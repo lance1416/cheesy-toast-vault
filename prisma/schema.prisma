@@ -6,3 +6,40 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  /// bcrypt hash of the master password — used by next-auth for login only, never for encryption
+  passwordHash String
+  /// base64-encoded PBKDF2 salt; combined with the master password in-browser to derive the AES-256-GCM key
+  salt         String
+  createdAt    DateTime     @default(now())
+  vaultEntries VaultEntry[]
+  tags         Tag[]
+}
+
+model VaultEntry {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// base64-encoded AES-256-GCM ciphertext of the vault entry JSON; server never decrypts this
+  encryptedBlob String
+  /// base64-encoded AES-GCM initialization vector; unique per entry, safe to store in plaintext
+  iv            String
+  tags          Tag[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Tag {
+  id           String       @id @default(cuid())
+  userId       String
+  /// scoped to the owning user so tags are not shared across accounts
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  vaultEntries VaultEntry[]
+  createdAt    DateTime     @default(now())
+
+  @@unique([userId, name])
+}
