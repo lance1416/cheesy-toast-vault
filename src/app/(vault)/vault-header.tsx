@@ -10,12 +10,12 @@ export default function VaultHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-stone-200/80">
+    <header className="sticky top-0 z-10 bg-surface/90 backdrop-blur-sm border-b border-line/80">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
         <div className="flex items-center gap-1.5 min-w-0">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-colors shrink-0 whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm text-muted hover:text-default hover:bg-line transition-colors shrink-0 whitespace-nowrap"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -37,7 +37,7 @@ export default function VaultHeader({
             /
           </span>
           <h1
-            className="text-sm font-semibold text-stone-800 truncate"
+            className="text-sm font-semibold text-default truncate"
             style={{ fontFamily: "var(--font-playfair, serif)" }}
           >
             {vaultName}

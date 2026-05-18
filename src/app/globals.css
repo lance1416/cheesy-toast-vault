@@ -1,25 +1,68 @@
 @import "tailwindcss";
 
+/* ── Class-based dark mode ──────────────────────────────────────────────── */
+@variant dark (&:where(.dark, .dark *));
+
+/* ── Functional colour tokens ──────────────────────────────────────────── */
+/*    Named after intent, not appearance. Swap values here for each scheme. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Backgrounds */
+  --ct-canvas: #fffbeb; /* page / outermost surface  (amber-50)  */
+  --ct-surface: #ffffff; /* cards, panels             (white)     */
+  --ct-sunken: #fafaf9; /* inputs, inset areas       (stone-50)  */
+
+  /* Text */
+  --ct-text-default: #292524; /* body copy               (stone-800) */
+  --ct-text-muted: #57534e; /* secondary info          (stone-600) */
+  --ct-text-subtle: #78716c; /* icons, placeholders     (stone-500) */
+
+  /* Borders */
+  --ct-line: #e7e5e4; /* ui element borders      (stone-200) */
+  --ct-divider: #f5f5f4; /* subtle separators       (stone-100) */
 }
 
+.dark {
+  /* Backgrounds */
+  --ct-canvas: #1c1917; /* stone-900 */
+  --ct-surface: #292524; /* stone-800 */
+  --ct-sunken: #1c1917; /* stone-900 (inset same as canvas in dark) */
+
+  /* Text */
+  --ct-text-default: #fafaf9; /* stone-50  */
+  --ct-text-muted: #d6d3d1; /* stone-300 */
+  --ct-text-subtle: #a8a29e; /* stone-400 */
+
+  /* Borders */
+  --ct-line: #44403c; /* stone-700 */
+  --ct-divider: #292524; /* stone-800 */
+}
+
+/* ── Register tokens as Tailwind utility colours ─────────────────────────── */
 @theme inline {
+  --color-canvas: var(--ct-canvas);
+  --color-surface: var(--ct-surface);
+  --color-sunken: var(--ct-sunken);
+  --color-default: var(--ct-text-default);
+  --color-muted: var(--ct-text-muted);
+  --color-subtle: var(--ct-text-subtle);
+  --color-line: var(--ct-line);
+  --color-divider: var(--ct-divider);
+
+  /* Keep scaffold defaults */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ── Noise texture utility ──────────────────────────────────────────────── */
+/*    CSS custom properties are not resolved inside SVG data URIs, so       */
+/*    opacity is hardcoded at 0.035 and dark mode suppresses it via CSS.    */
+@layer utilities {
+  .bg-noise {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
+  .dark .bg-noise {
+    background-image: none;
+  }
 }

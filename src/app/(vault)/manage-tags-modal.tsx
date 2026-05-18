@@ -65,15 +65,15 @@ function TagRow({
 
   if (confirmDelete) {
     return (
-      <div className="flex items-center justify-between gap-3 py-2.5 border-b border-stone-100 last:border-0">
-        <span className="text-sm text-stone-600">
-          Delete <span className="font-medium text-stone-700">{tag.name}</span>?
+      <div className="flex items-center justify-between gap-3 py-2.5 border-b border-divider last:border-0">
+        <span className="text-sm text-muted">
+          Delete <span className="font-medium text-default">{tag.name}</span>?
         </span>
         <div className="flex gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setConfirmDelete(false)}
-            className="text-xs text-stone-600 hover:text-stone-800 transition-colors"
+            className="text-xs text-muted hover:text-default transition-colors"
           >
             Cancel
           </button>
@@ -91,7 +91,7 @@ function TagRow({
   }
 
   return (
-    <div className="flex items-center gap-2 py-2.5 border-b border-stone-100 last:border-0">
+    <div className="flex items-center gap-2 py-2.5 border-b border-divider last:border-0">
       {editing ? (
         <>
           <input
@@ -110,7 +110,7 @@ function TagRow({
               }
             }}
             maxLength={32}
-            className="flex-1 rounded-lg border border-amber-400 bg-white px-2.5 py-1 text-sm text-stone-800 outline-none focus:ring-2 focus:ring-amber-400/20"
+            className="flex-1 rounded-lg border border-amber-400 bg-surface px-2.5 py-1 text-sm text-default outline-none focus:ring-2 focus:ring-amber-400/20"
           />
           <button
             type="button"
@@ -126,19 +126,19 @@ function TagRow({
               setEditing(false);
               setName(tag.name);
             }}
-            className="text-xs text-stone-600 hover:text-stone-800 transition-colors"
+            className="text-xs text-muted hover:text-default transition-colors"
           >
             Cancel
           </button>
         </>
       ) : (
         <>
-          <span className="flex-1 text-sm text-stone-700">{tag.name}</span>
+          <span className="flex-1 text-sm text-default">{tag.name}</span>
           <button
             type="button"
             onClick={() => setEditing(true)}
             aria-label={`Rename ${tag.name}`}
-            className="text-stone-500 hover:text-stone-700 transition-colors"
+            className="text-subtle hover:text-default transition-colors"
           >
             <EditIcon />
           </button>
@@ -146,7 +146,7 @@ function TagRow({
             type="button"
             onClick={() => setConfirmDelete(true)}
             aria-label={`Delete ${tag.name}`}
-            className="text-stone-500 hover:text-red-600 transition-colors"
+            className="text-subtle hover:text-red-600 transition-colors"
           >
             <TrashIcon />
           </button>
@@ -176,7 +176,7 @@ export default function ManageTagsModal({
       scrollable
     >
       {tags.length === 0 ? (
-        <p className="text-sm text-stone-600 text-center py-6">No tags yet.</p>
+        <p className="text-sm text-muted text-center py-6">No tags yet.</p>
       ) : (
         <div>
           {tags.map((tag) => (

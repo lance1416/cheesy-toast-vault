@@ -83,7 +83,7 @@ export default function CreateVaultModal({
               onClick={() => setShowPassword((v) => !v)}
               aria-pressed={showPassword}
               aria-label={showPassword ? "Hide password" : "Show password"}
-              className="text-stone-500 hover:text-stone-700 transition-colors"
+              className="text-subtle hover:text-default transition-colors"
             >
               <EyeIcon open={showPassword} />
             </button>
@@ -104,7 +104,7 @@ export default function CreateVaultModal({
           required
         />
         {passwordMismatch && <p className="text-xs text-red-600 -mt-2">Passwords do not match.</p>}
-        <p className="text-xs text-stone-600">
+        <p className="text-xs text-muted">
           This password encrypts your vault data — it never leaves your browser.
         </p>
 
@@ -121,14 +121,14 @@ export default function CreateVaultModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-lg border border-stone-200 py-2.5 text-sm font-semibold text-stone-600 hover:bg-stone-50 transition-colors"
+            className="flex-1 rounded-lg border border-line py-2.5 text-sm font-semibold text-muted hover:bg-sunken transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting || !name || password.length < 12 || password !== confirm}
-            className="flex-1 rounded-lg bg-stone-800 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex-1 rounded-lg bg-stone-800 dark:bg-amber-600 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Creating…" : "Create Vault"}
           </button>

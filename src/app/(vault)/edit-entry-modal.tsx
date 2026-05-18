@@ -133,7 +133,7 @@ export default function EditEntryModal({
                       onClick={() => setShowPassword((v) => !v)}
                       aria-pressed={showPassword}
                       aria-label={showPassword ? "Hide password" : "Show password"}
-                      className="text-stone-500 hover:text-stone-700 transition-colors"
+                      className="text-subtle hover:text-default transition-colors"
                     >
                       <EyeIcon open={showPassword} />
                     </button>
@@ -141,7 +141,7 @@ export default function EditEntryModal({
                       type="button"
                       onClick={() => setShowGenerator((v) => !v)}
                       aria-label="Toggle password generator"
-                      className="text-stone-500 hover:text-amber-600 transition-colors ml-1"
+                      className="text-subtle hover:text-amber-600 transition-colors ml-1"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -214,21 +214,21 @@ export default function EditEntryModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-lg border border-stone-200 py-2.5 text-sm font-semibold text-stone-600 hover:bg-stone-50 transition-colors"
+                className="flex-1 rounded-lg border border-line py-2.5 text-sm font-semibold text-muted hover:bg-sunken transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving || !name}
-                className="flex-1 rounded-lg bg-stone-800 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 rounded-lg bg-stone-800 dark:bg-amber-600 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? "Saving…" : "Save"}
               </button>
             </div>
           </form>
 
-          <div className="mt-5 pt-5 border-t border-stone-100">
+          <div className="mt-5 pt-5 border-t border-divider">
             {!confirmDelete ? (
               <button
                 type="button"
@@ -246,7 +246,7 @@ export default function EditEntryModal({
                   <button
                     type="button"
                     onClick={() => setConfirmDelete(false)}
-                    className="flex-1 rounded-lg border border-stone-200 bg-white py-2 text-sm font-semibold text-stone-600 hover:bg-stone-50 transition-colors"
+                    className="flex-1 rounded-lg border border-line bg-surface py-2 text-sm font-semibold text-muted hover:bg-sunken transition-colors"
                   >
                     Cancel
                   </button>

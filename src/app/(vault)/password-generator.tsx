@@ -24,27 +24,27 @@ export default function PasswordGenerator({
   );
 
   return (
-    <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+    <div className="mt-2 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold text-stone-600 uppercase tracking-wide">
+        <p className="text-xs font-semibold text-muted uppercase tracking-wide">
           Generated password
         </p>
         <button
           type="button"
           onClick={onClose}
-          className="text-xs text-stone-600 hover:text-stone-800 transition-colors"
+          className="text-xs text-muted hover:text-default transition-colors"
         >
           Close
         </button>
       </div>
 
-      <div className="flex items-center gap-2 bg-white rounded-lg border border-stone-200 px-3 py-2">
-        <code className="flex-1 text-sm font-mono text-stone-800 break-all">{generated}</code>
+      <div className="flex items-center gap-2 bg-surface rounded-lg border border-line px-3 py-2">
+        <code className="flex-1 text-sm font-mono text-default break-all">{generated}</code>
         <button
           type="button"
           onClick={() => setSeed((s) => s + 1)}
           aria-label="Regenerate password"
-          className="shrink-0 text-stone-500 hover:text-amber-600 transition-colors"
+          className="shrink-0 text-subtle hover:text-amber-600 transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -66,7 +66,7 @@ export default function PasswordGenerator({
 
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <label className="text-xs text-stone-600 w-12 shrink-0">Length</label>
+          <label className="text-xs text-muted w-12 shrink-0">Length</label>
           <input
             type="range"
             min={12}
@@ -75,7 +75,7 @@ export default function PasswordGenerator({
             onChange={(e) => setLength(Number(e.target.value))}
             className="flex-1 accent-amber-600"
           />
-          <span className="text-xs font-mono text-stone-600 w-6 text-right">{length}</span>
+          <span className="text-xs font-mono text-muted w-6 text-right">{length}</span>
         </div>
 
         {(
@@ -92,7 +92,7 @@ export default function PasswordGenerator({
               onChange={(e) => setter(e.target.checked)}
               className="accent-amber-600 rounded"
             />
-            <span className="text-xs text-stone-600">{labelText}</span>
+            <span className="text-xs text-muted">{labelText}</span>
           </label>
         ))}
       </div>
@@ -103,7 +103,7 @@ export default function PasswordGenerator({
           onUse(generated);
           onClose();
         }}
-        className="w-full rounded-lg bg-stone-800 py-2 text-xs font-semibold text-white hover:bg-amber-700 transition-colors"
+        className="w-full rounded-lg bg-stone-800 dark:bg-amber-600 py-2 text-xs font-semibold text-white hover:bg-amber-700 dark:hover:bg-amber-500 transition-colors"
       >
         Use this password
       </button>

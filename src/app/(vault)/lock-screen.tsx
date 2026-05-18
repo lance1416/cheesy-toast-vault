@@ -21,10 +21,9 @@ export default function LockScreen({
 
   return (
     <div
-      className="min-h-screen bg-amber-50 flex flex-col"
+      className="min-h-screen bg-canvas bg-noise flex flex-col"
       style={{
         fontFamily: "var(--font-dm-sans, sans-serif)",
-        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E")`,
       }}
     >
       <VaultHeader
@@ -33,7 +32,7 @@ export default function LockScreen({
           <button
             type="button"
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="rounded-lg px-3 py-2 text-sm text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors"
+            className="rounded-lg px-3 py-2 text-sm text-subtle hover:text-default hover:bg-line transition-colors"
           >
             Sign out
           </button>
@@ -46,10 +45,10 @@ export default function LockScreen({
             <span className="text-5xl block mb-4 select-none" aria-hidden="true">
               🔐
             </span>
-            <p className="text-sm text-stone-600">Enter the vault password to unlock.</p>
+            <p className="text-sm text-muted">Enter the vault password to unlock.</p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm shadow-stone-100 px-8 py-8">
+          <div className="bg-surface rounded-2xl border border-line/80 shadow-sm shadow-black/5 px-8 py-8">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -60,7 +59,7 @@ export default function LockScreen({
               <div className="space-y-1.5">
                 <label
                   htmlFor="lock-password"
-                  className="block text-xs font-medium text-stone-500 tracking-wide"
+                  className="block text-xs font-medium text-subtle tracking-wide"
                 >
                   Vault Password
                 </label>
@@ -74,14 +73,14 @@ export default function LockScreen({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Your vault password"
-                    className="w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 pr-10 text-sm text-stone-800 placeholder:text-stone-300 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white"
+                    className="w-full rounded-lg border border-line bg-sunken/50 px-3.5 py-2.5 pr-10 text-sm text-default placeholder:text-stone-300 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-surface"
                   />
                   <button
                     type="button"
                     onClick={() => setShow((v) => !v)}
                     aria-pressed={show}
                     aria-label={show ? "Hide password" : "Show password"}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-700 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-subtle hover:text-default transition-colors"
                   >
                     <EyeIcon open={show} />
                   </button>
@@ -100,7 +99,7 @@ export default function LockScreen({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-lg bg-stone-800 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-lg bg-stone-800 dark:bg-amber-600 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? "Unlocking…" : "Unlock"}
               </button>

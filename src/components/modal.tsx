@@ -98,7 +98,7 @@ export default function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         className={[
-          "w-full bg-white rounded-2xl border border-stone-200/80 shadow-xl px-8 py-8",
+          "w-full bg-surface rounded-2xl border border-line/80 shadow-xl px-8 py-8",
           maxWidth,
           scrollable ? "max-h-[90vh] overflow-y-auto" : "",
         ]
@@ -109,7 +109,7 @@ export default function Modal({
         <div className="flex items-center justify-between mb-6">
           <h2
             id={titleId}
-            className="text-xl font-bold text-stone-800 tracking-tight"
+            className="text-xl font-bold text-default tracking-tight"
             style={{ fontFamily: "var(--font-playfair, serif)" }}
           >
             {title}
@@ -117,7 +117,7 @@ export default function Modal({
           <button
             type="button"
             onClick={onClose}
-            className="text-stone-500 hover:text-stone-800 transition-colors"
+            className="text-subtle hover:text-default transition-colors"
             aria-label="Close"
           >
             <CloseIcon />

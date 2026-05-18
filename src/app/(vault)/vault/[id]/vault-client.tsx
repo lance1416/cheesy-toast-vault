@@ -134,23 +134,22 @@ export default function VaultClient({
 
   return (
     <div
-      className="min-h-screen bg-amber-50"
+      className="min-h-screen bg-canvas bg-noise"
       style={{
         fontFamily: "var(--font-dm-sans, sans-serif)",
-        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E")`,
       }}
     >
       <VaultHeader
         vaultName={vault.name}
         actions={
           <>
-            <span className="hidden md:block text-xs text-stone-600 truncate max-w-40 mr-1.5">
+            <span className="hidden md:block text-xs text-muted truncate max-w-40 mr-1.5">
               {email}
             </span>
             <button
               type="button"
               onClick={() => setShowNew(true)}
-              className="rounded-lg bg-stone-800 px-3.5 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
+              className="rounded-lg bg-stone-800 dark:bg-amber-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-amber-700 dark:hover:bg-amber-500 transition-colors"
             >
               + Add entry
             </button>
@@ -158,7 +157,7 @@ export default function VaultClient({
               type="button"
               onClick={() => clearKey(vault.id)}
               aria-label={`Lock vault "${vault.name}"`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-600 hover:border-amber-300 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm font-medium text-muted hover:border-amber-300 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
             >
               <LockIcon />
               Lock
@@ -167,7 +166,7 @@ export default function VaultClient({
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="rounded-lg px-3 py-2 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-colors"
+              className="rounded-lg px-3 py-2 text-sm text-muted hover:text-default hover:bg-line transition-colors"
             >
               Sign out
             </button>
@@ -179,7 +178,7 @@ export default function VaultClient({
         {decrypted.length > 0 && (
           <div className="space-y-2">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle pointer-events-none">
                 <SearchIcon />
               </span>
               <label htmlFor="vault-search" className="sr-only">
@@ -191,7 +190,7 @@ export default function VaultClient({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search entries…"
-                className="w-full rounded-xl border border-stone-200 bg-white pl-9 pr-4 py-2.5 text-sm text-stone-800 placeholder:text-stone-500 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+                className="w-full rounded-xl border border-line bg-surface pl-9 pr-4 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
               />
             </div>
 
@@ -205,7 +204,7 @@ export default function VaultClient({
                       type="button"
                       aria-pressed={active}
                       onClick={() => toggleTagFilter(tag.id)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${active ? "bg-amber-100 text-amber-800 border-amber-300" : "bg-white text-stone-600 border-stone-200 hover:border-amber-300 hover:text-amber-700"}`}
+                      className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${active ? "bg-amber-100 text-amber-800 border-amber-300" : "bg-surface text-muted border-line hover:border-amber-300 hover:text-amber-700 dark:hover:bg-stone-700"}`}
                     >
                       {tag.name}
                     </button>
@@ -215,7 +214,7 @@ export default function VaultClient({
                   <button
                     type="button"
                     onClick={() => setSelectedTagIds([])}
-                    className="rounded-full px-3 py-1 text-xs font-medium text-stone-600 hover:text-stone-800 transition-colors"
+                    className="rounded-full px-3 py-1 text-xs font-medium text-muted hover:text-default transition-colors"
                   >
                     Clear
                   </button>
@@ -223,7 +222,7 @@ export default function VaultClient({
                 <button
                   type="button"
                   onClick={() => setShowManageTags(true)}
-                  className="rounded-full px-3 py-1 text-xs font-medium text-stone-600 hover:text-stone-800 transition-colors"
+                  className="rounded-full px-3 py-1 text-xs font-medium text-muted hover:text-default transition-colors"
                 >
                   Edit tags
                 </button>
@@ -238,23 +237,23 @@ export default function VaultClient({
               🗝️
             </span>
             <h2
-              className="text-xl font-semibold text-stone-700 mb-2"
+              className="text-xl font-semibold text-default mb-2"
               style={{ fontFamily: "var(--font-playfair, serif)" }}
             >
               This vault is empty
             </h2>
-            <p className="text-sm text-stone-600 mb-6">Add your first entry to get started.</p>
+            <p className="text-sm text-muted mb-6">Add your first entry to get started.</p>
             <button
               type="button"
               onClick={() => setShowNew(true)}
-              className="rounded-lg bg-stone-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
+              className="rounded-lg bg-stone-800 dark:bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 dark:hover:bg-amber-500 transition-colors"
             >
               + Add your first entry
             </button>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p className="text-stone-600 text-sm mb-3">No entries match your search.</p>
+            <p className="text-muted text-sm mb-3">No entries match your search.</p>
             <button
               type="button"
               onClick={() => {

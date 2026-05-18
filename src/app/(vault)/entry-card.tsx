@@ -21,7 +21,7 @@ function CopyButton({ value }: { value: string }) {
       type="button"
       onClick={handleCopy}
       aria-label={copied ? "Copied" : "Copy to clipboard"}
-      className="text-stone-500 hover:text-amber-600 transition-colors"
+      className="text-subtle hover:text-amber-600 transition-colors"
     >
       {copied ? <span className="text-xs font-medium text-amber-600">✓</span> : <CopyIcon />}
     </button>
@@ -32,7 +32,7 @@ function CopyButton({ value }: { value: string }) {
 
 function LetterAvatar({ name }: { name: string }) {
   return (
-    <div className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-xs font-semibold text-stone-600 shrink-0 select-none">
+    <div className="w-6 h-6 rounded-md bg-stone-100 dark:bg-stone-700 flex items-center justify-center text-xs font-semibold text-muted shrink-0 select-none">
       {name[0]?.toUpperCase() ?? "?"}
     </div>
   );
@@ -96,7 +96,7 @@ export default function EntryCard({
   }, [entry.url]);
 
   return (
-    <div className="bg-white rounded-xl border border-stone-200/80 shadow-sm shadow-stone-100 overflow-hidden">
+    <div className="bg-surface rounded-xl border border-line/80 shadow-sm shadow-black/5 overflow-hidden">
       {/* Header — click anywhere to expand/collapse */}
       <div
         className="px-4 py-3 flex items-center gap-3 cursor-pointer select-none"
@@ -110,7 +110,7 @@ export default function EntryCard({
 
         <div className="min-w-0 flex-1">
           <p
-            className="text-sm font-semibold text-stone-800 leading-snug truncate"
+            className="text-sm font-semibold text-default leading-snug truncate"
             style={{ fontFamily: "var(--font-playfair, serif)" }}
           >
             {entry.name}
@@ -121,7 +121,7 @@ export default function EntryCard({
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="text-xs text-stone-600 hover:text-amber-600 transition-colors truncate inline-block max-w-full leading-none mt-0.5"
+              className="text-xs text-muted hover:text-amber-600 transition-colors truncate inline-block max-w-full leading-none mt-0.5"
             >
               {displayHost}
             </a>
@@ -135,7 +135,7 @@ export default function EntryCard({
               e.stopPropagation();
               onEdit();
             }}
-            className="text-xs font-medium text-stone-600 hover:text-amber-700 transition-colors"
+            className="text-xs font-medium text-muted hover:text-amber-700 transition-colors"
           >
             Edit
           </button>
@@ -148,7 +148,7 @@ export default function EntryCard({
             aria-expanded={open}
             aria-controls={`entry-body-${entry.id}`}
             aria-label={open ? "Collapse entry" : "Expand entry"}
-            className="text-stone-500 hover:text-stone-700 transition-colors"
+            className="text-subtle hover:text-default transition-colors"
           >
             <ChevronIcon open={open} />
           </button>
@@ -159,7 +159,7 @@ export default function EntryCard({
       {open && (
         <div
           id={`entry-body-${entry.id}`}
-          className="px-4 pt-3 pb-4 border-t border-stone-100 space-y-2"
+          className="px-4 pt-3 pb-4 border-t border-divider space-y-2"
         >
           {[
             {
@@ -183,7 +183,7 @@ export default function EntryCard({
                     onClick={() => setShowPassword((v) => !v)}
                     aria-pressed={showPassword}
                     aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="text-stone-500 hover:text-stone-700 transition-colors"
+                    className="text-subtle hover:text-default transition-colors"
                   >
                     <EyeIcon open={showPassword} />
                   </button>
@@ -193,8 +193,8 @@ export default function EntryCard({
             },
           ].map(({ label, value, mono, actions }) => (
             <div key={label} className="flex items-center gap-2">
-              <span className="w-20 shrink-0 text-xs font-medium text-stone-600">{label}</span>
-              <span className={`flex-1 truncate text-sm text-stone-700 ${mono ? "font-mono" : ""}`}>
+              <span className="w-20 shrink-0 text-xs font-medium text-muted">{label}</span>
+              <span className={`flex-1 truncate text-sm text-default ${mono ? "font-mono" : ""}`}>
                 {value}
               </span>
               <div className="shrink-0">{actions}</div>
@@ -204,24 +204,24 @@ export default function EntryCard({
           {entry.notes && (
             <div className="flex gap-2 pt-1">
               <span className="w-20 shrink-0 text-xs font-medium text-stone-400 pt-0.5">Notes</span>
-              <p className="flex-1 text-sm text-stone-600 whitespace-pre-wrap break-words">
+              <p className="flex-1 text-sm text-muted whitespace-pre-wrap break-words">
                 {entry.notes}
               </p>
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-2 mt-1 border-t border-stone-100">
+          <div className="flex items-center justify-between pt-2 mt-1 border-t border-divider">
             <div className="flex flex-wrap gap-1">
               {entry.tags.map((tag) => (
                 <span
                   key={tag.id}
-                  className="inline-block rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 border border-amber-200"
+                  className="inline-block rounded-full bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
                 >
                   {tag.name}
                 </span>
               ))}
             </div>
-            <span className="text-xs text-stone-600 shrink-0 ml-2">{formattedDate}</span>
+            <span className="text-xs text-muted shrink-0 ml-2">{formattedDate}</span>
           </div>
         </div>
       )}

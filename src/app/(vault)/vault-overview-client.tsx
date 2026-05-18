@@ -24,29 +24,28 @@ export default function VaultOverviewClient({
 
   return (
     <div
-      className="min-h-screen bg-amber-50"
+      className="min-h-screen bg-canvas bg-noise"
       style={{
         fontFamily: "var(--font-dm-sans, sans-serif)",
-        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E")`,
       }}
     >
-      <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-stone-200/80">
+      <header className="sticky top-0 z-10 bg-surface/90 backdrop-blur-sm border-b border-line/80">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
           <span
             aria-label="Cheesy Toast Vault"
-            className="text-base font-bold text-stone-800 tracking-tight"
+            className="text-base font-bold text-default tracking-tight"
             style={{ fontFamily: "var(--font-playfair, serif)" }}
           >
             <span aria-hidden="true">🧀 </span>Cheesy Toast Vault
           </span>
           <div className="flex items-center gap-1.5">
-            <span className="hidden md:block text-xs text-stone-600 truncate max-w-40 mr-1.5">
+            <span className="hidden md:block text-xs text-muted truncate max-w-40 mr-1.5">
               {email}
             </span>
             <button
               type="button"
               onClick={() => setShowCreate(true)}
-              className="rounded-lg bg-stone-800 px-3.5 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
+              className="rounded-lg bg-stone-800 dark:bg-amber-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-amber-700 dark:hover:bg-amber-500 transition-colors"
             >
               + New vault
             </button>
@@ -54,7 +53,7 @@ export default function VaultOverviewClient({
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="rounded-lg px-3 py-2 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-colors"
+              className="rounded-lg px-3 py-2 text-sm text-muted hover:text-default hover:bg-line transition-colors"
             >
               Sign out
             </button>
@@ -69,16 +68,16 @@ export default function VaultOverviewClient({
               🔐
             </span>
             <h2
-              className="text-xl font-semibold text-stone-700 mb-2"
+              className="text-xl font-semibold text-default mb-2"
               style={{ fontFamily: "var(--font-playfair, serif)" }}
             >
               No vaults yet
             </h2>
-            <p className="text-sm text-stone-600 mb-6">Create your first vault to get started.</p>
+            <p className="text-sm text-muted mb-6">Create your first vault to get started.</p>
             <button
               type="button"
               onClick={() => setShowCreate(true)}
-              className="rounded-lg bg-stone-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
+              className="rounded-lg bg-stone-800 dark:bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 dark:hover:bg-amber-500 transition-colors"
             >
               + Create vault
             </button>
@@ -90,16 +89,16 @@ export default function VaultOverviewClient({
                 key={vault.id}
                 type="button"
                 onClick={() => router.push(`/vault/${vault.id}`)}
-                className="bg-white rounded-xl border border-stone-200/80 shadow-sm shadow-stone-100 p-5 text-left hover:border-amber-300 hover:shadow-md transition-all group"
+                className="bg-surface rounded-xl border border-line/80 shadow-sm shadow-black/5 p-5 text-left hover:border-amber-300 hover:shadow-md transition-all group"
               >
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <h2
-                    className="text-base font-semibold text-stone-800 group-hover:text-amber-700 transition-colors"
+                    className="text-base font-semibold text-default group-hover:text-amber-700 transition-colors"
                     style={{ fontFamily: "var(--font-playfair, serif)" }}
                   >
                     {vault.name}
                   </h2>
-                  <span className="text-stone-500 group-hover:text-amber-600 transition-colors mt-0.5">
+                  <span className="text-subtle group-hover:text-amber-600 transition-colors mt-0.5">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="14"
@@ -115,7 +114,7 @@ export default function VaultOverviewClient({
                     </svg>
                   </span>
                 </div>
-                <p className="text-sm text-stone-600">
+                <p className="text-sm text-muted">
                   {vault._count.entries} {vault._count.entries === 1 ? "entry" : "entries"}
                 </p>
               </button>

@@ -36,14 +36,14 @@ function PasswordInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 pr-10 text-sm text-stone-800 placeholder:text-stone-500 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white"
+        className="w-full rounded-lg border border-line bg-sunken/50 px-3.5 py-2.5 pr-10 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-surface"
       />
       <button
         type="button"
         onClick={onToggle}
         aria-pressed={show}
         aria-label={show ? "Hide" : "Show"}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-600 hover:text-stone-800 transition-colors"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-default transition-colors"
       >
         <EyeIcon open={show} size={15} />
       </button>
@@ -132,10 +132,9 @@ export default function RegisterPage() {
 
   return (
     <div
-      className="min-h-screen bg-amber-50 flex items-center justify-center px-4 py-12"
+      className="min-h-screen bg-canvas bg-noise flex items-center justify-center px-4 py-12"
       style={{
         fontFamily: "var(--font-dm-sans, sans-serif)",
-        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E")`,
       }}
     >
       <div className="w-full max-w-sm">
@@ -144,18 +143,18 @@ export default function RegisterPage() {
             🧀
           </span>
           <h1
-            className="text-[1.75rem] font-bold text-stone-800 leading-tight tracking-tight"
+            className="text-[1.75rem] font-bold text-default leading-tight tracking-tight"
             style={{ fontFamily: "var(--font-playfair, serif)" }}
           >
             Cheesy Toast Vault
           </h1>
-          <p className="text-sm text-stone-600 mt-1.5 tracking-wide">
+          <p className="text-sm text-muted mt-1.5 tracking-wide">
             Your secrets, kept warm &amp; safe.
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm shadow-stone-100 px-8 py-8">
-          <p className="text-xs font-semibold text-stone-600 uppercase tracking-widest mb-6">
+        <div className="bg-surface rounded-2xl border border-line/80 shadow-sm shadow-black/5 px-8 py-8">
+          <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-6">
             Create your account
           </p>
 
@@ -164,7 +163,7 @@ export default function RegisterPage() {
             <div className="space-y-1.5">
               <label
                 htmlFor="register-email"
-                className="block text-xs font-medium text-stone-600 tracking-wide"
+                className="block text-xs font-medium text-muted tracking-wide"
               >
                 Email
               </label>
@@ -176,19 +175,19 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-500 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white"
+                className="w-full rounded-lg border border-line bg-sunken/50 px-3.5 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-surface"
               />
             </div>
 
             {/* Login credentials section */}
-            <div className="space-y-3 rounded-xl border border-stone-100 bg-stone-50/50 p-4">
-              <p className="text-xs font-semibold text-stone-600 uppercase tracking-wider">
+            <div className="space-y-3 rounded-xl border border-divider bg-sunken/50 p-4">
+              <p className="text-xs font-semibold text-muted uppercase tracking-wider">
                 Login credentials
               </p>
               <div className="space-y-1.5">
                 <label
                   htmlFor="login-password"
-                  className="block text-xs font-medium text-stone-600 tracking-wide"
+                  className="block text-xs font-medium text-muted tracking-wide"
                 >
                   Login Password{" "}
                   <span className="text-red-500 ml-0.5" aria-label="required">
@@ -214,7 +213,7 @@ export default function RegisterPage() {
               <div className="space-y-1.5">
                 <label
                   htmlFor="login-confirm"
-                  className="block text-xs font-medium text-stone-600 tracking-wide"
+                  className="block text-xs font-medium text-muted tracking-wide"
                 >
                   Confirm Login Password{" "}
                   <span className="text-red-500 ml-0.5" aria-label="required">
@@ -238,14 +237,14 @@ export default function RegisterPage() {
                 <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider">
                   First vault
                 </p>
-                <p className="text-xs text-stone-600 mt-0.5">
+                <p className="text-xs text-muted mt-0.5">
                   Vault password encrypts your data — never sent to our servers.
                 </p>
               </div>
               <div className="space-y-1.5">
                 <label
                   htmlFor="vault-name-input"
-                  className="block text-xs font-medium text-stone-600 tracking-wide"
+                  className="block text-xs font-medium text-muted tracking-wide"
                 >
                   Vault Name
                 </label>
@@ -255,13 +254,13 @@ export default function RegisterPage() {
                   value={vaultName}
                   onChange={(e) => setVaultName(e.target.value)}
                   placeholder="Personal"
-                  className="w-full rounded-lg border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-500 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+                  className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
                 />
               </div>
               <div className="space-y-1.5">
                 <label
                   htmlFor="vault-password"
-                  className="block text-xs font-medium text-stone-600 tracking-wide"
+                  className="block text-xs font-medium text-muted tracking-wide"
                 >
                   Vault Password{" "}
                   <span className="text-red-500 ml-0.5" aria-label="required">
@@ -287,7 +286,7 @@ export default function RegisterPage() {
               <div className="space-y-1.5">
                 <label
                   htmlFor="vault-confirm"
-                  className="block text-xs font-medium text-stone-600 tracking-wide"
+                  className="block text-xs font-medium text-muted tracking-wide"
                 >
                   Confirm Vault Password{" "}
                   <span className="text-red-500 ml-0.5" aria-label="required">
@@ -317,14 +316,14 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-stone-800 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-lg bg-stone-800 dark:bg-amber-600 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "Creating your account…" : "Create Account"}
             </button>
           </form>
         </div>
 
-        <p className="mt-6 text-center text-sm text-stone-600">
+        <p className="mt-6 text-center text-sm text-muted">
           Already have an account?{" "}
           <Link
             href="/login"

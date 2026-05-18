@@ -24,11 +24,11 @@ export default function Field({
   suffix?: React.ReactNode;
 }) {
   const base =
-    "w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-500 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white";
+    "w-full rounded-lg border border-line bg-sunken/50 px-3.5 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-surface";
 
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-sm font-medium text-stone-600">
+      <label htmlFor={id} className="block text-sm font-medium text-muted">
         {label}
         {required && (
           <span aria-label="required" className="text-red-500 ml-0.5">

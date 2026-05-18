@@ -39,7 +39,7 @@ export default function TagSelector({
 
   return (
     <div className="space-y-2">
-      <span className="block text-xs font-medium text-stone-600 tracking-wide">Tags</span>
+      <span className="block text-xs font-medium text-muted tracking-wide">Tags</span>
 
       {available.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
@@ -53,7 +53,7 @@ export default function TagSelector({
                 className={`rounded-full px-2.5 py-1 text-xs font-medium border transition-colors ${
                   selected
                     ? "bg-amber-100 text-amber-800 border-amber-300"
-                    : "bg-stone-50 text-stone-600 border-stone-200 hover:border-amber-300 hover:text-amber-700"
+                    : "bg-sunken text-muted border-line hover:border-amber-300 hover:text-amber-700"
                 }`}
               >
                 {tag.name}
@@ -76,13 +76,13 @@ export default function TagSelector({
           }}
           placeholder="New tag…"
           maxLength={32}
-          className="flex-1 rounded-lg border border-stone-200 bg-stone-50/50 px-3 py-1.5 text-sm text-stone-800 placeholder:text-stone-500 outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400/20 focus:bg-white"
+          className="flex-1 rounded-lg border border-line bg-sunken/50 px-3 py-1.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400/20 focus:bg-surface"
         />
         <button
           type="button"
           onClick={() => void handleCreate()}
           disabled={!newName.trim() || creating}
-          className="rounded-lg bg-stone-100 px-3 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="rounded-lg bg-stone-100 px-3 py-1.5 text-xs font-semibold text-muted hover:bg-stone-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Add
         </button>
