@@ -102,6 +102,22 @@ export default function VaultClient({
     setSelectedTagIds((prev) => prev.filter((x) => x !== id));
   }, []);
 
+  function handleExport() {
+    const date = new Date().toISOString().slice(0, 10);
+    const payload = JSON.stringify(
+      { version: 1, vaultName: vault.name, exportedAt: new Date().toISOString(), entries },
+      null,
+      2,
+    );
+    const blob = new Blob([payload], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${vault.name.toLowerCase().replace(/\s+/g, "-")}-${date}-backup.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function handleUnlock(password: string) {
     setUnlockError("");
     setUnlocking(true);
@@ -155,14 +171,22 @@ export default function VaultClient({
             </button>
             <button
               type="button"
+              onClick={handleExport}
+              title="Entries remain encrypted in the export file"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm font-medium text-muted hover:text-default hover:bg-line transition-colors"
+            >
+              Export
+            </button>
+            <button
+              type="button"
               onClick={() => clearKey(vault.id)}
               aria-label={`Lock vault "${vault.name}"`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm font-medium text-muted hover:border-amber-300 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm font-medium text-muted hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
             >
               <LockIcon />
               Lock
             </button>
-            <div className="w-px h-5 bg-stone-200 mx-0.5" role="separator" aria-hidden="true" />
+            <div className="w-px h-5 bg-line mx-0.5" role="separator" aria-hidden="true" />
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/login" })}
@@ -204,7 +228,7 @@ export default function VaultClient({
                       type="button"
                       aria-pressed={active}
                       onClick={() => toggleTagFilter(tag.id)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${active ? "bg-amber-100 text-amber-800 border-amber-300" : "bg-surface text-muted border-line hover:border-amber-300 hover:text-amber-700 dark:hover:bg-stone-700"}`}
+                      className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${active ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-700" : "bg-surface text-muted border-line hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400 dark:hover:bg-stone-700"}`}
                     >
                       {tag.name}
                     </button>
@@ -260,7 +284,7 @@ export default function VaultClient({
                 setQuery("");
                 setSelectedTagIds([]);
               }}
-              className="text-xs text-amber-700 hover:underline"
+              className="text-xs text-amber-700 dark:text-amber-400 hover:underline"
             >
               Clear filters
             </button>

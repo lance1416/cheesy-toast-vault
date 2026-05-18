@@ -225,7 +225,7 @@ export default function EditEntryModal({
             {error && (
               <div
                 role="alert"
-                className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+                className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
               >
                 {error}
               </div>
@@ -254,13 +254,13 @@ export default function EditEntryModal({
               <button
                 type="button"
                 onClick={() => setConfirmDelete(true)}
-                className="w-full rounded-lg border border-red-200 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
+                className="w-full rounded-lg border border-red-200 dark:border-red-900/50 py-2.5 text-sm font-semibold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
               >
                 Delete entry
               </button>
             ) : (
-              <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-3">
-                <p className="text-sm text-red-700">
+              <div className="rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 p-4 space-y-3">
+                <p className="text-sm text-red-700 dark:text-red-300">
                   Delete <span className="font-bold">{name}</span>? This cannot be undone.
                 </p>
                 <div className="flex gap-3">

@@ -126,7 +126,7 @@ function VaultCard({
             />
           ) : (
             <h2
-              className="text-base font-semibold text-default group-hover:text-amber-700 transition-colors"
+              className="text-base font-semibold text-default group-hover:text-amber-700 dark:group-hover:text-amber-500 transition-colors"
               style={{ fontFamily: "var(--font-playfair, serif)" }}
             >
               {vault.name}
@@ -180,7 +180,7 @@ function VaultCard({
               setConfirmDelete(true);
               setMenuOpen(false);
             }}
-            className="flex-1 rounded-lg px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
+            className="flex-1 rounded-lg px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
           >
             Delete
           </button>
@@ -221,7 +221,7 @@ function VaultCard({
       )}
 
       {error && (
-        <p role="alert" className="px-4 pb-3 text-xs text-red-600">
+        <p role="alert" className="px-4 pb-3 text-xs text-red-600 dark:text-red-400">
           {error}
         </p>
       )}

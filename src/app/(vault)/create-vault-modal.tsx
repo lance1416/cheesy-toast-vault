@@ -90,7 +90,7 @@ export default function CreateVaultModal({
           }
         />
         {passwordShort && (
-          <p className="text-xs text-amber-600 -mt-2">
+          <p className="text-xs text-amber-600 dark:text-amber-400 -mt-2">
             {12 - password.length} more character{12 - password.length !== 1 ? "s" : ""} needed
           </p>
         )}
@@ -103,7 +103,9 @@ export default function CreateVaultModal({
           placeholder="Repeat your vault password"
           required
         />
-        {passwordMismatch && <p className="text-xs text-red-600 -mt-2">Passwords do not match.</p>}
+        {passwordMismatch && (
+          <p className="text-xs text-red-600 dark:text-red-400 -mt-2">Passwords do not match.</p>
+        )}
         <p className="text-xs text-muted">
           This password encrypts your vault data — it never leaves your browser.
         </p>
@@ -111,7 +113,7 @@ export default function CreateVaultModal({
         {error && (
           <div
             role="alert"
-            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+            className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
           >
             {error}
           </div>

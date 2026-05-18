@@ -190,7 +190,7 @@ export default function RegisterPage() {
                   className="block text-xs font-medium text-muted tracking-wide"
                 >
                   Login Password{" "}
-                  <span className="text-red-500 ml-0.5" aria-label="required">
+                  <span className="text-red-500 dark:text-red-400 ml-0.5" aria-label="required">
                     *
                   </span>
                 </label>
@@ -204,7 +204,7 @@ export default function RegisterPage() {
                   minLength={12}
                 />
                 {loginShort && (
-                  <p className="text-xs text-amber-600">
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
                     {12 - loginPassword.length} more character
                     {12 - loginPassword.length !== 1 ? "s" : ""} needed
                   </p>
@@ -216,7 +216,7 @@ export default function RegisterPage() {
                   className="block text-xs font-medium text-muted tracking-wide"
                 >
                   Confirm Login Password{" "}
-                  <span className="text-red-500 ml-0.5" aria-label="required">
+                  <span className="text-red-500 dark:text-red-400 ml-0.5" aria-label="required">
                     *
                   </span>
                 </label>
@@ -232,9 +232,9 @@ export default function RegisterPage() {
             </div>
 
             {/* Vault section */}
-            <div className="space-y-3 rounded-xl border border-amber-100 bg-amber-50/50 p-4">
+            <div className="space-y-3 rounded-xl border border-amber-100 dark:border-amber-900/30 bg-amber-50/50 dark:bg-amber-900/10 p-4">
               <div>
-                <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
                   First vault
                 </p>
                 <p className="text-xs text-muted mt-0.5">
@@ -263,7 +263,7 @@ export default function RegisterPage() {
                   className="block text-xs font-medium text-muted tracking-wide"
                 >
                   Vault Password{" "}
-                  <span className="text-red-500 ml-0.5" aria-label="required">
+                  <span className="text-red-500 dark:text-red-400 ml-0.5" aria-label="required">
                     *
                   </span>
                 </label>
@@ -277,7 +277,7 @@ export default function RegisterPage() {
                   minLength={12}
                 />
                 {vaultShort && (
-                  <p className="text-xs text-amber-600">
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
                     {12 - vaultPassword.length} more character
                     {12 - vaultPassword.length !== 1 ? "s" : ""} needed
                   </p>
@@ -289,7 +289,7 @@ export default function RegisterPage() {
                   className="block text-xs font-medium text-muted tracking-wide"
                 >
                   Confirm Vault Password{" "}
-                  <span className="text-red-500 ml-0.5" aria-label="required">
+                  <span className="text-red-500 dark:text-red-400 ml-0.5" aria-label="required">
                     *
                   </span>
                 </label>
@@ -307,7 +307,7 @@ export default function RegisterPage() {
             {error && (
               <div
                 role="alert"
-                className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+                className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
               >
                 {error}
               </div>
@@ -327,7 +327,7 @@ export default function RegisterPage() {
           Already have an account?{" "}
           <Link
             href="/login"
-            className="font-medium text-amber-700 transition hover:text-amber-800"
+            className="font-medium text-amber-700 dark:text-amber-400 transition hover:text-amber-800 dark:hover:text-amber-300"
           >
             Sign in
           </Link>

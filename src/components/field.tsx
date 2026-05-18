@@ -31,7 +31,7 @@ export default function Field({
       <label htmlFor={id} className="block text-sm font-medium text-muted">
         {label}
         {required && (
-          <span aria-label="required" className="text-red-500 ml-0.5">
+          <span aria-label="required" className="text-red-500 dark:text-red-400 ml-0.5">
             *
           </span>
         )}

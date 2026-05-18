@@ -121,7 +121,7 @@ export default function LoginPage() {
             {error && (
               <div
                 role="alert"
-                className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+                className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
               >
                 {error}
               </div>
@@ -141,7 +141,7 @@ export default function LoginPage() {
           No vault yet?{" "}
           <Link
             href="/register"
-            className="font-medium text-amber-700 transition hover:text-amber-800"
+            className="font-medium text-amber-700 dark:text-amber-400 transition hover:text-amber-800 dark:hover:text-amber-300"
           >
             Create one
           </Link>

@@ -86,7 +86,7 @@ export default function PasswordGenerator({
           type="button"
           onClick={() => setSeed((s) => s + 1)}
           aria-label="Regenerate"
-          className="shrink-0 text-subtle hover:text-amber-600 transition-colors"
+          className="shrink-0 text-subtle hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -117,7 +117,7 @@ export default function PasswordGenerator({
               max={64}
               value={length}
               onChange={(e) => setLength(Number(e.target.value))}
-              className="flex-1 accent-amber-600"
+              className="flex-1 accent-amber-600 dark:accent-amber-400"
             />
             <span className="text-xs font-mono text-muted w-6 text-right">{length}</span>
           </div>
@@ -133,7 +133,7 @@ export default function PasswordGenerator({
                 type="checkbox"
                 checked={checked}
                 onChange={(e) => setter(e.target.checked)}
-                className="accent-amber-600 rounded"
+                className="accent-amber-600 dark:accent-amber-400 rounded"
               />
               <span className="text-xs text-muted">{labelText}</span>
             </label>
@@ -149,7 +149,7 @@ export default function PasswordGenerator({
               max={6}
               value={wordCount}
               onChange={(e) => setWordCount(Number(e.target.value))}
-              className="flex-1 accent-amber-600"
+              className="flex-1 accent-amber-600 dark:accent-amber-400"
             />
             <span className="text-xs font-mono text-muted w-4 text-right">{wordCount}</span>
           </div>
@@ -180,7 +180,7 @@ export default function PasswordGenerator({
               type="checkbox"
               checked={capitalize}
               onChange={(e) => setCapitalize(e.target.checked)}
-              className="accent-amber-600 rounded"
+              className="accent-amber-600 dark:accent-amber-400 rounded"
             />
             <span className="text-xs text-muted">Capitalize words</span>
           </label>

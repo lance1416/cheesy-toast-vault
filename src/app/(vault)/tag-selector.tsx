@@ -52,8 +52,8 @@ export default function TagSelector({
                 onClick={() => onToggle(tag.id)}
                 className={`rounded-full px-2.5 py-1 text-xs font-medium border transition-colors ${
                   selected
-                    ? "bg-amber-100 text-amber-800 border-amber-300"
-                    : "bg-sunken text-muted border-line hover:border-amber-300 hover:text-amber-700"
+                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-700"
+                    : "bg-sunken text-muted border-line hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400"
                 }`}
               >
                 {tag.name}
@@ -82,7 +82,7 @@ export default function TagSelector({
           type="button"
           onClick={() => void handleCreate()}
           disabled={!newName.trim() || creating}
-          className="rounded-lg bg-stone-100 px-3 py-1.5 text-xs font-semibold text-muted hover:bg-stone-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="rounded-lg bg-stone-100 dark:bg-stone-700 px-3 py-1.5 text-xs font-semibold text-muted hover:bg-stone-200 dark:hover:bg-stone-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Add
         </button>

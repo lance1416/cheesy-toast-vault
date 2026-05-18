@@ -21,7 +21,7 @@ function CopyButton({ value }: { value: string }) {
       type="button"
       onClick={handleCopy}
       aria-label={copied ? "Copied" : "Copy to clipboard"}
-      className="text-subtle hover:text-amber-600 transition-colors"
+      className="text-subtle hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
     >
       {copied ? <span className="text-xs font-medium text-amber-600">✓</span> : <CopyIcon />}
     </button>
@@ -121,7 +121,7 @@ export default function EntryCard({
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="text-xs text-muted hover:text-amber-600 transition-colors truncate inline-block max-w-full leading-none mt-0.5"
+              className="text-xs text-muted hover:text-amber-600 dark:hover:text-amber-400 transition-colors truncate inline-block max-w-full leading-none mt-0.5"
             >
               {displayHost}
             </a>
@@ -135,7 +135,7 @@ export default function EntryCard({
               e.stopPropagation();
               onEdit();
             }}
-            className="text-xs font-medium text-muted hover:text-amber-700 transition-colors"
+            className="text-xs font-medium text-muted hover:text-amber-700 dark:hover:text-amber-500 transition-colors"
           >
             Edit
           </button>
@@ -203,7 +203,7 @@ export default function EntryCard({
 
           {entry.notes && (
             <div className="flex gap-2 pt-1">
-              <span className="w-20 shrink-0 text-xs font-medium text-stone-400 pt-0.5">Notes</span>
+              <span className="w-20 shrink-0 text-xs font-medium text-muted pt-0.5">Notes</span>
               <p className="flex-1 text-sm text-muted whitespace-pre-wrap break-words">
                 {entry.notes}
               </p>

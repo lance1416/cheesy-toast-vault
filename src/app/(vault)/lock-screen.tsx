@@ -73,7 +73,7 @@ export default function LockScreen({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Your vault password"
-                    className="w-full rounded-lg border border-line bg-sunken/50 px-3.5 py-2.5 pr-10 text-sm text-default placeholder:text-stone-300 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-surface"
+                    className="w-full rounded-lg border border-line bg-sunken/50 px-3.5 py-2.5 pr-10 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-surface"
                   />
                   <button
                     type="button"
@@ -90,7 +90,7 @@ export default function LockScreen({
               {error && (
                 <div
                   role="alert"
-                  className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+                  className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
                 >
                   {error}
                 </div>

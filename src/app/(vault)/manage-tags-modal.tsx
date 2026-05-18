@@ -81,7 +81,7 @@ function TagRow({
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="text-xs font-semibold text-red-600 hover:text-red-800 transition-colors disabled:opacity-50"
+            className="text-xs font-semibold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors disabled:opacity-50"
           >
             {deleting ? "Deleting…" : "Delete"}
           </button>
@@ -110,13 +110,13 @@ function TagRow({
               }
             }}
             maxLength={32}
-            className="flex-1 rounded-lg border border-amber-400 bg-surface px-2.5 py-1 text-sm text-default outline-none focus:ring-2 focus:ring-amber-400/20"
+            className="flex-1 rounded-lg border border-amber-400 dark:border-amber-600 bg-surface px-2.5 py-1 text-sm text-default outline-none focus:ring-2 focus:ring-amber-400/20"
           />
           <button
             type="button"
             onClick={() => void handleSave()}
             disabled={saving || !name.trim()}
-            className="text-xs font-semibold text-amber-700 hover:text-amber-900 transition-colors disabled:opacity-50"
+            className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 transition-colors disabled:opacity-50"
           >
             {saving ? "Saving…" : "Save"}
           </button>
@@ -146,7 +146,7 @@ function TagRow({
             type="button"
             onClick={() => setConfirmDelete(true)}
             aria-label={`Delete ${tag.name}`}
-            className="text-subtle hover:text-red-600 transition-colors"
+            className="text-subtle hover:text-red-600 dark:hover:text-red-400 transition-colors"
           >
             <TrashIcon />
           </button>
