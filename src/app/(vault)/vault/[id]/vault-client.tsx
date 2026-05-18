@@ -144,7 +144,7 @@ export default function VaultClient({
         vaultName={vault.name}
         actions={
           <>
-            <span className="hidden md:block text-xs text-stone-400 truncate max-w-40 mr-1.5">
+            <span className="hidden md:block text-xs text-stone-600 truncate max-w-40 mr-1.5">
               {email}
             </span>
             <button
@@ -167,7 +167,7 @@ export default function VaultClient({
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="rounded-lg px-3 py-2 text-sm text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors"
+              className="rounded-lg px-3 py-2 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-colors"
             >
               Sign out
             </button>
@@ -179,7 +179,7 @@ export default function VaultClient({
         {decrypted.length > 0 && (
           <div className="space-y-2">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none">
                 <SearchIcon />
               </span>
               <label htmlFor="vault-search" className="sr-only">
@@ -191,7 +191,7 @@ export default function VaultClient({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search entries…"
-                className="w-full rounded-xl border border-stone-200 bg-white pl-9 pr-4 py-2.5 text-sm text-stone-800 placeholder:text-stone-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+                className="w-full rounded-xl border border-stone-200 bg-white pl-9 pr-4 py-2.5 text-sm text-stone-800 placeholder:text-stone-500 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
               />
             </div>
 
@@ -205,7 +205,7 @@ export default function VaultClient({
                       type="button"
                       aria-pressed={active}
                       onClick={() => toggleTagFilter(tag.id)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${active ? "bg-amber-100 text-amber-800 border-amber-300" : "bg-white text-stone-500 border-stone-200 hover:border-amber-300 hover:text-amber-700"}`}
+                      className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${active ? "bg-amber-100 text-amber-800 border-amber-300" : "bg-white text-stone-600 border-stone-200 hover:border-amber-300 hover:text-amber-700"}`}
                     >
                       {tag.name}
                     </button>
@@ -215,7 +215,7 @@ export default function VaultClient({
                   <button
                     type="button"
                     onClick={() => setSelectedTagIds([])}
-                    className="rounded-full px-3 py-1 text-xs font-medium text-stone-400 hover:text-stone-600 transition-colors"
+                    className="rounded-full px-3 py-1 text-xs font-medium text-stone-600 hover:text-stone-800 transition-colors"
                   >
                     Clear
                   </button>
@@ -223,7 +223,7 @@ export default function VaultClient({
                 <button
                   type="button"
                   onClick={() => setShowManageTags(true)}
-                  className="rounded-full px-3 py-1 text-xs font-medium text-stone-400 hover:text-stone-600 transition-colors"
+                  className="rounded-full px-3 py-1 text-xs font-medium text-stone-600 hover:text-stone-800 transition-colors"
                 >
                   Edit tags
                 </button>
@@ -243,7 +243,7 @@ export default function VaultClient({
             >
               This vault is empty
             </h2>
-            <p className="text-sm text-stone-400 mb-6">Add your first entry to get started.</p>
+            <p className="text-sm text-stone-600 mb-6">Add your first entry to get started.</p>
             <button
               type="button"
               onClick={() => setShowNew(true)}
@@ -254,7 +254,7 @@ export default function VaultClient({
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p className="text-stone-500 text-sm mb-3">No entries match your search.</p>
+            <p className="text-stone-600 text-sm mb-3">No entries match your search.</p>
             <button
               type="button"
               onClick={() => {

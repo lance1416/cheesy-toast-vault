@@ -40,7 +40,7 @@ export default function VaultOverviewClient({
             <span aria-hidden="true">🧀 </span>Cheesy Toast Vault
           </span>
           <div className="flex items-center gap-1.5">
-            <span className="hidden md:block text-xs text-stone-400 truncate max-w-40 mr-1.5">
+            <span className="hidden md:block text-xs text-stone-600 truncate max-w-40 mr-1.5">
               {email}
             </span>
             <button
@@ -54,7 +54,7 @@ export default function VaultOverviewClient({
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="rounded-lg px-3 py-2 text-sm text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors"
+              className="rounded-lg px-3 py-2 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-colors"
             >
               Sign out
             </button>
@@ -74,7 +74,7 @@ export default function VaultOverviewClient({
             >
               No vaults yet
             </h2>
-            <p className="text-sm text-stone-400 mb-6">Create your first vault to get started.</p>
+            <p className="text-sm text-stone-600 mb-6">Create your first vault to get started.</p>
             <button
               type="button"
               onClick={() => setShowCreate(true)}
@@ -99,7 +99,7 @@ export default function VaultOverviewClient({
                   >
                     {vault.name}
                   </h2>
-                  <span className="text-stone-300 group-hover:text-amber-500 transition-colors mt-0.5">
+                  <span className="text-stone-500 group-hover:text-amber-600 transition-colors mt-0.5">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="14"
@@ -115,7 +115,7 @@ export default function VaultOverviewClient({
                     </svg>
                   </span>
                 </div>
-                <p className="text-sm text-stone-400">
+                <p className="text-sm text-stone-600">
                   {vault._count.entries} {vault._count.entries === 1 ? "entry" : "entries"}
                 </p>
               </button>

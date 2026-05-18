@@ -58,13 +58,13 @@ export default function LoginPage() {
           >
             Cheesy Toast Vault
           </h1>
-          <p className="text-sm text-stone-400 mt-1.5 tracking-wide">
+          <p className="text-sm text-stone-600 mt-1.5 tracking-wide">
             Your secrets, kept warm &amp; safe.
           </p>
         </div>
 
         <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm shadow-stone-100 px-8 py-8">
-          <p className="text-[0.8rem] font-semibold text-stone-400 uppercase tracking-widest mb-6">
+          <p className="text-xs font-semibold text-stone-600 uppercase tracking-widest mb-6">
             Open your vault
           </p>
 
@@ -72,7 +72,7 @@ export default function LoginPage() {
             <div className="space-y-1.5">
               <label
                 htmlFor="login-email"
-                className="block text-xs font-medium text-stone-500 tracking-wide"
+                className="block text-xs font-medium text-stone-600 tracking-wide"
               >
                 Email
               </label>
@@ -85,14 +85,14 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-300 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white"
+                className="w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-500 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white"
               />
             </div>
 
             <div className="space-y-1.5">
               <label
                 htmlFor="login-password"
-                className="block text-xs font-medium text-stone-500 tracking-wide"
+                className="block text-xs font-medium text-stone-600 tracking-wide"
               >
                 Login Password
               </label>
@@ -105,14 +105,14 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Your master password"
-                  className="w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 pr-10 text-sm text-stone-800 placeholder:text-stone-300 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white"
+                  className="w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 pr-10 text-sm text-stone-800 placeholder:text-stone-500 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   aria-pressed={showPassword}
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-500 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-600 hover:text-stone-800 transition-colors"
                 >
                   <EyeIcon open={showPassword} size={15} />
                 </button>
@@ -138,7 +138,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-sm text-stone-400">
+        <p className="mt-6 text-center text-sm text-stone-600">
           No vault yet?{" "}
           <Link
             href="/register"

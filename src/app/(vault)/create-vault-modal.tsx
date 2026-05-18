@@ -83,7 +83,7 @@ export default function CreateVaultModal({
               onClick={() => setShowPassword((v) => !v)}
               aria-pressed={showPassword}
               aria-label={showPassword ? "Hide password" : "Show password"}
-              className="text-stone-400 hover:text-stone-500 transition-colors"
+              className="text-stone-500 hover:text-stone-700 transition-colors"
             >
               <EyeIcon open={showPassword} />
             </button>
@@ -104,7 +104,7 @@ export default function CreateVaultModal({
           required
         />
         {passwordMismatch && <p className="text-xs text-red-600 -mt-2">Passwords do not match.</p>}
-        <p className="text-xs text-stone-400">
+        <p className="text-xs text-stone-600">
           This password encrypts your vault data — it never leaves your browser.
         </p>
 

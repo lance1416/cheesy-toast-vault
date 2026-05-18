@@ -46,7 +46,7 @@ export default function LockScreen({
             <span className="text-5xl block mb-4 select-none" aria-hidden="true">
               🔐
             </span>
-            <p className="text-sm text-stone-400">Enter the vault password to unlock.</p>
+            <p className="text-sm text-stone-600">Enter the vault password to unlock.</p>
           </div>
 
           <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm shadow-stone-100 px-8 py-8">
@@ -81,7 +81,7 @@ export default function LockScreen({
                     onClick={() => setShow((v) => !v)}
                     aria-pressed={show}
                     aria-label={show ? "Hide password" : "Show password"}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-500 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-700 transition-colors"
                   >
                     <EyeIcon open={show} />
                   </button>

@@ -117,7 +117,7 @@ export default function Modal({
           <button
             type="button"
             onClick={onClose}
-            className="text-stone-400 hover:text-stone-600 transition-colors"
+            className="text-stone-500 hover:text-stone-800 transition-colors"
             aria-label="Close"
           >
             <CloseIcon />

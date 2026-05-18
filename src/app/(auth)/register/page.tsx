@@ -36,14 +36,14 @@ function PasswordInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 pr-10 text-sm text-stone-800 placeholder:text-stone-300 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white"
+        className="w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 pr-10 text-sm text-stone-800 placeholder:text-stone-500 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white"
       />
       <button
         type="button"
         onClick={onToggle}
         aria-pressed={show}
         aria-label={show ? "Hide" : "Show"}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-500 transition-colors"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-600 hover:text-stone-800 transition-colors"
       >
         <EyeIcon open={show} size={15} />
       </button>
@@ -149,13 +149,13 @@ export default function RegisterPage() {
           >
             Cheesy Toast Vault
           </h1>
-          <p className="text-sm text-stone-400 mt-1.5 tracking-wide">
+          <p className="text-sm text-stone-600 mt-1.5 tracking-wide">
             Your secrets, kept warm &amp; safe.
           </p>
         </div>
 
         <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm shadow-stone-100 px-8 py-8">
-          <p className="text-[0.8rem] font-semibold text-stone-400 uppercase tracking-widest mb-6">
+          <p className="text-xs font-semibold text-stone-600 uppercase tracking-widest mb-6">
             Create your account
           </p>
 
@@ -164,7 +164,7 @@ export default function RegisterPage() {
             <div className="space-y-1.5">
               <label
                 htmlFor="register-email"
-                className="block text-xs font-medium text-stone-500 tracking-wide"
+                className="block text-xs font-medium text-stone-600 tracking-wide"
               >
                 Email
               </label>
@@ -176,19 +176,19 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-300 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white"
+                className="w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-500 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white"
               />
             </div>
 
             {/* Login credentials section */}
             <div className="space-y-3 rounded-xl border border-stone-100 bg-stone-50/50 p-4">
-              <p className="text-[0.7rem] font-semibold text-stone-400 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-stone-600 uppercase tracking-wider">
                 Login credentials
               </p>
               <div className="space-y-1.5">
                 <label
                   htmlFor="login-password"
-                  className="block text-xs font-medium text-stone-500 tracking-wide"
+                  className="block text-xs font-medium text-stone-600 tracking-wide"
                 >
                   Login Password{" "}
                   <span className="text-red-500 ml-0.5" aria-label="required">
@@ -214,7 +214,7 @@ export default function RegisterPage() {
               <div className="space-y-1.5">
                 <label
                   htmlFor="login-confirm"
-                  className="block text-xs font-medium text-stone-500 tracking-wide"
+                  className="block text-xs font-medium text-stone-600 tracking-wide"
                 >
                   Confirm Login Password{" "}
                   <span className="text-red-500 ml-0.5" aria-label="required">
@@ -235,17 +235,17 @@ export default function RegisterPage() {
             {/* Vault section */}
             <div className="space-y-3 rounded-xl border border-amber-100 bg-amber-50/50 p-4">
               <div>
-                <p className="text-[0.7rem] font-semibold text-amber-700 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider">
                   First vault
                 </p>
-                <p className="text-[0.7rem] text-stone-400 mt-0.5">
+                <p className="text-xs text-stone-600 mt-0.5">
                   Vault password encrypts your data — never sent to our servers.
                 </p>
               </div>
               <div className="space-y-1.5">
                 <label
                   htmlFor="vault-name-input"
-                  className="block text-xs font-medium text-stone-500 tracking-wide"
+                  className="block text-xs font-medium text-stone-600 tracking-wide"
                 >
                   Vault Name
                 </label>
@@ -255,13 +255,13 @@ export default function RegisterPage() {
                   value={vaultName}
                   onChange={(e) => setVaultName(e.target.value)}
                   placeholder="Personal"
-                  className="w-full rounded-lg border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-300 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+                  className="w-full rounded-lg border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-500 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
                 />
               </div>
               <div className="space-y-1.5">
                 <label
                   htmlFor="vault-password"
-                  className="block text-xs font-medium text-stone-500 tracking-wide"
+                  className="block text-xs font-medium text-stone-600 tracking-wide"
                 >
                   Vault Password{" "}
                   <span className="text-red-500 ml-0.5" aria-label="required">
@@ -287,7 +287,7 @@ export default function RegisterPage() {
               <div className="space-y-1.5">
                 <label
                   htmlFor="vault-confirm"
-                  className="block text-xs font-medium text-stone-500 tracking-wide"
+                  className="block text-xs font-medium text-stone-600 tracking-wide"
                 >
                   Confirm Vault Password{" "}
                   <span className="text-red-500 ml-0.5" aria-label="required">
@@ -324,7 +324,7 @@ export default function RegisterPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-sm text-stone-400">
+        <p className="mt-6 text-center text-sm text-stone-600">
           Already have an account?{" "}
           <Link
             href="/login"

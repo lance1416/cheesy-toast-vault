@@ -21,7 +21,7 @@ function CopyButton({ value }: { value: string }) {
       type="button"
       onClick={handleCopy}
       aria-label={copied ? "Copied" : "Copy to clipboard"}
-      className="text-stone-400 hover:text-amber-600 transition-colors"
+      className="text-stone-500 hover:text-amber-600 transition-colors"
     >
       {copied ? <span className="text-xs font-medium text-amber-600">✓</span> : <CopyIcon />}
     </button>
@@ -32,7 +32,7 @@ function CopyButton({ value }: { value: string }) {
 
 function LetterAvatar({ name }: { name: string }) {
   return (
-    <div className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-xs font-semibold text-stone-400 shrink-0 select-none">
+    <div className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-xs font-semibold text-stone-600 shrink-0 select-none">
       {name[0]?.toUpperCase() ?? "?"}
     </div>
   );
@@ -121,7 +121,7 @@ export default function EntryCard({
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="text-xs text-stone-500 hover:text-amber-600 transition-colors truncate inline-block max-w-full leading-none mt-0.5"
+              className="text-xs text-stone-600 hover:text-amber-600 transition-colors truncate inline-block max-w-full leading-none mt-0.5"
             >
               {displayHost}
             </a>
@@ -135,7 +135,7 @@ export default function EntryCard({
               e.stopPropagation();
               onEdit();
             }}
-            className="text-xs font-medium text-stone-400 hover:text-amber-700 transition-colors"
+            className="text-xs font-medium text-stone-600 hover:text-amber-700 transition-colors"
           >
             Edit
           </button>
@@ -148,7 +148,7 @@ export default function EntryCard({
             aria-expanded={open}
             aria-controls={`entry-body-${entry.id}`}
             aria-label={open ? "Collapse entry" : "Expand entry"}
-            className="text-stone-400 hover:text-stone-600 transition-colors"
+            className="text-stone-500 hover:text-stone-700 transition-colors"
           >
             <ChevronIcon open={open} />
           </button>
@@ -183,7 +183,7 @@ export default function EntryCard({
                     onClick={() => setShowPassword((v) => !v)}
                     aria-pressed={showPassword}
                     aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="text-stone-400 hover:text-stone-500 transition-colors"
+                    className="text-stone-500 hover:text-stone-700 transition-colors"
                   >
                     <EyeIcon open={showPassword} />
                   </button>
@@ -193,7 +193,7 @@ export default function EntryCard({
             },
           ].map(({ label, value, mono, actions }) => (
             <div key={label} className="flex items-center gap-2">
-              <span className="w-20 shrink-0 text-xs font-medium text-stone-400">{label}</span>
+              <span className="w-20 shrink-0 text-xs font-medium text-stone-600">{label}</span>
               <span className={`flex-1 truncate text-sm text-stone-700 ${mono ? "font-mono" : ""}`}>
                 {value}
               </span>
@@ -221,7 +221,7 @@ export default function EntryCard({
                 </span>
               ))}
             </div>
-            <span className="text-xs text-stone-400 shrink-0 ml-2">{formattedDate}</span>
+            <span className="text-xs text-stone-600 shrink-0 ml-2">{formattedDate}</span>
           </div>
         </div>
       )}

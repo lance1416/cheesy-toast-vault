@@ -26,13 +26,13 @@ export default function PasswordGenerator({
   return (
     <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide">
+        <p className="text-xs font-semibold text-stone-600 uppercase tracking-wide">
           Generated password
         </p>
         <button
           type="button"
           onClick={onClose}
-          className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
+          className="text-xs text-stone-600 hover:text-stone-800 transition-colors"
         >
           Close
         </button>
@@ -44,7 +44,7 @@ export default function PasswordGenerator({
           type="button"
           onClick={() => setSeed((s) => s + 1)}
           aria-label="Regenerate password"
-          className="shrink-0 text-stone-400 hover:text-amber-600 transition-colors"
+          className="shrink-0 text-stone-500 hover:text-amber-600 transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -66,7 +66,7 @@ export default function PasswordGenerator({
 
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <label className="text-xs text-stone-500 w-12 shrink-0">Length</label>
+          <label className="text-xs text-stone-600 w-12 shrink-0">Length</label>
           <input
             type="range"
             min={12}

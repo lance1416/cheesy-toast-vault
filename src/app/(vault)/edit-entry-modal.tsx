@@ -133,7 +133,7 @@ export default function EditEntryModal({
                       onClick={() => setShowPassword((v) => !v)}
                       aria-pressed={showPassword}
                       aria-label={showPassword ? "Hide password" : "Show password"}
-                      className="text-stone-400 hover:text-stone-500 transition-colors"
+                      className="text-stone-500 hover:text-stone-700 transition-colors"
                     >
                       <EyeIcon open={showPassword} />
                     </button>
@@ -141,7 +141,7 @@ export default function EditEntryModal({
                       type="button"
                       onClick={() => setShowGenerator((v) => !v)}
                       aria-label="Toggle password generator"
-                      className="text-stone-400 hover:text-amber-600 transition-colors ml-1"
+                      className="text-stone-500 hover:text-amber-600 transition-colors ml-1"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
