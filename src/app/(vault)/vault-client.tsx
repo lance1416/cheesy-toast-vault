@@ -2,14 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useVault } from "@/lib/vault-context";
 import { deriveCryptoKey, decryptEntry, base64ToBuffer } from "@/lib/crypto";
+import NewEntryModal from "./new-entry-modal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type EntryPayload = {
-  site: string;
+  name: string;
+  url?: string;
   username: string;
   email: string;
   password: string;
@@ -66,6 +69,25 @@ function EyeIcon({ open }: { open: boolean }) {
   );
 }
 
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+    >
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
 function CopyIcon() {
   return (
     <svg
@@ -104,14 +126,51 @@ function CopyButton({ value }: { value: string }) {
       className="text-stone-300 hover:text-amber-600 transition-colors"
       aria-label="Copy to clipboard"
     >
-      {copied ? <span className="text-[10px] font-medium text-amber-600">✓</span> : <CopyIcon />}
+      {copied ? <span className="text-xs font-medium text-amber-600">✓</span> : <CopyIcon />}
     </button>
+  );
+}
+
+// ─── Favicon ─────────────────────────────────────────────────────────────────
+
+function LetterAvatar({ name }: { name: string }) {
+  return (
+    <div className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-xs font-semibold text-stone-400 shrink-0 select-none">
+      {name[0]?.toUpperCase() ?? "?"}
+    </div>
+  );
+}
+
+function Favicon({ url, name }: { url: string; name: string }) {
+  const [failed, setFailed] = useState(false);
+
+  const domain = useMemo(() => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return null;
+    }
+  }, [url]);
+
+  if (!domain || failed) return <LetterAvatar name={name} />;
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`https://icons.duckduckgo.com/ip3/${domain}.ico`}
+      alt=""
+      width={24}
+      height={24}
+      className="w-6 h-6 rounded-md object-contain shrink-0"
+      onError={() => setFailed(true)}
+    />
   );
 }
 
 // ─── Entry card ───────────────────────────────────────────────────────────────
 
 function EntryCard({ entry }: { entry: DecryptedEntry }) {
+  const [open, setOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const formattedDate = useMemo(
@@ -124,83 +183,117 @@ function EntryCard({ entry }: { entry: DecryptedEntry }) {
     [entry.updatedAt],
   );
 
+  const displayHost = useMemo(() => {
+    if (!entry.url) return null;
+    try {
+      return new URL(entry.url).hostname.replace(/^www\./, "");
+    } catch {
+      return entry.url;
+    }
+  }, [entry.url]);
+
   return (
-    <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm shadow-stone-100 p-5 flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2">
-        <h2
-          className="text-base font-semibold text-stone-800 leading-snug break-all"
-          style={{ fontFamily: "var(--font-playfair, serif)" }}
-        >
-          {entry.site}
-        </h2>
-        <Link
-          href={`/${entry.id}/edit`}
-          className="shrink-0 text-xs font-medium text-stone-400 hover:text-amber-700 transition-colors"
-        >
-          Edit
-        </Link>
-      </div>
+    <div className="bg-white rounded-xl border border-stone-200/80 shadow-sm shadow-stone-100 overflow-hidden">
+      {/* Header — always visible, click anywhere to expand/collapse */}
+      <div
+        className="px-4 py-3 flex items-center gap-3 cursor-pointer select-none"
+        onClick={() => setOpen((v) => !v)}
+      >
+        {entry.url ? (
+          <Favicon url={entry.url} name={entry.name} />
+        ) : (
+          <LetterAvatar name={entry.name} />
+        )}
 
-      {/* Fields */}
-      <div className="space-y-2 text-sm">
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">
-              Username
-            </span>
-            <p className="text-stone-700 truncate">{entry.username}</p>
-          </div>
-          <CopyButton value={entry.username} />
-        </div>
-
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">
-              Email
-            </span>
-            <p className="text-stone-700 truncate">{entry.email}</p>
-          </div>
-          <CopyButton value={entry.email} />
-        </div>
-
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">
-              Password
-            </span>
-            <p className="text-stone-700 font-mono tracking-widest">
-              {showPassword ? entry.password : "••••••••••••"}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="text-stone-300 hover:text-stone-500 transition-colors"
-              aria-label={showPassword ? "Hide password" : "Show password"}
+        <div className="min-w-0 flex-1">
+          <p
+            className="text-sm font-semibold text-stone-800 leading-snug truncate"
+            style={{ fontFamily: "var(--font-playfair, serif)" }}
+          >
+            {entry.name}
+          </p>
+          {displayHost && (
+            <a
+              href={entry.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs text-stone-500 hover:text-amber-600 transition-colors truncate inline-block max-w-full leading-none mt-0.5"
             >
-              <EyeIcon open={showPassword} />
-            </button>
-            <CopyButton value={entry.password} />
-          </div>
+              {displayHost}
+            </a>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <Link
+            href={`/${entry.id}/edit`}
+            onClick={(e) => e.stopPropagation()}
+            className="text-xs font-medium text-stone-400 hover:text-amber-700 transition-colors"
+          >
+            Edit
+          </Link>
+          <span className="text-stone-400">
+            <ChevronIcon open={open} />
+          </span>
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="flex items-center justify-between pt-1 border-t border-stone-100">
-        <div className="flex flex-wrap gap-1">
-          {entry.tags.map((tag) => (
-            <span
-              key={tag.id}
-              className="inline-block rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 border border-amber-200"
-            >
-              {tag.name}
-            </span>
+      {/* Body — collapsible */}
+      {open && (
+        <div className="px-4 pt-3 pb-4 border-t border-stone-100 space-y-2">
+          {/* Inline field rows: label | value | action */}
+          {[
+            {
+              label: "Username",
+              value: entry.username,
+              actions: <CopyButton value={entry.username} />,
+            },
+            { label: "Email", value: entry.email, actions: <CopyButton value={entry.email} /> },
+            {
+              label: "Password",
+              value: showPassword ? entry.password : "••••••••",
+              mono: true,
+              actions: (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="text-stone-300 hover:text-stone-500 transition-colors"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    <EyeIcon open={showPassword} />
+                  </button>
+                  <CopyButton value={entry.password} />
+                </div>
+              ),
+            },
+          ].map(({ label, value, mono, actions }) => (
+            <div key={label} className="flex items-center gap-2">
+              <span className="w-20 shrink-0 text-xs font-medium text-stone-400">{label}</span>
+              <span className={`flex-1 truncate text-sm text-stone-700 ${mono ? "font-mono" : ""}`}>
+                {value}
+              </span>
+              <div className="shrink-0">{actions}</div>
+            </div>
           ))}
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-2 mt-1 border-t border-stone-100">
+            <div className="flex flex-wrap gap-1">
+              {entry.tags.map((tag) => (
+                <span
+                  key={tag.id}
+                  className="inline-block rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 border border-amber-200"
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+            <span className="text-xs text-stone-400 shrink-0 ml-2">{formattedDate}</span>
+          </div>
         </div>
-        <span className="text-[11px] text-stone-400 shrink-0 ml-2">{formattedDate}</span>
-      </div>
+      )}
     </div>
   );
 }
@@ -308,10 +401,12 @@ export default function VaultClient({
   salt: string;
   entries: EncryptedEntryProp[];
 }) {
+  const router = useRouter();
   const { cryptoKey, setCryptoKey } = useVault();
   const [decrypted, setDecrypted] = useState<DecryptedEntry[] | null>(null);
   const [unlockError, setUnlockError] = useState("");
   const [unlocking, setUnlocking] = useState(false);
+  const [showNew, setShowNew] = useState(false);
 
   // Re-decrypt whenever the key or the entries list changes.
   useEffect(() => {
@@ -382,7 +477,7 @@ export default function VaultClient({
     >
       {/* Top bar */}
       <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-stone-200/80">
-        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+        <div className="max-w-5xl mx-auto px-4 h-12 flex items-center justify-between gap-4">
           <span
             className="text-lg font-bold text-stone-800 tracking-tight"
             style={{ fontFamily: "var(--font-playfair, serif)" }}
@@ -394,12 +489,13 @@ export default function VaultClient({
             <span className="hidden sm:block text-xs text-stone-400 truncate max-w-40">
               {email}
             </span>
-            <Link
-              href="/new"
+            <button
+              type="button"
+              onClick={() => setShowNew(true)}
               className="rounded-lg bg-stone-800 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition-colors"
             >
               + Add entry
-            </Link>
+            </button>
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/login" })}
@@ -412,7 +508,7 @@ export default function VaultClient({
       </header>
 
       {/* Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-5xl mx-auto px-4 py-5">
         {decrypted.length === 0 ? (
           // Empty state
           <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -424,21 +520,33 @@ export default function VaultClient({
               Your vault is empty
             </h2>
             <p className="text-sm text-stone-400 mb-6">Add your first entry to get started.</p>
-            <Link
-              href="/new"
+            <button
+              type="button"
+              onClick={() => setShowNew(true)}
               className="rounded-lg bg-stone-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
             >
               + Add your first entry
-            </Link>
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-start">
             {decrypted.map((entry) => (
               <EntryCard key={entry.id} entry={entry} />
             ))}
           </div>
         )}
       </main>
+
+      {showNew && (
+        <NewEntryModal
+          cryptoKey={cryptoKey}
+          onClose={() => setShowNew(false)}
+          onSuccess={() => {
+            setShowNew(false);
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }
