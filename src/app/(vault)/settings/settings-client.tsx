@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { signOut } from "next-auth/react";
 import { passwordStrength } from "@/lib/crypto";
 import Field from "@/components/field";
 import VaultHeader from "../vault-header";
@@ -32,6 +33,34 @@ export default function SettingsClient() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  const [deletePhase, setDeletePhase] = useState<"idle" | "confirm">("idle");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  async function handleDelete(e: React.FormEvent) {
+    e.preventDefault();
+    setDeleteError("");
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/auth/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: deletePassword }),
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        throw new Error(data.error ?? "Failed to delete account");
+      }
+      await signOut({ callbackUrl: "/login" });
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Something went wrong. Please try again.",
+      );
+      setDeleting(false);
+    }
+  }
 
   const mismatch = confirmPassword.length > 0 && confirmPassword !== newPassword;
   const canSubmit =
@@ -148,6 +177,70 @@ export default function SettingsClient() {
               {submitting ? "Updating…" : "Update password"}
             </button>
           </form>
+        </section>
+
+        <section className="mt-8 bg-surface rounded-xl border border-red-200 dark:border-red-900/40 shadow-sm shadow-black/5 p-6">
+          <h2 className="text-base font-semibold text-red-600 dark:text-red-400 mb-1">
+            Danger zone
+          </h2>
+          <p className="text-sm text-muted mb-5">
+            Permanently delete your account and all vault data. This cannot be undone.
+          </p>
+
+          {deletePhase === "idle" && (
+            <button
+              type="button"
+              onClick={() => setDeletePhase("confirm")}
+              className="rounded-lg border border-red-300 dark:border-red-800 px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+            >
+              Delete my account
+            </button>
+          )}
+
+          {deletePhase === "confirm" && (
+            <form onSubmit={handleDelete} className="space-y-4">
+              <p className="text-sm font-medium text-default">
+                Enter your password to confirm deletion.
+              </p>
+              <Field
+                label="Current password"
+                id="delete-password"
+                type="password"
+                value={deletePassword}
+                onChange={setDeletePassword}
+                required
+                autoFocus
+              />
+              {deleteError && (
+                <div
+                  role="alert"
+                  className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
+                >
+                  {deleteError}
+                </div>
+              )}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeletePhase("idle");
+                    setDeletePassword("");
+                    setDeleteError("");
+                  }}
+                  className="flex-1 rounded-lg border border-line py-2.5 text-sm font-semibold text-muted hover:bg-sunken transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={deleting || !deletePassword}
+                  className="flex-1 rounded-lg bg-red-600 dark:bg-red-700 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 dark:hover:bg-red-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {deleting ? "Deleting…" : "Delete permanently"}
+                </button>
+              </div>
+            </form>
+          )}
         </section>
       </main>
     </div>
