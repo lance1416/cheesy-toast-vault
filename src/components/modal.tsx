@@ -98,7 +98,7 @@ export default function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         className={[
-          "w-full bg-surface rounded-2xl border border-line/80 shadow-xl px-8 py-8",
+          "w-full bg-surface rounded-xl border border-line/60 shadow-lg px-8 py-7",
           maxWidth,
           scrollable ? "max-h-[90vh] overflow-y-auto" : "",
         ]
@@ -107,11 +107,7 @@ export default function Modal({
         style={{ fontFamily: "var(--font-dm-sans, sans-serif)" }}
       >
         <div className="flex items-center justify-between mb-6">
-          <h2
-            id={titleId}
-            className="text-xl font-bold text-default tracking-tight"
-            style={{ fontFamily: "var(--font-playfair, serif)" }}
-          >
+          <h2 id={titleId} className="text-base font-semibold text-default">
             {title}
           </h2>
           <button

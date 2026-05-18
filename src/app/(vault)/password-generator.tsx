@@ -45,7 +45,7 @@ export default function PasswordGenerator({
   );
 
   return (
-    <div className="mt-2 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 space-y-3">
+    <div className="mt-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
         {/* Mode toggle */}

@@ -41,7 +41,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen bg-canvas bg-noise flex items-center justify-center px-4 py-12"
+      className="min-h-screen bg-canvas flex items-center justify-center px-4 py-12"
       style={{
         fontFamily: "var(--font-dm-sans, sans-serif)",
       }}
@@ -62,7 +62,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="bg-surface rounded-2xl border border-line/80 shadow-sm shadow-black/5 px-8 py-8">
+        <div className="bg-surface rounded-xl border border-line/60 px-8 py-8">
           <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-6">
             Open your vault
           </p>

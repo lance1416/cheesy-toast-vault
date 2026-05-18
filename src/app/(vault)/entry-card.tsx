@@ -110,7 +110,7 @@ export default function EntryCard({
   }, [entry.url]);
 
   return (
-    <div className="bg-surface rounded-xl border border-line/80 shadow-sm shadow-black/5 overflow-hidden">
+    <div className="bg-surface rounded-lg border border-line/60 overflow-hidden">
       {/* Header — click anywhere to expand/collapse */}
       <div
         className="px-4 py-3 flex items-center gap-3 cursor-pointer select-none"

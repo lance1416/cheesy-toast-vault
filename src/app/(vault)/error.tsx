@@ -17,7 +17,7 @@ export default function VaultError({
   return (
     <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
       <div className="w-full max-w-sm text-center">
-        <div className="bg-surface rounded-2xl border border-line/80 shadow-sm shadow-black/5 px-8 py-10">
+        <div className="bg-surface rounded-xl border border-line/60 px-8 py-10">
           <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-4">
             500 — Server error
           </p>

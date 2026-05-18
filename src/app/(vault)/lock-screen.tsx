@@ -21,7 +21,7 @@ export default function LockScreen({
 
   return (
     <div
-      className="min-h-screen bg-canvas bg-noise flex flex-col"
+      className="min-h-screen bg-canvas flex flex-col"
       style={{
         fontFamily: "var(--font-dm-sans, sans-serif)",
       }}
@@ -48,7 +48,7 @@ export default function LockScreen({
             <p className="text-sm text-muted">Enter the vault password to unlock.</p>
           </div>
 
-          <div className="bg-surface rounded-2xl border border-line/80 shadow-sm shadow-black/5 px-8 py-8">
+          <div className="bg-surface rounded-xl border border-line/60 px-8 py-7">
             <form
               onSubmit={(e) => {
                 e.preventDefault();

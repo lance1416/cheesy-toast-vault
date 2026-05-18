@@ -134,7 +134,7 @@ function VaultMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+6px)] w-56 rounded-xl border border-line/80 bg-surface shadow-lg shadow-black/10 z-50 p-1.5">
+        <div className="absolute right-0 top-[calc(100%+6px)] w-56 rounded-lg border border-line/60 bg-surface shadow-lg shadow-black/10 z-50 p-1.5">
           {phase === "idle" && (
             <>
               <button
@@ -393,7 +393,7 @@ export default function VaultClient({
 
   return (
     <div
-      className="min-h-screen bg-canvas bg-noise"
+      className="min-h-screen bg-canvas"
       style={{
         fontFamily: "var(--font-dm-sans, sans-serif)",
       }}
@@ -445,7 +445,7 @@ export default function VaultClient({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search entries…"
-                className="w-full rounded-xl border border-line bg-surface pl-9 pr-4 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+                className="w-full rounded-lg border border-line/60 bg-surface pl-9 pr-4 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
               />
             </div>
 

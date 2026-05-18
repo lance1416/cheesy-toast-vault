@@ -95,7 +95,7 @@ function VaultCard({
   }
 
   return (
-    <div className="bg-surface rounded-xl border border-line/80 shadow-sm shadow-black/5 overflow-hidden">
+    <div className="bg-surface rounded-lg border border-line/60 overflow-hidden">
       {/* Main card body */}
       <div
         className="p-5 cursor-pointer hover:bg-sunken/30 transition-colors group"
@@ -246,7 +246,7 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
 
   return (
     <div
-      className="min-h-screen bg-canvas bg-noise"
+      className="min-h-screen bg-canvas"
       style={{ fontFamily: "var(--font-dm-sans, sans-serif)" }}
     >
       <header className="sticky top-0 z-10 bg-surface/90 backdrop-blur-sm border-b border-line/80">

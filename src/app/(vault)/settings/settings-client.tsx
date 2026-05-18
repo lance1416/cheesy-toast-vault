@@ -105,20 +105,15 @@ export default function SettingsClient() {
 
   return (
     <div
-      className="min-h-screen bg-canvas bg-noise"
+      className="min-h-screen bg-canvas"
       style={{ fontFamily: "var(--font-dm-sans, sans-serif)" }}
     >
       <VaultHeader vaultName="Settings" />
 
       <main className="max-w-lg mx-auto px-4 py-10">
-        <h1
-          className="text-2xl font-semibold text-default mb-8"
-          style={{ fontFamily: "var(--font-playfair, serif)" }}
-        >
-          Account Settings
-        </h1>
+        <h1 className="text-lg font-semibold text-default mb-6">Account Settings</h1>
 
-        <section className="bg-surface rounded-xl border border-line/80 shadow-sm shadow-black/5 p-6">
+        <section className="bg-surface rounded-lg border border-line/60 p-6">
           <h2 className="text-base font-semibold text-default mb-5">Change login password</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -189,7 +184,7 @@ export default function SettingsClient() {
           </form>
         </section>
 
-        <section className="mt-8 bg-surface rounded-xl border border-line/80 shadow-sm shadow-black/5 p-6">
+        <section className="mt-8 bg-surface rounded-lg border border-line/60 p-6">
           <h2 className="text-base font-semibold text-default mb-1">Auto-lock timeout</h2>
           <p className="text-sm text-muted mb-4">
             Lock all open vaults after this period of inactivity.
@@ -213,7 +208,7 @@ export default function SettingsClient() {
           </div>
         </section>
 
-        <section className="mt-8 bg-surface rounded-xl border border-red-200 dark:border-red-900/40 shadow-sm shadow-black/5 p-6">
+        <section className="mt-8 bg-surface rounded-lg border border-red-200 dark:border-red-900/40 p-6">
           <h2 className="text-base font-semibold text-red-600 dark:text-red-400 mb-1">
             Danger zone
           </h2>

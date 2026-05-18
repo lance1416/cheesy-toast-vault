@@ -132,7 +132,7 @@ export default function RegisterPage() {
 
   return (
     <div
-      className="min-h-screen bg-canvas bg-noise flex items-center justify-center px-4 py-12"
+      className="min-h-screen bg-canvas flex items-center justify-center px-4 py-12"
       style={{
         fontFamily: "var(--font-dm-sans, sans-serif)",
       }}
@@ -153,7 +153,7 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <div className="bg-surface rounded-2xl border border-line/80 shadow-sm shadow-black/5 px-8 py-8">
+        <div className="bg-surface rounded-xl border border-line/60 px-8 py-8">
           <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-6">
             Create your account
           </p>
@@ -180,7 +180,7 @@ export default function RegisterPage() {
             </div>
 
             {/* Login credentials section */}
-            <div className="space-y-3 rounded-xl border border-divider bg-sunken/50 p-4">
+            <div className="space-y-3 rounded-lg border border-divider bg-sunken/50 p-4">
               <p className="text-xs font-semibold text-muted uppercase tracking-wider">
                 Login credentials
               </p>
@@ -232,7 +232,7 @@ export default function RegisterPage() {
             </div>
 
             {/* Vault section */}
-            <div className="space-y-3 rounded-xl border border-amber-100 dark:border-amber-900/30 bg-amber-50/50 dark:bg-amber-900/10 p-4">
+            <div className="space-y-3 rounded-lg border border-amber-100 dark:border-amber-900/30 bg-amber-50/50 dark:bg-amber-900/10 p-4">
               <div>
                 <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
                   First vault

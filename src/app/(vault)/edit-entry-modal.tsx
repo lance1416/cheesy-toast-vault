@@ -259,7 +259,7 @@ export default function EditEntryModal({
                 Delete entry
               </button>
             ) : (
-              <div className="rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 p-4 space-y-3">
+              <div className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 p-4 space-y-3">
                 <p className="text-sm text-red-700 dark:text-red-300">
                   Delete <span className="font-bold">{name}</span>? This cannot be undone.
                 </p>
