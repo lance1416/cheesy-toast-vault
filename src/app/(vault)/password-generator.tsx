@@ -1,7 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { generatePassword } from "@/lib/crypto";
+import { generatePassword, generatePassphrase } from "@/lib/crypto";
+
+const SEPARATORS = [
+  { label: "-", value: "-" },
+  { label: ".", value: "." },
+  { label: "space", value: " " },
+  { label: "none", value: "" },
+] as const;
+
+type Mode = "password" | "passphrase";
 
 export default function PasswordGenerator({
   onUse,
@@ -10,25 +19,57 @@ export default function PasswordGenerator({
   onUse: (password: string) => void;
   onClose: () => void;
 }) {
+  const [mode, setMode] = useState<Mode>("password");
+
+  // Password options
   const [length, setLength] = useState(20);
   const [uppercase, setUppercase] = useState(true);
   const [numbers, setNumbers] = useState(true);
   const [symbols, setSymbols] = useState(true);
-  // Increment to force a new password without changing options
+
+  // Passphrase options
+  const [wordCount, setWordCount] = useState(4);
+  const [separator, setSeparator] = useState("-");
+  const [capitalize, setCapitalize] = useState(false);
+
+  // Increment to force regeneration without changing options
   const [seed, setSeed] = useState(0);
 
   const generated = useMemo(
-    () => generatePassword({ length, uppercase, numbers, symbols }),
+    () =>
+      mode === "password"
+        ? generatePassword({ length, uppercase, numbers, symbols })
+        : generatePassphrase({ wordCount, separator, capitalize }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [length, uppercase, numbers, symbols, seed],
+    [mode, length, uppercase, numbers, symbols, wordCount, separator, capitalize, seed],
   );
 
   return (
     <div className="mt-2 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 space-y-3">
+      {/* Header */}
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold text-muted uppercase tracking-wide">
-          Generated password
-        </p>
+        {/* Mode toggle */}
+        <div
+          role="group"
+          aria-label="Generator mode"
+          className="flex rounded-lg border border-line overflow-hidden text-xs font-medium"
+        >
+          {(["password", "passphrase"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              aria-pressed={mode === m}
+              className={`px-2.5 py-1 capitalize transition-colors ${
+                mode === m
+                  ? "bg-stone-800 dark:bg-amber-600 text-white"
+                  : "text-muted hover:text-default hover:bg-line"
+              }`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           onClick={onClose}
@@ -38,12 +79,13 @@ export default function PasswordGenerator({
         </button>
       </div>
 
+      {/* Generated value */}
       <div className="flex items-center gap-2 bg-surface rounded-lg border border-line px-3 py-2">
         <code className="flex-1 text-sm font-mono text-default break-all">{generated}</code>
         <button
           type="button"
           onClick={() => setSeed((s) => s + 1)}
-          aria-label="Regenerate password"
+          aria-label="Regenerate"
           className="shrink-0 text-subtle hover:text-amber-600 transition-colors"
         >
           <svg
@@ -64,38 +106,86 @@ export default function PasswordGenerator({
         </button>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-muted w-12 shrink-0">Length</label>
-          <input
-            type="range"
-            min={12}
-            max={64}
-            value={length}
-            onChange={(e) => setLength(Number(e.target.value))}
-            className="flex-1 accent-amber-600"
-          />
-          <span className="text-xs font-mono text-muted w-6 text-right">{length}</span>
+      {/* Options */}
+      {mode === "password" ? (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-muted w-12 shrink-0">Length</label>
+            <input
+              type="range"
+              min={12}
+              max={64}
+              value={length}
+              onChange={(e) => setLength(Number(e.target.value))}
+              className="flex-1 accent-amber-600"
+            />
+            <span className="text-xs font-mono text-muted w-6 text-right">{length}</span>
+          </div>
+          {(
+            [
+              ["uppercase", "A–Z", uppercase, setUppercase],
+              ["numbers", "0–9", numbers, setNumbers],
+              ["symbols", "!@#…", symbols, setSymbols],
+            ] as const
+          ).map(([key, labelText, checked, setter]) => (
+            <label key={key} className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={(e) => setter(e.target.checked)}
+                className="accent-amber-600 rounded"
+              />
+              <span className="text-xs text-muted">{labelText}</span>
+            </label>
+          ))}
         </div>
+      ) : (
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-muted w-12 shrink-0">Words</label>
+            <input
+              type="range"
+              min={3}
+              max={6}
+              value={wordCount}
+              onChange={(e) => setWordCount(Number(e.target.value))}
+              className="flex-1 accent-amber-600"
+            />
+            <span className="text-xs font-mono text-muted w-4 text-right">{wordCount}</span>
+          </div>
 
-        {(
-          [
-            ["uppercase", "A–Z", uppercase, setUppercase],
-            ["numbers", "0–9", numbers, setNumbers],
-            ["symbols", "!@#…", symbols, setSymbols],
-          ] as const
-        ).map(([key, labelText, checked, setter]) => (
-          <label key={key} className="flex items-center gap-2 cursor-pointer">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted w-12 shrink-0">Separator</span>
+            <div role="group" aria-label="Separator" className="flex gap-1">
+              {SEPARATORS.map((sep) => (
+                <button
+                  key={sep.label}
+                  type="button"
+                  onClick={() => setSeparator(sep.value)}
+                  aria-pressed={separator === sep.value}
+                  className={`rounded px-2 py-0.5 text-xs transition-colors ${
+                    separator === sep.value
+                      ? "bg-stone-800 dark:bg-amber-600 text-white"
+                      : "text-muted hover:text-default hover:bg-line"
+                  }`}
+                >
+                  {sep.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              checked={checked}
-              onChange={(e) => setter(e.target.checked)}
+              checked={capitalize}
+              onChange={(e) => setCapitalize(e.target.checked)}
               className="accent-amber-600 rounded"
             />
-            <span className="text-xs text-muted">{labelText}</span>
+            <span className="text-xs text-muted">Capitalize words</span>
           </label>
-        ))}
-      </div>
+        </div>
+      )}
 
       <button
         type="button"

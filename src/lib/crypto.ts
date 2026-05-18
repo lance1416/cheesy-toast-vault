@@ -1,4 +1,5 @@
 // Client-only — never import in Server Components or route handlers
+import { WORDLIST } from "./wordlist";
 
 export function generateSalt(): Uint8Array<ArrayBuffer> {
   const salt = new Uint8Array(16);
@@ -113,6 +114,33 @@ export function generatePassword({
     }
   }
   return result;
+}
+
+export function generatePassphrase({
+  wordCount = 4,
+  separator = "-",
+  capitalize = false,
+}: {
+  wordCount?: number;
+  separator?: string;
+  capitalize?: boolean;
+} = {}): string {
+  const words: string[] = [];
+  // 2-byte rejection sampling: max index range aligned to WORDLIST.length
+  const maxVal = Math.floor(65536 / WORDLIST.length) * WORDLIST.length;
+  const buf = new Uint8Array(wordCount * 8);
+  while (words.length < wordCount) {
+    crypto.getRandomValues(buf);
+    for (let i = 0; i + 1 < buf.length && words.length < wordCount; i += 2) {
+      const val = (buf[i] << 8) | buf[i + 1];
+      if (val < maxVal) {
+        let word = WORDLIST[val % WORDLIST.length];
+        if (capitalize) word = word.charAt(0).toUpperCase() + word.slice(1);
+        words.push(word);
+      }
+    }
+  }
+  return words.join(separator);
 }
 
 export async function decryptEntry<T>(
