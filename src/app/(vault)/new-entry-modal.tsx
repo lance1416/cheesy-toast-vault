@@ -68,6 +68,7 @@ export default function NewEntryModal({
         email,
         password,
         notes: notes || undefined,
+        passwordChangedAt: new Date().toISOString(),
       });
       const res = await fetch("/api/vault", {
         method: "POST",

@@ -23,12 +23,14 @@ function VaultMenu({
   vault,
   entryCount,
   onExport,
+  onImport,
   onRenamed,
   onDeleted,
 }: {
   vault: { id: string; name: string };
   entryCount: number;
   onExport: () => void;
+  onImport: (file: File) => void;
   onRenamed: (name: string) => void;
   onDeleted: () => void;
 }) {
@@ -147,6 +149,24 @@ function VaultMenu({
               >
                 Export backup
               </button>
+              <label
+                className={`${ITEM_BASE} text-muted hover:text-default hover:bg-sunken/60 cursor-pointer`}
+              >
+                Import backup
+                <input
+                  type="file"
+                  accept=".json"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      onImport(file);
+                      closeMenu();
+                    }
+                    e.target.value = "";
+                  }}
+                />
+              </label>
 
               {divider}
 
@@ -282,6 +302,12 @@ export default function VaultClient({
   const [query, setQuery] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [showManageTags, setShowManageTags] = useState(false);
+  const [sort, setSort] = useState<"updated-desc" | "updated-asc" | "name-asc" | "name-desc">(
+    "updated-desc",
+  );
+  const [importStatus, setImportStatus] = useState<
+    "idle" | "importing" | { imported: number } | { error: string }
+  >("idle");
 
   useEffect(() => {
     if (!cryptoKey) return;
@@ -320,8 +346,19 @@ export default function VaultClient({
           e.notes?.toLowerCase().includes(q),
       );
     }
-    return result;
-  }, [decrypted, query, selectedTagIds]);
+    return [...result].sort((a, b) => {
+      switch (sort) {
+        case "name-asc":
+          return a.name.localeCompare(b.name);
+        case "name-desc":
+          return b.name.localeCompare(a.name);
+        case "updated-asc":
+          return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+        case "updated-desc":
+          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      }
+    });
+  }, [decrypted, query, selectedTagIds, sort]);
 
   function toggleTagFilter(id: string) {
     setSelectedTagIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -359,6 +396,69 @@ export default function VaultClient({
     a.download = `${vault.name.toLowerCase().replace(/\s+/g, "-")}-${date}-backup.json`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function handleImport(file: File) {
+    if (!cryptoKey) return;
+    setImportStatus("importing");
+    try {
+      type BackupEntry = { encryptedBlob: string; iv: string; tags: { name: string }[] };
+      type Backup = { version: number; entries: BackupEntry[] };
+
+      const raw: unknown = JSON.parse(await file.text());
+      if (
+        typeof raw !== "object" ||
+        raw === null ||
+        (raw as Partial<Backup>).version !== 1 ||
+        !Array.isArray((raw as Partial<Backup>).entries)
+      )
+        throw new Error("Unrecognised backup format.");
+
+      const backup = raw as Backup;
+
+      // Validate the key matches by attempting to decrypt the first entry
+      if (backup.entries.length > 0) {
+        try {
+          await decryptEntry(cryptoKey, backup.entries[0].encryptedBlob, backup.entries[0].iv);
+        } catch {
+          throw new Error("This backup was encrypted with a different vault password.");
+        }
+      }
+
+      let imported = 0;
+      for (const entry of backup.entries) {
+        // Upsert tags by name, collect new IDs
+        const tagIds: string[] = [];
+        for (const t of entry.tags ?? []) {
+          const res = await fetch("/api/tags", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: t.name }),
+          });
+          if (res.ok) {
+            const tag = (await res.json()) as { id: string };
+            tagIds.push(tag.id);
+          }
+        }
+
+        await fetch("/api/vault", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            vaultId: vault.id,
+            encryptedBlob: entry.encryptedBlob,
+            iv: entry.iv,
+            tagIds,
+          }),
+        });
+        imported++;
+      }
+
+      setImportStatus({ imported });
+      router.refresh();
+    } catch (err) {
+      setImportStatus({ error: err instanceof Error ? err.message : "Import failed." });
+    }
   }
 
   async function handleUnlock(password: string) {
@@ -422,6 +522,7 @@ export default function VaultClient({
               vault={{ id: vault.id, name: vaultName }}
               entryCount={entries.length}
               onExport={handleExport}
+              onImport={handleImport}
               onRenamed={setVaultName}
               onDeleted={() => router.push("/")}
             />
@@ -430,23 +531,66 @@ export default function VaultClient({
       />
 
       <main className="max-w-5xl mx-auto px-4 py-5 space-y-4">
+        {importStatus !== "idle" && (
+          <div
+            role={typeof importStatus === "object" && "error" in importStatus ? "alert" : "status"}
+            className={`flex items-center justify-between rounded-lg border px-4 py-3 text-sm ${
+              importStatus === "importing"
+                ? "border-line/60 bg-surface text-muted"
+                : "error" in (importStatus as object)
+                  ? "border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400"
+                  : "border-green-200 bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400"
+            }`}
+          >
+            <span>
+              {importStatus === "importing"
+                ? "Importing…"
+                : "error" in (importStatus as object)
+                  ? (importStatus as { error: string }).error
+                  : `Imported ${(importStatus as { imported: number }).imported} entries successfully.`}
+            </span>
+            {importStatus !== "importing" && (
+              <button
+                type="button"
+                onClick={() => setImportStatus("idle")}
+                className="ml-4 text-xs underline opacity-60 hover:opacity-100"
+              >
+                Dismiss
+              </button>
+            )}
+          </div>
+        )}
+
         {decrypted.length > 0 && (
           <div className="space-y-2">
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle pointer-events-none">
-                <SearchIcon />
-              </span>
-              <label htmlFor="vault-search" className="sr-only">
-                Search entries
-              </label>
-              <input
-                id="vault-search"
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search entries…"
-                className="w-full rounded-lg border border-line/60 bg-surface pl-9 pr-4 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
-              />
+            <div className="flex gap-2 items-center">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle pointer-events-none">
+                  <SearchIcon />
+                </span>
+                <label htmlFor="vault-search" className="sr-only">
+                  Search entries
+                </label>
+                <input
+                  id="vault-search"
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search entries…"
+                  className="w-full rounded-lg border border-line/60 bg-surface pl-9 pr-4 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+                />
+              </div>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as typeof sort)}
+                aria-label="Sort entries"
+                className="rounded-lg border border-line/60 bg-surface px-2.5 py-2.5 text-sm text-muted outline-none focus:border-amber-400 transition shrink-0"
+              >
+                <option value="updated-desc">Newest</option>
+                <option value="updated-asc">Oldest</option>
+                <option value="name-asc">A → Z</option>
+                <option value="name-desc">Z → A</option>
+              </select>
             </div>
 
             {allTags.length > 0 && (

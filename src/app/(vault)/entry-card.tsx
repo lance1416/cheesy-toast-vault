@@ -5,6 +5,9 @@ import { EyeIcon, ChevronIcon, CopyIcon, ShieldIcon, CloseIcon } from "@/compone
 import { checkBreach } from "@/lib/crypto";
 import type { DecryptedEntry } from "@/types/vault";
 
+const NOW_MS = Date.now(); // stable for the session; day-level precision is sufficient
+const STALE_DAYS = 90;
+
 // ─── Copy button ──────────────────────────────────────────────────────────────
 
 function CopyButton({ value }: { value: string }) {
@@ -100,6 +103,12 @@ export default function EntryCard({
     [entry.updatedAt],
   );
 
+  const passwordAgeDays =
+    entry.passwordChangedAt != null
+      ? Math.floor((NOW_MS - new Date(entry.passwordChangedAt).getTime()) / 86_400_000)
+      : null;
+  const isStale = passwordAgeDays !== null && passwordAgeDays >= STALE_DAYS;
+
   const displayHost = useMemo(() => {
     if (!entry.url) return null;
     try {
@@ -142,7 +151,15 @@ export default function EntryCard({
           )}
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
+          {isStale && (
+            <span
+              title={`Password last changed ${passwordAgeDays} days ago`}
+              className="hidden sm:inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+            >
+              {passwordAgeDays}d
+            </span>
+          )}
           <button
             type="button"
             onClick={(e) => {

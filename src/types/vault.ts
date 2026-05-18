@@ -5,6 +5,7 @@ export type EntryPayload = {
   email: string;
   password: string;
   notes?: string;
+  passwordChangedAt?: string; // ISO timestamp; set on create, updated when password field changes
 };
 
 export type EncryptedEntryProp = {

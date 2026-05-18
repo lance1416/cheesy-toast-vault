@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { signOut } from "next-auth/react";
 import { EyeIcon } from "@/components/icons";
 import VaultHeader from "./vault-header";
 
@@ -26,18 +25,7 @@ export default function LockScreen({
         fontFamily: "var(--font-dm-sans, sans-serif)",
       }}
     >
-      <VaultHeader
-        vaultName={vaultName ?? "Vault"}
-        actions={
-          <button
-            type="button"
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="rounded-lg px-3 py-2 text-sm text-subtle hover:text-default hover:bg-line transition-colors"
-          >
-            Sign out
-          </button>
-        }
-      />
+      <VaultHeader vaultName={vaultName ?? "Vault"} />
 
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-sm">

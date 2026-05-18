@@ -49,6 +49,8 @@ export default function EditEntryModal({
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [originalPassword, setOriginalPassword] = useState("");
+  const [originalPasswordChangedAt, setOriginalPasswordChangedAt] = useState<string | undefined>();
   const [notes, setNotes] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showGenerator, setShowGenerator] = useState(false);
@@ -69,6 +71,8 @@ export default function EditEntryModal({
       setUsername(payload.username);
       setEmail(payload.email);
       setPassword(payload.password);
+      setOriginalPassword(payload.password);
+      setOriginalPasswordChangedAt(payload.passwordChangedAt);
       setNotes(payload.notes ?? "");
       setDecrypted(true);
     });
@@ -82,6 +86,7 @@ export default function EditEntryModal({
     setError("");
     setSaving(true);
     try {
+      const passwordChanged = password !== originalPassword;
       const { encryptedBlob, iv } = await encryptEntry(cryptoKey, {
         name,
         url: url || undefined,
@@ -89,6 +94,7 @@ export default function EditEntryModal({
         email,
         password,
         notes: notes || undefined,
+        passwordChangedAt: passwordChanged ? new Date().toISOString() : originalPasswordChangedAt,
       });
       const res = await fetch(`/api/vault/${entry.id}`, {
         method: "PUT",
