@@ -1,12 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { encryptEntry } from "@/lib/crypto";
+import { encryptEntry, passwordStrength } from "@/lib/crypto";
 import Field from "@/components/field";
 import Modal from "@/components/modal";
 import { EyeIcon } from "@/components/icons";
 import TagSelector, { type Tag } from "./tag-selector";
 import PasswordGenerator from "./password-generator";
+
+function StrengthBar({ password }: { password: string }) {
+  const { score, label } = passwordStrength(password);
+  const colors = ["bg-red-500", "bg-red-400", "bg-amber-400", "bg-lime-500", "bg-green-500"];
+  return (
+    <div className="mt-1.5 space-y-1">
+      <div className="flex gap-1" aria-hidden="true">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className={`h-1 flex-1 rounded-full transition-colors ${i <= score ? colors[score] : "bg-line"}`}
+          />
+        ))}
+      </div>
+      <p className="text-xs text-muted" aria-live="polite">
+        {label}
+      </p>
+    </div>
+  );
+}
 
 export default function NewEntryModal({
   vaultId,
@@ -155,6 +175,7 @@ export default function NewEntryModal({
               onClose={() => setShowGenerator(false)}
             />
           )}
+          {password && <StrengthBar password={password} />}
         </div>
 
         <Field

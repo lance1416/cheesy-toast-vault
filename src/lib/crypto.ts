@@ -60,6 +60,27 @@ export async function encryptEntry(
   return { encryptedBlob: bufferToBase64(ciphertext), iv: bufferToBase64(iv) };
 }
 
+export function passwordStrength(password: string): {
+  score: 0 | 1 | 2 | 3 | 4;
+  label: string;
+} {
+  if (!password) return { score: 0, label: "Very weak" };
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (password.length >= 16) score++;
+  // Up to +1 for character variety (0.5 per class, capped at 1)
+  let classes = 0;
+  if (/[a-z]/.test(password)) classes++;
+  if (/[A-Z]/.test(password)) classes++;
+  if (/[0-9]/.test(password)) classes++;
+  if (/[^a-zA-Z0-9]/.test(password)) classes++;
+  score += Math.min(1, classes * 0.5);
+  const clamped = Math.min(4, Math.round(score)) as 0 | 1 | 2 | 3 | 4;
+  const labels = ["Very weak", "Weak", "Fair", "Strong", "Very strong"] as const;
+  return { score: clamped, label: labels[clamped] };
+}
+
 export function generatePassword({
   length = 20,
   uppercase = true,
