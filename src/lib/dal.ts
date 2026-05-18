@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -15,8 +15,32 @@ export const getUser = cache(async () => {
   const { userId } = await verifySession();
   return db.user.findUniqueOrThrow({
     where: { id: userId },
-    select: { id: true, email: true, salt: true },
+    select: { id: true, email: true },
   });
+});
+
+export const getVaults = cache(async () => {
+  const { userId } = await verifySession();
+  return db.vault.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      name: true,
+      updatedAt: true,
+      _count: { select: { entries: true } },
+    },
+  });
+});
+
+export const getVault = cache(async (id: string) => {
+  const { userId } = await verifySession();
+  const vault = await db.vault.findFirst({
+    where: { id, userId },
+    select: { id: true, name: true, salt: true },
+  });
+  if (!vault) notFound();
+  return vault;
 });
 
 export const getTags = cache(async () => {
@@ -28,10 +52,13 @@ export const getTags = cache(async () => {
   });
 });
 
-export const getVaultEntries = cache(async () => {
+export const getVaultEntries = cache(async (vaultId: string) => {
   const { userId } = await verifySession();
+  // Verify vault ownership
+  const vault = await db.vault.findFirst({ where: { id: vaultId, userId }, select: { id: true } });
+  if (!vault) notFound();
   return db.vaultEntry.findMany({
-    where: { userId },
+    where: { vaultId },
     include: { tags: { select: { id: true, name: true } } },
     orderBy: { updatedAt: "desc" },
   });

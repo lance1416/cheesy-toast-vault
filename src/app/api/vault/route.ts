@@ -4,6 +4,7 @@ import { verifySession } from "@/lib/dal";
 import { db } from "@/lib/db";
 
 const createSchema = z.object({
+  vaultId: z.string().min(1),
   encryptedBlob: z.string().min(1),
   iv: z.string().min(1),
   tagIds: z.array(z.string()).optional(),
@@ -18,11 +19,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
-    const { encryptedBlob, iv, tagIds } = parsed.data;
+    const { vaultId, encryptedBlob, iv, tagIds } = parsed.data;
+
+    // Verify vault belongs to current user
+    const vault = await db.vault.findFirst({
+      where: { id: vaultId, userId },
+      select: { id: true },
+    });
+    if (!vault) return NextResponse.json({ error: "Vault not found" }, { status: 404 });
 
     const entry = await db.vaultEntry.create({
       data: {
-        userId,
+        vaultId,
         encryptedBlob,
         iv,
         tags: tagIds?.length ? { connect: tagIds.map((id) => ({ id })) } : undefined,

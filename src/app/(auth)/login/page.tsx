@@ -94,7 +94,7 @@ export default function LoginPage() {
                 htmlFor="login-password"
                 className="block text-xs font-medium text-stone-500 tracking-wide"
               >
-                Master Password
+                Login Password
               </label>
               <div className="relative">
                 <input

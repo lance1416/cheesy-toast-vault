@@ -60,6 +60,40 @@ export async function encryptEntry(
   return { encryptedBlob: bufferToBase64(ciphertext), iv: bufferToBase64(iv) };
 }
 
+export function generatePassword({
+  length = 20,
+  uppercase = true,
+  numbers = true,
+  symbols = true,
+}: {
+  length?: number;
+  uppercase?: boolean;
+  numbers?: boolean;
+  symbols?: boolean;
+} = {}): string {
+  const lower = "abcdefghijklmnopqrstuvwxyz";
+  const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const digits = "0123456789";
+  const syms = "!@#$%^&*()-_=+[]{}|;:,.<>?";
+
+  let charset = lower;
+  if (uppercase) charset += upper;
+  if (numbers) charset += digits;
+  if (symbols) charset += syms;
+
+  // Rejection sampling to avoid modulo bias
+  const max = Math.floor(256 / charset.length) * charset.length;
+  const buf = new Uint8Array(length * 2);
+  let result = "";
+  while (result.length < length) {
+    crypto.getRandomValues(buf);
+    for (let i = 0; i < buf.length && result.length < length; i++) {
+      if (buf[i] < max) result += charset[buf[i] % charset.length];
+    }
+  }
+  return result;
+}
+
 export async function decryptEntry<T>(
   key: CryptoKey,
   encryptedBlob: string,

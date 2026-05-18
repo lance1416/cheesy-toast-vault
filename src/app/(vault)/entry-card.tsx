@@ -201,6 +201,15 @@ export default function EntryCard({
             </div>
           ))}
 
+          {entry.notes && (
+            <div className="flex gap-2 pt-1">
+              <span className="w-20 shrink-0 text-xs font-medium text-stone-400 pt-0.5">Notes</span>
+              <p className="flex-1 text-sm text-stone-600 whitespace-pre-wrap break-words">
+                {entry.notes}
+              </p>
+            </div>
+          )}
+
           <div className="flex items-center justify-between pt-2 mt-1 border-t border-stone-100">
             <div className="flex flex-wrap gap-1">
               {entry.tags.map((tag) => (

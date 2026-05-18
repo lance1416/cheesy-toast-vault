@@ -5,8 +5,9 @@ import { db } from "@/lib/db";
 
 const schema = z.object({
   email: z.email(),
-  password: z.string().min(12),
-  salt: z.string().min(1),
+  loginPassword: z.string().min(12),
+  vaultSalt: z.string().min(1),
+  vaultName: z.string().min(1).max(64).optional(),
 });
 
 export async function POST(req: Request) {
@@ -16,17 +17,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
-    const { email, password, salt } = parsed.data;
+    const { email, loginPassword, vaultSalt, vaultName } = parsed.data;
 
     const existing = await db.user.findUnique({ where: { email } });
     if (existing) {
       return NextResponse.json({ error: "Email already in use" }, { status: 409 });
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
-    await db.user.create({ data: { email, passwordHash, salt } });
+    const passwordHash = await bcrypt.hash(loginPassword, 12);
 
-    return NextResponse.json({ ok: true }, { status: 201 });
+    const user = await db.user.create({
+      data: {
+        email,
+        passwordHash,
+        vaults: {
+          create: {
+            name: vaultName ?? "Personal",
+            salt: vaultSalt,
+          },
+        },
+      },
+      select: { id: true, vaults: { select: { id: true } } },
+    });
+
+    return NextResponse.json({ ok: true, vaultId: user.vaults[0].id }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

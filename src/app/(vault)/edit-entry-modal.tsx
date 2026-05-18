@@ -7,6 +7,7 @@ import Modal from "@/components/modal";
 import { EyeIcon } from "@/components/icons";
 import type { EntryPayload, EncryptedEntryProp } from "@/types/vault";
 import TagSelector, { type Tag } from "./tag-selector";
+import PasswordGenerator from "./password-generator";
 
 export default function EditEntryModal({
   entry,
@@ -28,7 +29,9 @@ export default function EditEntryModal({
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [notes, setNotes] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showGenerator, setShowGenerator] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(entry.tags.map((t) => t.id));
   const [availableTags, setAvailableTags] = useState<Tag[]>(initialTags);
   const [decrypted, setDecrypted] = useState(false);
@@ -46,6 +49,7 @@ export default function EditEntryModal({
       setUsername(payload.username);
       setEmail(payload.email);
       setPassword(payload.password);
+      setNotes(payload.notes ?? "");
       setDecrypted(true);
     });
     return () => {
@@ -64,6 +68,7 @@ export default function EditEntryModal({
         username,
         email,
         password,
+        notes: notes || undefined,
       });
       const res = await fetch(`/api/vault/${entry.id}`, {
         method: "PUT",
@@ -113,23 +118,68 @@ export default function EditEntryModal({
             />
             <Field label="Username" id="edit-username" value={username} onChange={setUsername} />
             <Field label="Email" id="edit-email" type="email" value={email} onChange={setEmail} />
+
+            <div>
+              <Field
+                label="Password"
+                id="edit-password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={setPassword}
+                suffix={
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-pressed={showPassword}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="text-stone-400 hover:text-stone-500 transition-colors"
+                    >
+                      <EyeIcon open={showPassword} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowGenerator((v) => !v)}
+                      aria-label="Toggle password generator"
+                      className="text-stone-400 hover:text-amber-600 transition-colors ml-1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="23 4 23 10 17 10" />
+                        <polyline points="1 20 1 14 7 14" />
+                        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+                      </svg>
+                    </button>
+                  </div>
+                }
+              />
+              {showGenerator && (
+                <PasswordGenerator
+                  onUse={(p) => {
+                    setPassword(p);
+                    setShowPassword(true);
+                  }}
+                  onClose={() => setShowGenerator(false)}
+                />
+              )}
+            </div>
+
             <Field
-              label="Password"
-              id="edit-password"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={setPassword}
-              suffix={
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-pressed={showPassword}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="text-stone-400 hover:text-stone-500 transition-colors"
-                >
-                  <EyeIcon open={showPassword} />
-                </button>
-              }
+              label="Notes"
+              id="edit-notes"
+              value={notes}
+              onChange={setNotes}
+              placeholder="Recovery codes, hints…"
+              multiline
             />
 
             <TagSelector

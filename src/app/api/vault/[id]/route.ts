@@ -10,7 +10,10 @@ const updateSchema = z.object({
 });
 
 async function resolveEntry(id: string, userId: string) {
-  return db.vaultEntry.findFirst({ where: { id, userId }, select: { id: true } });
+  return db.vaultEntry.findFirst({
+    where: { id, vault: { userId } },
+    select: { id: true },
+  });
 }
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {

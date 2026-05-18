@@ -4,10 +4,12 @@ import { useState } from "react";
 import { EyeIcon } from "@/components/icons";
 
 export default function LockScreen({
+  vaultName,
   onUnlock,
   error,
   loading,
 }: {
+  vaultName?: string;
   onUnlock: (password: string) => void;
   error: string;
   loading: boolean;
@@ -34,12 +36,14 @@ export default function LockScreen({
           >
             Cheesy Toast Vault
           </h1>
-          <p className="text-sm text-stone-400 mt-1.5">Enter your master password to unlock.</p>
+          <p className="text-sm text-stone-400 mt-1.5">
+            Enter your vault password to unlock{vaultName ? ` "${vaultName}"` : ""}.
+          </p>
         </div>
 
         <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm shadow-stone-100 px-8 py-8">
           <p className="text-[0.8rem] font-semibold text-stone-400 uppercase tracking-widest mb-6">
-            Unlock your vault
+            {vaultName ? `Unlock "${vaultName}"` : "Unlock your vault"}
           </p>
 
           <form
@@ -54,7 +58,7 @@ export default function LockScreen({
                 htmlFor="lock-password"
                 className="block text-xs font-medium text-stone-500 tracking-wide"
               >
-                Master Password
+                Vault Password
               </label>
               <div className="relative">
                 <input

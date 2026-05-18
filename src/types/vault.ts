@@ -4,6 +4,7 @@ export type EntryPayload = {
   username: string;
   email: string;
   password: string;
+  notes?: string;
 };
 
 export type EncryptedEntryProp = {

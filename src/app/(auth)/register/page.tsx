@@ -4,37 +4,97 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
-import { generateSalt, bufferToBase64 } from "@/lib/crypto";
+import { generateSalt, bufferToBase64, deriveCryptoKey } from "@/lib/crypto";
 import { EyeIcon } from "@/components/icons";
+import { useVault } from "@/lib/vault-context";
+
+function PasswordInput({
+  id,
+  value,
+  onChange,
+  placeholder,
+  show,
+  onToggle,
+  minLength,
+}: {
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  show: boolean;
+  onToggle: () => void;
+  minLength?: number;
+}) {
+  return (
+    <div className="relative">
+      <input
+        id={id}
+        type={show ? "text" : "password"}
+        required
+        minLength={minLength}
+        autoComplete="new-password"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 pr-10 text-sm text-stone-800 placeholder:text-stone-300 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white"
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-pressed={show}
+        aria-label={show ? "Hide" : "Show"}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-500 transition-colors"
+      >
+        <EyeIcon open={show} size={15} />
+      </button>
+    </div>
+  );
+}
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { setKey } = useVault();
+
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginConfirm, setLoginConfirm] = useState("");
+  const [vaultPassword, setVaultPassword] = useState("");
+  const [vaultConfirm, setVaultConfirm] = useState("");
+  const [vaultName, setVaultName] = useState("");
+  const [showLogin, setShowLogin] = useState(false);
+  const [showVault, setShowVault] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const passwordShort = password.length > 0 && password.length < 12;
+  const loginShort = loginPassword.length > 0 && loginPassword.length < 12;
+  const vaultShort = vaultPassword.length > 0 && vaultPassword.length < 12;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-
-    if (password !== confirm) {
-      setError("Passwords do not match.");
+    if (loginPassword !== loginConfirm) {
+      setError("Login passwords do not match.");
+      return;
+    }
+    if (vaultPassword !== vaultConfirm) {
+      setError("Vault passwords do not match.");
       return;
     }
 
     setLoading(true);
     try {
       const salt = generateSalt();
+      const saltB64 = bufferToBase64(salt);
+
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, salt: bufferToBase64(salt) }),
+        body: JSON.stringify({
+          email,
+          loginPassword,
+          vaultSalt: saltB64,
+          vaultName: vaultName || "Personal",
+        }),
       });
 
       if (res.status === 409) {
@@ -46,13 +106,23 @@ export default function RegisterPage() {
         return;
       }
 
-      const result = await signIn("credentials", { email, password, redirect: false });
+      const { vaultId } = (await res.json()) as { vaultId: string };
+
+      const result = await signIn("credentials", {
+        email,
+        password: loginPassword,
+        redirect: false,
+      });
       if (result?.error) {
         setError("Account created but sign-in failed. Please log in.");
         return;
       }
 
-      router.push("/");
+      // Derive vault key and store in context
+      const key = await deriveCryptoKey(vaultPassword, salt);
+      setKey(vaultId, key);
+
+      router.push(`/vault/${vaultId}`);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -86,10 +156,11 @@ export default function RegisterPage() {
 
         <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm shadow-stone-100 px-8 py-8">
           <p className="text-[0.8rem] font-semibold text-stone-400 uppercase tracking-widest mb-6">
-            Create your vault
+            Create your account
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Email */}
             <div className="space-y-1.5">
               <label
                 htmlFor="register-email"
@@ -109,70 +180,128 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label
-                htmlFor="register-password"
-                className="block text-xs font-medium text-stone-500 tracking-wide"
-              >
-                Master Password
-              </label>
-              <div className="relative">
-                <input
-                  id="register-password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  minLength={12}
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 12 characters"
-                  className="w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 pr-10 text-sm text-stone-800 placeholder:text-stone-300 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-pressed={showPassword}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-500 transition-colors"
+            {/* Login credentials section */}
+            <div className="space-y-3 rounded-xl border border-stone-100 bg-stone-50/50 p-4">
+              <p className="text-[0.7rem] font-semibold text-stone-400 uppercase tracking-wider">
+                Login credentials
+              </p>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="login-password"
+                  className="block text-xs font-medium text-stone-500 tracking-wide"
                 >
-                  <EyeIcon open={showPassword} size={15} />
-                </button>
+                  Login Password{" "}
+                  <span className="text-red-500 ml-0.5" aria-label="required">
+                    *
+                  </span>
+                </label>
+                <PasswordInput
+                  id="login-password"
+                  value={loginPassword}
+                  onChange={setLoginPassword}
+                  placeholder="At least 12 characters"
+                  show={showLogin}
+                  onToggle={() => setShowLogin((v) => !v)}
+                  minLength={12}
+                />
+                {loginShort && (
+                  <p className="text-xs text-amber-600">
+                    {12 - loginPassword.length} more character
+                    {12 - loginPassword.length !== 1 ? "s" : ""} needed
+                  </p>
+                )}
               </div>
-              {passwordShort && (
-                <p className="text-xs text-amber-600">
-                  {12 - password.length} more character{12 - password.length !== 1 ? "s" : ""}{" "}
-                  needed
-                </p>
-              )}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="login-confirm"
+                  className="block text-xs font-medium text-stone-500 tracking-wide"
+                >
+                  Confirm Login Password{" "}
+                  <span className="text-red-500 ml-0.5" aria-label="required">
+                    *
+                  </span>
+                </label>
+                <PasswordInput
+                  id="login-confirm"
+                  value={loginConfirm}
+                  onChange={setLoginConfirm}
+                  placeholder="Repeat login password"
+                  show={showLogin}
+                  onToggle={() => setShowLogin((v) => !v)}
+                />
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label
-                htmlFor="register-confirm"
-                className="block text-xs font-medium text-stone-500 tracking-wide"
-              >
-                Confirm Password
-              </label>
-              <div className="relative">
-                <input
-                  id="register-confirm"
-                  type={showConfirm ? "text" : "password"}
-                  required
-                  autoComplete="new-password"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  placeholder="Repeat your password"
-                  className="w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 pr-10 text-sm text-stone-800 placeholder:text-stone-300 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm((v) => !v)}
-                  aria-pressed={showConfirm}
-                  aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-500 transition-colors"
+            {/* Vault section */}
+            <div className="space-y-3 rounded-xl border border-amber-100 bg-amber-50/50 p-4">
+              <div>
+                <p className="text-[0.7rem] font-semibold text-amber-700 uppercase tracking-wider">
+                  First vault
+                </p>
+                <p className="text-[0.7rem] text-stone-400 mt-0.5">
+                  Vault password encrypts your data — never sent to our servers.
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="vault-name-input"
+                  className="block text-xs font-medium text-stone-500 tracking-wide"
                 >
-                  <EyeIcon open={showConfirm} size={15} />
-                </button>
+                  Vault Name
+                </label>
+                <input
+                  id="vault-name-input"
+                  type="text"
+                  value={vaultName}
+                  onChange={(e) => setVaultName(e.target.value)}
+                  placeholder="Personal"
+                  className="w-full rounded-lg border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-300 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="vault-password"
+                  className="block text-xs font-medium text-stone-500 tracking-wide"
+                >
+                  Vault Password{" "}
+                  <span className="text-red-500 ml-0.5" aria-label="required">
+                    *
+                  </span>
+                </label>
+                <PasswordInput
+                  id="vault-password"
+                  value={vaultPassword}
+                  onChange={setVaultPassword}
+                  placeholder="At least 12 characters"
+                  show={showVault}
+                  onToggle={() => setShowVault((v) => !v)}
+                  minLength={12}
+                />
+                {vaultShort && (
+                  <p className="text-xs text-amber-600">
+                    {12 - vaultPassword.length} more character
+                    {12 - vaultPassword.length !== 1 ? "s" : ""} needed
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="vault-confirm"
+                  className="block text-xs font-medium text-stone-500 tracking-wide"
+                >
+                  Confirm Vault Password{" "}
+                  <span className="text-red-500 ml-0.5" aria-label="required">
+                    *
+                  </span>
+                </label>
+                <PasswordInput
+                  id="vault-confirm"
+                  value={vaultConfirm}
+                  onChange={setVaultConfirm}
+                  placeholder="Repeat vault password"
+                  show={showVault}
+                  onToggle={() => setShowVault((v) => !v)}
+                />
               </div>
             </div>
 
@@ -190,13 +319,13 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full rounded-lg bg-stone-800 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? "Creating your vault…" : "Create Vault"}
+              {loading ? "Creating your account…" : "Create Account"}
             </button>
           </form>
         </div>
 
         <p className="mt-6 text-center text-sm text-stone-400">
-          Already have a vault?{" "}
+          Already have an account?{" "}
           <Link
             href="/login"
             className="font-medium text-amber-700 transition hover:text-amber-800"
