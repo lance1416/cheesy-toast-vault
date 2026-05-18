@@ -1,43 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { signIn } from "next-auth/react";
 import { EyeIcon } from "@/components/icons";
 
-export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
+export default function LockScreen({
+  onUnlock,
+  error,
+  loading,
+}: {
+  onUnlock: (password: string) => void;
+  error: string;
+  loading: boolean;
+}) {
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError("Invalid email or password.");
-        return;
-      }
-
-      router.push("/");
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [show, setShow] = useState(false);
 
   return (
     <div
@@ -50,7 +26,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <span className="text-5xl block mb-4 select-none" aria-hidden="true">
-            🧀
+            🔐
           </span>
           <h1
             className="text-[1.75rem] font-bold text-stone-800 leading-tight tracking-tight"
@@ -58,49 +34,34 @@ export default function LoginPage() {
           >
             Cheesy Toast Vault
           </h1>
-          <p className="text-sm text-stone-400 mt-1.5 tracking-wide">
-            Your secrets, kept warm &amp; safe.
-          </p>
+          <p className="text-sm text-stone-400 mt-1.5">Enter your master password to unlock.</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm shadow-stone-100 px-8 py-8">
           <p className="text-[0.8rem] font-semibold text-stone-400 uppercase tracking-widest mb-6">
-            Open your vault
+            Unlock your vault
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              onUnlock(password);
+            }}
+            className="space-y-5"
+          >
             <div className="space-y-1.5">
               <label
-                htmlFor="login-email"
-                className="block text-xs font-medium text-stone-500 tracking-wide"
-              >
-                Email
-              </label>
-              <input
-                id="login-email"
-                type="email"
-                required
-                autoComplete="email"
-                autoFocus
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-300 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label
-                htmlFor="login-password"
+                htmlFor="lock-password"
                 className="block text-xs font-medium text-stone-500 tracking-wide"
               >
                 Master Password
               </label>
               <div className="relative">
                 <input
-                  id="login-password"
-                  type={showPassword ? "text" : "password"}
+                  id="lock-password"
+                  type={show ? "text" : "password"}
                   required
+                  autoFocus
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -109,12 +70,12 @@ export default function LoginPage() {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-pressed={showPassword}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShow((v) => !v)}
+                  aria-pressed={show}
+                  aria-label={show ? "Hide password" : "Show password"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-500 transition-colors"
                 >
-                  <EyeIcon open={showPassword} size={15} />
+                  <EyeIcon open={show} />
                 </button>
               </div>
             </div>
@@ -133,20 +94,10 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full rounded-lg bg-stone-800 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? "Unlocking…" : "Open Vault"}
+              {loading ? "Unlocking…" : "Unlock Vault"}
             </button>
           </form>
         </div>
-
-        <p className="mt-6 text-center text-sm text-stone-400">
-          No vault yet?{" "}
-          <Link
-            href="/register"
-            className="font-medium text-amber-700 transition hover:text-amber-800"
-          >
-            Create one
-          </Link>
-        </p>
       </div>
     </div>
   );

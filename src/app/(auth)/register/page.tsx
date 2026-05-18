@@ -5,41 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { generateSalt, bufferToBase64 } from "@/lib/crypto";
-
-function EyeIcon({ open }: { open: boolean }) {
-  return open ? (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
-      <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  ) : (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
+import { EyeIcon } from "@/components/icons";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -103,9 +69,10 @@ export default function RegisterPage() {
       }}
     >
       <div className="w-full max-w-sm">
-        {/* Brand */}
         <div className="text-center mb-8">
-          <span className="text-5xl block mb-4 select-none">🧀</span>
+          <span className="text-5xl block mb-4 select-none" aria-hidden="true">
+            🧀
+          </span>
           <h1
             className="text-[1.75rem] font-bold text-stone-800 leading-tight tracking-tight"
             style={{ fontFamily: "var(--font-playfair, serif)" }}
@@ -117,19 +84,21 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {/* Card */}
         <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm shadow-stone-100 px-8 py-8">
           <p className="text-[0.8rem] font-semibold text-stone-400 uppercase tracking-widest mb-6">
             Create your vault
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-stone-500 tracking-wide">
+              <label
+                htmlFor="register-email"
+                className="block text-xs font-medium text-stone-500 tracking-wide"
+              >
                 Email
               </label>
               <input
+                id="register-email"
                 type="email"
                 required
                 autoComplete="email"
@@ -140,13 +109,16 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Master Password */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-stone-500 tracking-wide">
+              <label
+                htmlFor="register-password"
+                className="block text-xs font-medium text-stone-500 tracking-wide"
+              >
                 Master Password
               </label>
               <div className="relative">
                 <input
+                  id="register-password"
                   type={showPassword ? "text" : "password"}
                   required
                   minLength={12}
@@ -159,10 +131,11 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300 hover:text-stone-500 transition-colors"
+                  aria-pressed={showPassword}
                   aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-500 transition-colors"
                 >
-                  <EyeIcon open={showPassword} />
+                  <EyeIcon open={showPassword} size={15} />
                 </button>
               </div>
               {passwordShort && (
@@ -173,13 +146,16 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Confirm Password */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-stone-500 tracking-wide">
+              <label
+                htmlFor="register-confirm"
+                className="block text-xs font-medium text-stone-500 tracking-wide"
+              >
                 Confirm Password
               </label>
               <div className="relative">
                 <input
+                  id="register-confirm"
                   type={showConfirm ? "text" : "password"}
                   required
                   autoComplete="new-password"
@@ -191,22 +167,24 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirm((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300 hover:text-stone-500 transition-colors"
+                  aria-pressed={showConfirm}
                   aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-500 transition-colors"
                 >
-                  <EyeIcon open={showConfirm} />
+                  <EyeIcon open={showConfirm} size={15} />
                 </button>
               </div>
             </div>
 
-            {/* Error */}
             {error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              <div
+                role="alert"
+                className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+              >
                 {error}
               </div>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
@@ -217,7 +195,6 @@ export default function RegisterPage() {
           </form>
         </div>
 
-        {/* Login link */}
         <p className="mt-6 text-center text-sm text-stone-400">
           Already have a vault?{" "}
           <Link
