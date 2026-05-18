@@ -143,6 +143,24 @@ export function generatePassphrase({
   return words.join(separator);
 }
 
+export async function checkBreach(password: string): Promise<number> {
+  const hashBuffer = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(password));
+  const hex = Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
+  const prefix = hex.slice(0, 5);
+  const suffix = hex.slice(5);
+  const res = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
+    headers: { "Add-Padding": "true" },
+  });
+  if (!res.ok) throw new Error("HIBP request failed");
+  const text = await res.text();
+  const line = text.split("\n").find((l) => l.trimEnd().startsWith(suffix));
+  if (!line) return 0;
+  return parseInt(line.split(":")[1], 10);
+}
+
 export async function decryptEntry<T>(
   key: CryptoKey,
   encryptedBlob: string,
