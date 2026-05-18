@@ -276,6 +276,12 @@ export default function VaultOverviewClient({
               + New vault
             </button>
             <div className="w-px h-5 bg-line mx-0.5" role="separator" aria-hidden="true" />
+            <a
+              href="/settings"
+              className="rounded-lg px-3 py-2 text-sm text-muted hover:text-default hover:bg-line transition-colors"
+            >
+              Settings
+            </a>
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/login" })}

@@ -1,0 +1,39 @@
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
+import { verifySession } from "@/lib/dal";
+import { db } from "@/lib/db";
+import { handleApiError } from "@/lib/api-error";
+
+const schema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(12),
+});
+
+export async function PATCH(req: Request) {
+  try {
+    const { userId } = await verifySession();
+
+    const parsed = schema.safeParse(await req.json());
+    if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+
+    const { currentPassword, newPassword } = parsed.data;
+
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    });
+    if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid)
+      return NextResponse.json({ error: "Current password is incorrect" }, { status: 401 });
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await db.user.update({ where: { id: userId }, data: { passwordHash } });
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return handleApiError(err);
+  }
+}
