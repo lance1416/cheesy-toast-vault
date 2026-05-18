@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { verifySession } from "@/lib/dal";
 import { db } from "@/lib/db";
+import { handleApiError } from "@/lib/api-error";
 
 const renameSchema = z.object({ name: z.string().min(1).max(32) });
 
@@ -27,8 +28,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     });
 
     return NextResponse.json(updated);
-  } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err) {
+    return handleApiError(err);
   }
 }
 
@@ -43,7 +44,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     await db.tag.delete({ where: { id } });
 
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err) {
+    return handleApiError(err);
   }
 }

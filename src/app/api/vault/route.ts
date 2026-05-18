@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { verifySession } from "@/lib/dal";
 import { db } from "@/lib/db";
+import { handleApiError } from "@/lib/api-error";
 
 const createSchema = z.object({
   vaultId: z.string().min(1),
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ id: entry.id }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err) {
+    return handleApiError(err);
   }
 }

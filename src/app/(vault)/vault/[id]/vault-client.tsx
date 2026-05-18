@@ -1,16 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useVault } from "@/lib/vault-context";
 import { deriveCryptoKey, decryptEntry, base64ToBuffer } from "@/lib/crypto";
-import { SearchIcon } from "@/components/icons";
+import { SearchIcon, LockIcon } from "@/components/icons";
 import type { EntryPayload, EncryptedEntryProp, DecryptedEntry } from "@/types/vault";
 import type { Tag } from "../../tag-selector";
 import EntryCard from "../../entry-card";
 import LockScreen from "../../lock-screen";
+import VaultHeader from "../../vault-header";
 import NewEntryModal from "../../new-entry-modal";
 import EditEntryModal from "../../edit-entry-modal";
 import ManageTagsModal from "../../manage-tags-modal";
@@ -140,64 +140,40 @@ export default function VaultClient({
         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E")`,
       }}
     >
-      <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-stone-200/80">
-        <div className="max-w-5xl mx-auto px-4 h-12 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 min-w-0">
-            <Link
-              href="/"
-              className="text-stone-400 hover:text-stone-600 transition-colors shrink-0"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </Link>
-            <span
-              className="text-sm font-semibold text-stone-800 truncate"
-              style={{ fontFamily: "var(--font-playfair, serif)" }}
-            >
-              {vault.name}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="hidden sm:block text-xs text-stone-400 truncate max-w-40">
+      <VaultHeader
+        vaultName={vault.name}
+        actions={
+          <>
+            <span className="hidden md:block text-xs text-stone-400 truncate max-w-40 mr-1.5">
               {email}
             </span>
             <button
               type="button"
               onClick={() => setShowNew(true)}
-              className="rounded-lg bg-stone-800 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition-colors"
+              className="rounded-lg bg-stone-800 px-3.5 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
             >
               + Add entry
             </button>
             <button
               type="button"
               onClick={() => clearKey(vault.id)}
-              className="text-xs text-stone-400 hover:text-amber-700 transition-colors"
-              aria-label="Lock this vault"
+              aria-label={`Lock vault "${vault.name}"`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-600 hover:border-amber-300 hover:text-amber-700 hover:bg-amber-50 transition-colors"
             >
+              <LockIcon />
               Lock
             </button>
+            <div className="w-px h-5 bg-stone-200 mx-0.5" role="separator" aria-hidden="true" />
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
+              className="rounded-lg px-3 py-2 text-sm text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors"
             >
               Sign out
             </button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <main className="max-w-5xl mx-auto px-4 py-5 space-y-4">
         {decrypted.length > 0 && (

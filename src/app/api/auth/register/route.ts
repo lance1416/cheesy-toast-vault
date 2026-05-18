@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { handleApiError } from "@/lib/api-error";
 
 const schema = z.object({
   email: z.email(),
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ ok: true, vaultId: user.vaults[0].id }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err) {
+    return handleApiError(err);
   }
 }

@@ -1,5 +1,4 @@
 import { Playfair_Display, DM_Sans } from "next/font/google";
-import { VaultProvider } from "@/lib/vault-context";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -14,9 +13,5 @@ const dmSans = DM_Sans({
 });
 
 export default function VaultLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className={`${playfair.variable} ${dmSans.variable}`}>
-      <VaultProvider>{children}</VaultProvider>
-    </div>
-  );
+  return <div className={`${playfair.variable} ${dmSans.variable}`}>{children}</div>;
 }

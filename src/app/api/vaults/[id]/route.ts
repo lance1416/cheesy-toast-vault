@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/dal";
 import { db } from "@/lib/db";
+import { handleApiError } from "@/lib/api-error";
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -13,7 +14,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     await db.vault.delete({ where: { id } });
 
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err) {
+    return handleApiError(err);
   }
 }

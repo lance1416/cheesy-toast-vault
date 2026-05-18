@@ -13,10 +13,13 @@ export const verifySession = cache(async () => {
 
 export const getUser = cache(async () => {
   const { userId } = await verifySession();
-  return db.user.findUniqueOrThrow({
+  const user = await db.user.findUnique({
     where: { id: userId },
     select: { id: true, email: true },
   });
+  // Session references a deleted user (e.g. after a DB reset) — send back to login
+  if (!user) redirect("/login");
+  return user;
 });
 
 export const getVaults = cache(async () => {

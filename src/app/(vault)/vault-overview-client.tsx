@@ -31,29 +31,30 @@ export default function VaultOverviewClient({
       }}
     >
       <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-stone-200/80">
-        <div className="max-w-5xl mx-auto px-4 h-12 flex items-center justify-between gap-4">
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
           <span
             aria-label="Cheesy Toast Vault"
-            className="text-lg font-bold text-stone-800 tracking-tight"
+            className="text-base font-bold text-stone-800 tracking-tight"
             style={{ fontFamily: "var(--font-playfair, serif)" }}
           >
             <span aria-hidden="true">🧀 </span>Cheesy Toast Vault
           </span>
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:block text-xs text-stone-400 truncate max-w-40">
+          <div className="flex items-center gap-1.5">
+            <span className="hidden md:block text-xs text-stone-400 truncate max-w-40 mr-1.5">
               {email}
             </span>
             <button
               type="button"
               onClick={() => setShowCreate(true)}
-              className="rounded-lg bg-stone-800 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition-colors"
+              className="rounded-lg bg-stone-800 px-3.5 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
             >
               + New vault
             </button>
+            <div className="w-px h-5 bg-stone-200 mx-0.5" role="separator" aria-hidden="true" />
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
+              className="rounded-lg px-3 py-2 text-sm text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors"
             >
               Sign out
             </button>

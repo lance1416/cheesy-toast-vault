@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { verifySession } from "@/lib/dal";
 import { db } from "@/lib/db";
+import { handleApiError } from "@/lib/api-error";
 
 const updateSchema = z.object({
   encryptedBlob: z.string().min(1),
@@ -39,8 +40,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     });
 
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err) {
+    return handleApiError(err);
   }
 }
 
@@ -55,7 +56,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     await db.vaultEntry.delete({ where: { id } });
 
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err) {
+    return handleApiError(err);
   }
 }

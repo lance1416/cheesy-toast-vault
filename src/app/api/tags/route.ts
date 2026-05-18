@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { verifySession } from "@/lib/dal";
 import { db } from "@/lib/db";
+import { handleApiError } from "@/lib/api-error";
 
 const createSchema = z.object({ name: z.string().min(1).max(32) });
 
@@ -14,8 +15,8 @@ export async function GET() {
       select: { id: true, name: true },
     });
     return NextResponse.json(tags);
-  } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err) {
+    return handleApiError(err);
   }
 }
 
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(tag, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err) {
+    return handleApiError(err);
   }
 }
