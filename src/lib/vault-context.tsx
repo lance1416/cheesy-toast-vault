@@ -7,15 +7,27 @@ type VaultContextValue = {
   setKey: (vaultId: string, key: CryptoKey) => void;
   clearKey: (vaultId: string) => void;
   clearAllKeys: () => void;
+  lockTimeout: number;
+  setLockTimeout: (minutes: number) => void;
 };
 
 const VaultContext = createContext<VaultContextValue | null>(null);
 
-const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
+const LOCK_TIMEOUT_KEY = "ct-lock-timeout";
 const CHECK_INTERVAL_MS = 30_000;
+const DEFAULT_TIMEOUT = 5;
+
+function readLockTimeout(): number {
+  if (typeof window === "undefined") return DEFAULT_TIMEOUT;
+  const s = localStorage.getItem(LOCK_TIMEOUT_KEY);
+  const n = s !== null ? parseInt(s, 10) : NaN;
+  return isNaN(n) ? DEFAULT_TIMEOUT : n;
+}
 
 export function VaultProvider({ children }: { children: React.ReactNode }) {
   const [keys, setKeys] = useState<Record<string, CryptoKey>>({});
+  const [lockTimeout, setLockTimeoutState] = useState<number>(readLockTimeout);
+  const lockTimeoutRef = useRef(lockTimeout);
   const lastActivity = useRef(0);
 
   const setKey = useCallback((vaultId: string, key: CryptoKey) => {
@@ -31,6 +43,12 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const clearAllKeys = useCallback(() => setKeys({}), []);
+
+  const setLockTimeout = useCallback((minutes: number) => {
+    setLockTimeoutState(minutes);
+    lockTimeoutRef.current = minutes;
+    localStorage.setItem(LOCK_TIMEOUT_KEY, String(minutes));
+  }, []);
 
   const hasUnlockedVaults = Object.keys(keys).length > 0;
 
@@ -48,7 +66,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     events.forEach((e) => window.addEventListener(e, updateActivity, { passive: true }));
 
     const interval = setInterval(() => {
-      if (Date.now() - lastActivity.current > INACTIVITY_TIMEOUT_MS) {
+      if (lockTimeoutRef.current === 0) return; // "never" — no inactivity lock
+      if (Date.now() - lastActivity.current > lockTimeoutRef.current * 60_000) {
         clearAllKeys();
       }
     }, CHECK_INTERVAL_MS);
@@ -72,7 +91,9 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   }, [hasUnlockedVaults, clearAllKeys]);
 
   return (
-    <VaultContext.Provider value={{ keys, setKey, clearKey, clearAllKeys }}>
+    <VaultContext.Provider
+      value={{ keys, setKey, clearKey, clearAllKeys, lockTimeout, setLockTimeout }}
+    >
       {children}
     </VaultContext.Provider>
   );

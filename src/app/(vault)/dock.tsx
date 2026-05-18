@@ -1,6 +1,7 @@
 "use client";
 
 import { useColorScheme, type ColorScheme } from "@/lib/color-scheme";
+import { useVault } from "@/lib/vault-context";
 
 function SunIcon() {
   return (
@@ -64,8 +65,17 @@ const SCHEMES: { value: ColorScheme; icon: React.ReactNode; label: string }[] = 
   { value: "dark", icon: <MoonIcon />, label: "Dark mode" },
 ];
 
+const TIMEOUTS = [
+  { value: 1, label: "1m" },
+  { value: 5, label: "5m" },
+  { value: 15, label: "15m" },
+  { value: 30, label: "30m" },
+  { value: 0, label: "never" },
+] as const;
+
 export default function Dock() {
   const { scheme, setScheme } = useColorScheme();
+  const { lockTimeout, setLockTimeout } = useVault();
 
   return (
     <div
@@ -92,6 +102,31 @@ export default function Dock() {
             </button>
           );
         })}
+
+        <div className="w-px h-5 bg-line mx-1" aria-hidden="true" />
+
+        <div role="group" aria-label="Auto-lock timeout" className="flex items-center gap-0.5">
+          {TIMEOUTS.map(({ value, label }) => {
+            const active = lockTimeout === value;
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setLockTimeout(value)}
+                aria-pressed={active}
+                aria-label={`Auto-lock after ${label}`}
+                className={[
+                  "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                  active
+                    ? "bg-default text-surface"
+                    : "text-muted hover:text-default hover:bg-line",
+                ].join(" ")}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
