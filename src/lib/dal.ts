@@ -18,3 +18,12 @@ export const getUser = cache(async () => {
     select: { id: true, email: true, salt: true },
   });
 });
+
+export const getVaultEntries = cache(async () => {
+  const { userId } = await verifySession();
+  return db.vaultEntry.findMany({
+    where: { userId },
+    include: { tags: { select: { id: true, name: true } } },
+    orderBy: { updatedAt: "desc" },
+  });
+});
