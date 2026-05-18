@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import UserAvatar from "@/components/user-avatar";
 import CreateVaultModal from "./create-vault-modal";
 
 type VaultSummary = {
@@ -231,13 +231,7 @@ function VaultCard({
 
 // ─── Overview ─────────────────────────────────────────────────────────────────
 
-export default function VaultOverviewClient({
-  email,
-  vaults: initialVaults,
-}: {
-  email: string;
-  vaults: VaultSummary[];
-}) {
+export default function VaultOverviewClient({ vaults: initialVaults }: { vaults: VaultSummary[] }) {
   const router = useRouter();
   const [vaults, setVaults] = useState<VaultSummary[]>(initialVaults);
   const [showCreate, setShowCreate] = useState(false);
@@ -264,10 +258,7 @@ export default function VaultOverviewClient({
           >
             <span aria-hidden="true">🧀 </span>Cheesy Toast Vault
           </span>
-          <div className="flex items-center gap-1.5">
-            <span className="hidden md:block text-xs text-muted truncate max-w-40 mr-1.5">
-              {email}
-            </span>
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setShowCreate(true)}
@@ -275,20 +266,8 @@ export default function VaultOverviewClient({
             >
               + New vault
             </button>
-            <div className="w-px h-5 bg-line mx-0.5" role="separator" aria-hidden="true" />
-            <a
-              href="/settings"
-              className="rounded-lg px-3 py-2 text-sm text-muted hover:text-default hover:bg-line transition-colors"
-            >
-              Settings
-            </a>
-            <button
-              type="button"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="rounded-lg px-3 py-2 text-sm text-muted hover:text-default hover:bg-line transition-colors"
-            >
-              Sign out
-            </button>
+            <div className="w-px h-5 bg-line" role="separator" aria-hidden="true" />
+            <UserAvatar />
           </div>
         </div>
       </header>

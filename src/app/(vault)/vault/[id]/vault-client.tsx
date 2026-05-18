@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
 import { useVault } from "@/lib/vault-context";
 import { deriveCryptoKey, decryptEntry, base64ToBuffer } from "@/lib/crypto";
-import { SearchIcon, LockIcon } from "@/components/icons";
+import { SearchIcon, LockIcon, DotsHorizontalIcon } from "@/components/icons";
 import type { EntryPayload, EncryptedEntryProp, DecryptedEntry } from "@/types/vault";
 import type { Tag } from "../../tag-selector";
 import EntryCard from "../../entry-card";
@@ -15,13 +14,256 @@ import NewEntryModal from "../../new-entry-modal";
 import EditEntryModal from "../../edit-entry-modal";
 import ManageTagsModal from "../../manage-tags-modal";
 
+// ─── Vault menu ───────────────────────────────────────────────────────────────
+
+const ITEM_BASE =
+  "w-full flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-left transition-colors";
+
+function VaultMenu({
+  vault,
+  entryCount,
+  onExport,
+  onRenamed,
+  onDeleted,
+}: {
+  vault: { id: string; name: string };
+  entryCount: number;
+  onExport: () => void;
+  onRenamed: (name: string) => void;
+  onDeleted: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "rename" | "delete">("idle");
+  const [editName, setEditName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [menuError, setMenuError] = useState("");
+  const menuRef = useRef<HTMLDivElement>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  function openMenu() {
+    setPhase("idle");
+    setMenuError("");
+    setOpen(true);
+  }
+
+  function closeMenu() {
+    setOpen(false);
+    setPhase("idle");
+    setMenuError("");
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    function onMouseDown(e: MouseEvent) {
+      if (!menuRef.current?.contains(e.target as Node)) closeMenu();
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      if (phase !== "idle") setPhase("idle");
+      else closeMenu();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, phase]);
+
+  useEffect(() => {
+    if (phase === "rename") renameInputRef.current?.focus();
+  }, [phase]);
+
+  async function handleRename() {
+    const trimmed = editName.trim();
+    if (!trimmed || trimmed === vault.name) {
+      setPhase("idle");
+      return;
+    }
+    setSaving(true);
+    setMenuError("");
+    try {
+      const res = await fetch(`/api/vaults/${vault.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        setMenuError(data.error ?? "Failed to rename");
+      } else {
+        onRenamed(trimmed);
+        closeMenu();
+      }
+    } catch {
+      setMenuError("Something went wrong");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/vaults/${vault.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      onDeleted();
+    } catch {
+      setMenuError("Failed to delete vault");
+      setDeleting(false);
+    }
+  }
+
+  const divider = <div className="my-1 mx-1 h-px bg-divider" />;
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        type="button"
+        onClick={() => (open ? closeMenu() : openMenu())}
+        aria-expanded={open}
+        aria-label="More options"
+        className={`inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+          open ? "bg-line text-default" : "text-muted hover:text-default hover:bg-line"
+        }`}
+      >
+        <DotsHorizontalIcon />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-[calc(100%+6px)] w-56 rounded-xl border border-line/80 bg-surface shadow-lg shadow-black/10 z-50 p-1.5">
+          {phase === "idle" && (
+            <>
+              <button
+                type="button"
+                className={`${ITEM_BASE} text-muted hover:text-default hover:bg-sunken/60`}
+                onClick={() => {
+                  onExport();
+                  closeMenu();
+                }}
+              >
+                Export backup
+              </button>
+
+              {divider}
+
+              <button
+                type="button"
+                className={`${ITEM_BASE} text-muted hover:text-default hover:bg-sunken/60`}
+                onClick={() => {
+                  setEditName(vault.name);
+                  setPhase("rename");
+                }}
+              >
+                Rename vault
+              </button>
+              <button
+                type="button"
+                className={`${ITEM_BASE} text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30`}
+                onClick={() => setPhase("delete")}
+              >
+                Delete vault
+              </button>
+            </>
+          )}
+
+          {phase === "rename" && (
+            <div className="p-1.5 space-y-2">
+              <p className="text-xs font-medium text-muted px-1.5 pt-1">Rename vault</p>
+              <input
+                ref={renameInputRef}
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void handleRename();
+                  }
+                  if (e.key === "Escape") setPhase("idle");
+                }}
+                disabled={saving}
+                className="w-full rounded-lg border border-line bg-sunken/50 px-3 py-2 text-sm text-default outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+              />
+              {menuError && (
+                <p className="text-xs text-red-500 dark:text-red-400 px-1.5">{menuError}</p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPhase("idle");
+                    setMenuError("");
+                  }}
+                  className="flex-1 rounded-lg border border-line py-1.5 text-xs font-medium text-muted hover:bg-sunken transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleRename()}
+                  disabled={saving || !editName.trim()}
+                  className="flex-1 rounded-lg bg-stone-800 dark:bg-amber-600 py-1.5 text-xs font-medium text-white hover:bg-amber-700 dark:hover:bg-amber-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving ? "Saving…" : "Save"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {phase === "delete" && (
+            <div className="p-1.5 space-y-2.5">
+              <div className="px-1.5 pt-1 space-y-1">
+                <p className="text-sm font-medium text-default">
+                  Delete <span className="font-semibold">{vault.name}</span>?
+                </p>
+                {entryCount > 0 && (
+                  <p className="text-xs text-muted">
+                    Removes all {entryCount} {entryCount === 1 ? "entry" : "entries"}.
+                  </p>
+                )}
+              </div>
+              {menuError && (
+                <p className="text-xs text-red-500 dark:text-red-400 px-1.5">{menuError}</p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPhase("idle");
+                    setMenuError("");
+                  }}
+                  className="flex-1 rounded-lg border border-line py-1.5 text-xs font-medium text-muted hover:bg-sunken transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleDelete()}
+                  disabled={deleting}
+                  className="flex-1 rounded-lg bg-red-600 py-1.5 text-xs font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deleting ? "Deleting…" : "Delete"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Vault client ─────────────────────────────────────────────────────────────
+
 export default function VaultClient({
-  email,
   vault,
   entries,
   tags: initialTags,
 }: {
-  email: string;
   vault: { id: string; name: string; salt: string };
   entries: EncryptedEntryProp[];
   tags: Tag[];
@@ -30,6 +272,7 @@ export default function VaultClient({
   const { keys, setKey, clearKey } = useVault();
   const cryptoKey = keys[vault.id] ?? null;
 
+  const [vaultName, setVaultName] = useState(vault.name);
   const [decrypted, setDecrypted] = useState<DecryptedEntry[] | null>(null);
   const [unlockError, setUnlockError] = useState("");
   const [unlocking, setUnlocking] = useState(false);
@@ -156,12 +399,9 @@ export default function VaultClient({
       }}
     >
       <VaultHeader
-        vaultName={vault.name}
+        vaultName={vaultName}
         actions={
           <>
-            <span className="hidden md:block text-xs text-muted truncate max-w-40 mr-1.5">
-              {email}
-            </span>
             <button
               type="button"
               onClick={() => setShowNew(true)}
@@ -171,29 +411,20 @@ export default function VaultClient({
             </button>
             <button
               type="button"
-              onClick={handleExport}
-              title="Entries remain encrypted in the export file"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm font-medium text-muted hover:text-default hover:bg-line transition-colors"
-            >
-              Export
-            </button>
-            <button
-              type="button"
               onClick={() => clearKey(vault.id)}
-              aria-label={`Lock vault "${vault.name}"`}
+              aria-label={`Lock vault "${vaultName}"`}
               className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm font-medium text-muted hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
             >
               <LockIcon />
               Lock
             </button>
-            <div className="w-px h-5 bg-line mx-0.5" role="separator" aria-hidden="true" />
-            <button
-              type="button"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="rounded-lg px-3 py-2 text-sm text-muted hover:text-default hover:bg-line transition-colors"
-            >
-              Sign out
-            </button>
+            <VaultMenu
+              vault={{ id: vault.id, name: vaultName }}
+              entryCount={entries.length}
+              onExport={handleExport}
+              onRenamed={setVaultName}
+              onDeleted={() => router.push("/")}
+            />
           </>
         }
       />

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import UserAvatar from "@/components/user-avatar";
 
 export default function VaultHeader({
   vaultName,
@@ -33,7 +34,7 @@ export default function VaultHeader({
             </svg>
             All vaults
           </Link>
-          <span className="text-stone-300 select-none" aria-hidden="true">
+          <span className="text-subtle select-none" aria-hidden="true">
             /
           </span>
           <h1
@@ -44,7 +45,15 @@ export default function VaultHeader({
           </h1>
         </div>
 
-        {actions && <div className="flex items-center gap-1.5 shrink-0">{actions}</div>}
+        <div className="flex items-center gap-2 shrink-0">
+          {actions && (
+            <>
+              <div className="flex items-center gap-1.5">{actions}</div>
+              <div className="w-px h-5 bg-line" role="separator" aria-hidden="true" />
+            </>
+          )}
+          <UserAvatar />
+        </div>
       </div>
     </header>
   );

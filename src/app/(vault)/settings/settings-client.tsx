@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { passwordStrength } from "@/lib/crypto";
+import { useVault } from "@/lib/vault-context";
 import Field from "@/components/field";
 import VaultHeader from "../vault-header";
 
@@ -26,7 +27,16 @@ function StrengthBar({ password }: { password: string }) {
   );
 }
 
+const TIMEOUTS = [
+  { value: 1, label: "1 min" },
+  { value: 5, label: "5 min" },
+  { value: 15, label: "15 min" },
+  { value: 30, label: "30 min" },
+  { value: 0, label: "Never" },
+] as const;
+
 export default function SettingsClient() {
+  const { lockTimeout, setLockTimeout } = useVault();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -177,6 +187,30 @@ export default function SettingsClient() {
               {submitting ? "Updating…" : "Update password"}
             </button>
           </form>
+        </section>
+
+        <section className="mt-8 bg-surface rounded-xl border border-line/80 shadow-sm shadow-black/5 p-6">
+          <h2 className="text-base font-semibold text-default mb-1">Auto-lock timeout</h2>
+          <p className="text-sm text-muted mb-4">
+            Lock all open vaults after this period of inactivity.
+          </p>
+          <div role="group" aria-label="Auto-lock timeout" className="flex flex-wrap gap-2">
+            {TIMEOUTS.map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setLockTimeout(value)}
+                aria-pressed={lockTimeout === value}
+                className={`rounded-lg px-4 py-2 text-sm font-medium border transition-colors ${
+                  lockTimeout === value
+                    ? "bg-stone-800 dark:bg-amber-600 text-white border-transparent"
+                    : "border-line text-muted hover:border-amber-300 dark:hover:border-amber-700 hover:text-default"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </section>
 
         <section className="mt-8 bg-surface rounded-xl border border-red-200 dark:border-red-900/40 shadow-sm shadow-black/5 p-6">

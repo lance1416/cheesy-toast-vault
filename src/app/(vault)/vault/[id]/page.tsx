@@ -3,7 +3,7 @@ import VaultClient from "./vault-client";
 
 export default async function VaultDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [user, vault, entries, tags] = await Promise.all([
+  const [, vault, entries, tags] = await Promise.all([
     getUser(),
     getVault(id),
     getVaultEntries(id),
@@ -12,7 +12,6 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
 
   return (
     <VaultClient
-      email={user.email}
       vault={{ id: vault.id, name: vault.name, salt: vault.salt }}
       entries={entries.map((e) => ({
         id: e.id,
