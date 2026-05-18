@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { encryptEntry } from "@/lib/crypto";
+import TagSelector, { type Tag } from "./tag-selector";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -87,10 +88,14 @@ function Field({
 
 export default function NewEntryModal({
   cryptoKey,
+  tags: initialTags,
+  onTagCreated,
   onClose,
   onSuccess,
 }: {
   cryptoKey: CryptoKey;
+  tags: Tag[];
+  onTagCreated: (tag: Tag) => void;
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -100,6 +105,8 @@ export default function NewEntryModal({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [availableTags, setAvailableTags] = useState<Tag[]>(initialTags);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -146,7 +153,7 @@ export default function NewEntryModal({
       const res = await fetch("/api/vault", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ encryptedBlob, iv }),
+        body: JSON.stringify({ encryptedBlob, iv, tagIds: selectedTagIds }),
       });
 
       if (!res.ok) {
@@ -257,6 +264,25 @@ export default function NewEntryModal({
                 <EyeIcon open={showPassword} />
               </button>
             }
+          />
+
+          <TagSelector
+            available={availableTags}
+            selectedIds={selectedTagIds}
+            onToggle={(id) =>
+              setSelectedTagIds((prev) =>
+                prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+              )
+            }
+            onCreated={(tag) => {
+              setAvailableTags((prev) =>
+                prev.some((t) => t.id === tag.id)
+                  ? prev
+                  : [...prev, tag].sort((a, b) => a.name.localeCompare(b.name)),
+              );
+              setSelectedTagIds((prev) => [...prev, tag.id]);
+              onTagCreated(tag);
+            }}
           />
 
           {error && (

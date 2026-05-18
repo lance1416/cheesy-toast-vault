@@ -7,6 +7,8 @@ import { useVault } from "@/lib/vault-context";
 import { deriveCryptoKey, decryptEntry, base64ToBuffer } from "@/lib/crypto";
 import NewEntryModal from "./new-entry-modal";
 import EditEntryModal from "./edit-entry-modal";
+import ManageTagsModal from "./manage-tags-modal";
+import type { Tag } from "./tag-selector";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -399,10 +401,12 @@ export default function VaultClient({
   email,
   salt,
   entries,
+  tags: initialTags,
 }: {
   email: string;
   salt: string;
   entries: EncryptedEntryProp[];
+  tags: Tag[];
 }) {
   const router = useRouter();
   const { cryptoKey, setCryptoKey } = useVault();
@@ -411,6 +415,10 @@ export default function VaultClient({
   const [unlocking, setUnlocking] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [editingEntry, setEditingEntry] = useState<EncryptedEntryProp | null>(null);
+  const [allTags, setAllTags] = useState<Tag[]>(initialTags);
+  const [query, setQuery] = useState("");
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [showManageTags, setShowManageTags] = useState(false);
 
   // Re-decrypt whenever the key or the entries list changes.
   useEffect(() => {
@@ -435,6 +443,47 @@ export default function VaultClient({
       cancelled = true;
     };
   }, [cryptoKey, entries]);
+
+  const filtered = useMemo(() => {
+    if (!decrypted) return [];
+    let result = decrypted;
+    if (selectedTagIds.length > 0) {
+      result = result.filter((e) => e.tags.some((t) => selectedTagIds.includes(t.id)));
+    }
+    const q = query.trim().toLowerCase();
+    if (q) {
+      result = result.filter(
+        (e) =>
+          e.name.toLowerCase().includes(q) ||
+          e.url?.toLowerCase().includes(q) ||
+          e.username.toLowerCase().includes(q) ||
+          e.email.toLowerCase().includes(q),
+      );
+    }
+    return result;
+  }, [decrypted, query, selectedTagIds]);
+
+  function toggleTagFilter(id: string) {
+    setSelectedTagIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  function handleTagCreated(tag: Tag) {
+    setAllTags((prev) => {
+      if (prev.some((t) => t.id === tag.id)) return prev;
+      return [...prev, tag].sort((a, b) => a.name.localeCompare(b.name));
+    });
+  }
+
+  function handleTagUpdated(tag: Tag) {
+    setAllTags((prev) =>
+      prev.map((t) => (t.id === tag.id ? tag : t)).sort((a, b) => a.name.localeCompare(b.name)),
+    );
+  }
+
+  function handleTagDeleted(id: string) {
+    setAllTags((prev) => prev.filter((t) => t.id !== id));
+    setSelectedTagIds((prev) => prev.filter((x) => x !== id));
+  }
 
   async function handleUnlock(password: string) {
     setUnlockError("");
@@ -512,9 +561,78 @@ export default function VaultClient({
       </header>
 
       {/* Content */}
-      <main className="max-w-5xl mx-auto px-4 py-5">
+      <main className="max-w-5xl mx-auto px-4 py-5 space-y-4">
+        {decrypted.length > 0 && (
+          <div className="space-y-2">
+            {/* Search */}
+            <div className="relative">
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none"
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search entries…"
+                className="w-full rounded-xl border border-stone-200 bg-white pl-9 pr-4 py-2.5 text-sm text-stone-800 placeholder:text-stone-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+              />
+            </div>
+
+            {/* Tag filter chips */}
+            {allTags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {allTags.map((tag) => {
+                  const active = selectedTagIds.includes(tag.id);
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => toggleTagFilter(tag.id)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+                        active
+                          ? "bg-amber-100 text-amber-800 border-amber-300"
+                          : "bg-white text-stone-500 border-stone-200 hover:border-amber-300 hover:text-amber-700"
+                      }`}
+                    >
+                      {tag.name}
+                    </button>
+                  );
+                })}
+                {selectedTagIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTagIds([])}
+                    className="rounded-full px-3 py-1 text-xs font-medium text-stone-400 hover:text-stone-600 transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowManageTags(true)}
+                  className="rounded-full px-3 py-1 text-xs font-medium text-stone-400 hover:text-stone-600 transition-colors"
+                  aria-label="Manage tags"
+                >
+                  Edit tags
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {decrypted.length === 0 ? (
-          // Empty state
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <span className="text-6xl mb-5 select-none">🗝️</span>
             <h2
@@ -532,9 +650,23 @@ export default function VaultClient({
               + Add your first entry
             </button>
           </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <p className="text-stone-500 text-sm mb-3">No entries match your search.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setSelectedTagIds([]);
+              }}
+              className="text-xs text-amber-700 hover:underline"
+            >
+              Clear filters
+            </button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-start">
-            {decrypted.map((entry) => (
+            {filtered.map((entry) => (
               <EntryCard
                 key={entry.id}
                 entry={entry}
@@ -548,6 +680,8 @@ export default function VaultClient({
       {showNew && (
         <NewEntryModal
           cryptoKey={cryptoKey}
+          tags={allTags}
+          onTagCreated={handleTagCreated}
           onClose={() => setShowNew(false)}
           onSuccess={() => {
             setShowNew(false);
@@ -560,11 +694,22 @@ export default function VaultClient({
         <EditEntryModal
           entry={editingEntry}
           cryptoKey={cryptoKey}
+          tags={allTags}
+          onTagCreated={handleTagCreated}
           onClose={() => setEditingEntry(null)}
           onSuccess={() => {
             setEditingEntry(null);
             router.refresh();
           }}
+        />
+      )}
+
+      {showManageTags && (
+        <ManageTagsModal
+          tags={allTags}
+          onClose={() => setShowManageTags(false)}
+          onTagUpdated={handleTagUpdated}
+          onTagDeleted={handleTagDeleted}
         />
       )}
     </div>

@@ -19,6 +19,15 @@ export const getUser = cache(async () => {
   });
 });
 
+export const getTags = cache(async () => {
+  const { userId } = await verifySession();
+  return db.tag.findMany({
+    where: { userId },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
+});
+
 export const getVaultEntries = cache(async () => {
   const { userId } = await verifySession();
   return db.vaultEntry.findMany({

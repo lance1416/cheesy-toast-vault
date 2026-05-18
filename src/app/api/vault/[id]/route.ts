@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 const updateSchema = z.object({
   encryptedBlob: z.string().min(1),
   iv: z.string().min(1),
+  tagIds: z.array(z.string()).optional(),
 });
 
 async function resolveEntry(id: string, userId: string) {
@@ -25,7 +26,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     await db.vaultEntry.update({
       where: { id },
-      data: { encryptedBlob: parsed.data.encryptedBlob, iv: parsed.data.iv },
+      data: {
+        encryptedBlob: parsed.data.encryptedBlob,
+        iv: parsed.data.iv,
+        ...(parsed.data.tagIds !== undefined && {
+          tags: { set: parsed.data.tagIds.map((tid) => ({ id: tid })) },
+        }),
+      },
     });
 
     return NextResponse.json({ ok: true });
