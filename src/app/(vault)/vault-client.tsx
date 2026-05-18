@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useVault } from "@/lib/vault-context";
 import { deriveCryptoKey, decryptEntry, base64ToBuffer } from "@/lib/crypto";
 import NewEntryModal from "./new-entry-modal";
+import EditEntryModal from "./edit-entry-modal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -169,7 +169,7 @@ function Favicon({ url, name }: { url: string; name: string }) {
 
 // ─── Entry card ───────────────────────────────────────────────────────────────
 
-function EntryCard({ entry }: { entry: DecryptedEntry }) {
+function EntryCard({ entry, onEdit }: { entry: DecryptedEntry; onEdit: () => void }) {
   const [open, setOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -226,13 +226,16 @@ function EntryCard({ entry }: { entry: DecryptedEntry }) {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <Link
-            href={`/${entry.id}/edit`}
-            onClick={(e) => e.stopPropagation()}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
             className="text-xs font-medium text-stone-400 hover:text-amber-700 transition-colors"
           >
             Edit
-          </Link>
+          </button>
           <span className="text-stone-400">
             <ChevronIcon open={open} />
           </span>
@@ -407,6 +410,7 @@ export default function VaultClient({
   const [unlockError, setUnlockError] = useState("");
   const [unlocking, setUnlocking] = useState(false);
   const [showNew, setShowNew] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<EncryptedEntryProp | null>(null);
 
   // Re-decrypt whenever the key or the entries list changes.
   useEffect(() => {
@@ -531,7 +535,11 @@ export default function VaultClient({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-start">
             {decrypted.map((entry) => (
-              <EntryCard key={entry.id} entry={entry} />
+              <EntryCard
+                key={entry.id}
+                entry={entry}
+                onEdit={() => setEditingEntry(entries.find((e) => e.id === entry.id) ?? null)}
+              />
             ))}
           </div>
         )}
@@ -543,6 +551,18 @@ export default function VaultClient({
           onClose={() => setShowNew(false)}
           onSuccess={() => {
             setShowNew(false);
+            router.refresh();
+          }}
+        />
+      )}
+
+      {editingEntry && (
+        <EditEntryModal
+          entry={editingEntry}
+          cryptoKey={cryptoKey}
+          onClose={() => setEditingEntry(null)}
+          onSuccess={() => {
+            setEditingEntry(null);
             router.refresh();
           }}
         />
