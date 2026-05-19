@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import UserAvatar from "@/components/user-avatar";
 import CreateVaultModal from "./create-vault-modal";
 
+const PAGE_NOW = Date.now();
+const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
+function relativeDay(date: Date): string {
+  const days = -Math.round((PAGE_NOW - date.getTime()) / 86_400_000);
+  return rtf.format(days, "day");
+}
+
 type VaultSummary = {
   id: string;
   name: string;
@@ -159,9 +167,12 @@ function VaultCard({
           </button>
         </div>
 
-        <p className="text-sm text-muted">
-          {vault._count.entries} {vault._count.entries === 1 ? "entry" : "entries"}
-        </p>
+        <div className="flex items-center justify-between mt-1">
+          <p className="text-sm text-muted">
+            {vault._count.entries} {vault._count.entries === 1 ? "entry" : "entries"}
+          </p>
+          <p className="text-xs text-subtle">{relativeDay(new Date(vault.updatedAt))}</p>
+        </div>
       </div>
 
       {/* Inline menu */}

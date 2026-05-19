@@ -14,6 +14,14 @@ import NewEntryModal from "../../new-entry-modal";
 import EditEntryModal from "../../edit-entry-modal";
 import ManageTagsModal from "../../manage-tags-modal";
 
+const PAGE_NOW = Date.now();
+const STALE_DAYS = 90;
+
+function isStalePassword(passwordChangedAt: string | undefined): boolean {
+  if (!passwordChangedAt) return false;
+  return (PAGE_NOW - new Date(passwordChangedAt).getTime()) / 86_400_000 >= STALE_DAYS;
+}
+
 // ─── Vault menu ───────────────────────────────────────────────────────────────
 
 const ITEM_BASE =
@@ -305,6 +313,7 @@ export default function VaultClient({
   const [sort, setSort] = useState<"updated-desc" | "updated-asc" | "name-asc" | "name-desc">(
     "updated-desc",
   );
+  const [filterStale, setFilterStale] = useState(false);
   const [importStatus, setImportStatus] = useState<
     "idle" | "importing" | { imported: number } | { error: string }
   >("idle");
@@ -329,11 +338,19 @@ export default function VaultClient({
     };
   }, [cryptoKey, entries]);
 
+  const staleCount = useMemo(
+    () => (decrypted ?? []).filter((e) => isStalePassword(e.passwordChangedAt)).length,
+    [decrypted],
+  );
+
   const filtered = useMemo(() => {
     if (!decrypted) return [];
     let result = decrypted;
     if (selectedTagIds.length > 0) {
       result = result.filter((e) => e.tags.some((t) => selectedTagIds.includes(t.id)));
+    }
+    if (filterStale) {
+      result = result.filter((e) => isStalePassword(e.passwordChangedAt));
     }
     const q = query.trim().toLowerCase();
     if (q) {
@@ -358,7 +375,7 @@ export default function VaultClient({
           return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
       }
     });
-  }, [decrypted, query, selectedTagIds, sort]);
+  }, [decrypted, query, selectedTagIds, sort, filterStale]);
 
   function toggleTagFilter(id: string) {
     setSelectedTagIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -593,8 +610,8 @@ export default function VaultClient({
               </select>
             </div>
 
-            {allTags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
+            {(allTags.length > 0 || staleCount > 0) && (
+              <div className="flex flex-wrap gap-1.5 items-center">
                 {allTags.map((tag) => {
                   const active = selectedTagIds.includes(tag.id);
                   return (
@@ -609,22 +626,39 @@ export default function VaultClient({
                     </button>
                   );
                 })}
-                {selectedTagIds.length > 0 && (
+
+                {staleCount > 0 && (
                   <button
                     type="button"
-                    onClick={() => setSelectedTagIds([])}
+                    aria-pressed={filterStale}
+                    onClick={() => setFilterStale((v) => !v)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${filterStale ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-700" : "bg-surface text-muted border-line hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400"}`}
+                  >
+                    Stale ({staleCount})
+                  </button>
+                )}
+
+                {(selectedTagIds.length > 0 || filterStale) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedTagIds([]);
+                      setFilterStale(false);
+                    }}
                     className="rounded-full px-3 py-1 text-xs font-medium text-muted hover:text-default transition-colors"
                   >
                     Clear
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={() => setShowManageTags(true)}
-                  className="rounded-full px-3 py-1 text-xs font-medium text-muted hover:text-default transition-colors"
-                >
-                  Edit tags
-                </button>
+                {allTags.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowManageTags(true)}
+                    className="rounded-full px-3 py-1 text-xs font-medium text-muted hover:text-default transition-colors"
+                  >
+                    Edit tags
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -658,6 +692,7 @@ export default function VaultClient({
               onClick={() => {
                 setQuery("");
                 setSelectedTagIds([]);
+                setFilterStale(false);
               }}
               className="text-xs text-amber-700 dark:text-amber-400 hover:underline"
             >
