@@ -20,10 +20,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      const callbackUrl = new URLSearchParams(window.location.search).get("callbackUrl") ?? "/";
       const result = await signIn("credentials", {
         email,
         password,
         redirect: false,
+        callbackUrl,
       });
 
       if (result?.error) {
@@ -31,7 +33,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/");
+      router.push(result?.url ?? callbackUrl);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

@@ -315,7 +315,14 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={
+                loading ||
+                !email ||
+                loginPassword.length < 12 ||
+                loginPassword !== loginConfirm ||
+                vaultPassword.length < 12 ||
+                vaultPassword !== vaultConfirm
+              }
               className="w-full rounded-lg bg-stone-800 dark:bg-amber-600 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "Creating your account…" : "Create Account"}
