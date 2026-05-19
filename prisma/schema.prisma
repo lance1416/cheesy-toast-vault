@@ -12,9 +12,13 @@ model User {
   email        String   @unique
   /// bcrypt hash of the login password — used by next-auth for authentication only, never for encryption
   passwordHash String
-  createdAt    DateTime @default(now())
-  vaults       Vault[]
-  tags         Tag[]
+  resetTokenHash    String?
+  resetTokenExpiry  DateTime?
+  emailVerified     Boolean   @default(false)
+  verificationToken String?   @unique
+  createdAt         DateTime  @default(now())
+  vaults            Vault[]
+  tags              Tag[]
 }
 
 model Vault {

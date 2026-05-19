@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { handleApiError } from "@/lib/api-error";
+import { registrationLimiter, getIp } from "@/lib/rate-limit";
+import { sendVerificationEmail } from "@/lib/email";
 
 const schema = z.object({
   email: z.email(),
@@ -12,6 +15,16 @@ const schema = z.object({
 });
 
 export async function POST(req: Request) {
+  try {
+    const ip = getIp(req);
+    await registrationLimiter.consume(ip);
+  } catch {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 },
+    );
+  }
+
   try {
     const parsed = schema.safeParse(await req.json());
     if (!parsed.success) {
@@ -26,11 +39,13 @@ export async function POST(req: Request) {
     }
 
     const passwordHash = await bcrypt.hash(loginPassword, 12);
+    const verificationToken = randomBytes(32).toString("hex");
 
     const user = await db.user.create({
       data: {
         email,
         passwordHash,
+        verificationToken,
         vaults: {
           create: {
             name: vaultName ?? "Personal",
@@ -40,6 +55,12 @@ export async function POST(req: Request) {
       },
       select: { id: true, vaults: { select: { id: true } } },
     });
+
+    const baseUrl =
+      process.env.RESET_BASE_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+    const verifyUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
+    // Send async — don't block registration response
+    void sendVerificationEmail(email, verifyUrl).catch(() => null);
 
     return NextResponse.json({ ok: true, vaultId: user.vaults[0].id }, { status: 201 });
   } catch (err) {

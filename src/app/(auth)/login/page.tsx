@@ -1,10 +1,85 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { EyeIcon } from "@/components/icons";
+
+function LoginBanner() {
+  const params = useSearchParams();
+  const [resendEmail, setResendEmail] = useState("");
+  const [resendSent, setResendSent] = useState(false);
+
+  if (params.get("verified") === "1") {
+    return (
+      <div
+        role="status"
+        className="rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 px-4 py-3 text-sm text-green-700 dark:text-green-400 mb-6"
+      >
+        Email verified. You can now sign in.
+      </div>
+    );
+  }
+
+  if (params.get("verifyError") === "1") {
+    return (
+      <div
+        role="alert"
+        className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400 mb-6"
+      >
+        Verification link is invalid or already used.{" "}
+        <Link href="/login?unverified=1" className="underline">
+          Resend?
+        </Link>
+      </div>
+    );
+  }
+
+  if (params.get("unverified") === "1") {
+    return (
+      <div
+        role="alert"
+        className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-800 dark:text-amber-300 mb-6 space-y-2"
+      >
+        <p>Please verify your email before signing in.</p>
+        {resendSent ? (
+          <p className="text-xs">Verification email sent.</p>
+        ) : (
+          <form
+            className="flex gap-2"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              await fetch("/api/auth/resend-verification", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: resendEmail }),
+              });
+              setResendSent(true);
+            }}
+          >
+            <input
+              type="email"
+              required
+              placeholder="your@email.com"
+              value={resendEmail}
+              onChange={(e) => setResendEmail(e.target.value)}
+              className="flex-1 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs text-default outline-none focus:border-amber-400"
+            />
+            <button
+              type="submit"
+              className="rounded-lg bg-amber-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600 transition-colors"
+            >
+              Resend
+            </button>
+          </form>
+        )}
+      </div>
+    );
+  }
+
+  return null;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,6 +103,10 @@ export default function LoginPage() {
         callbackUrl,
       });
 
+      if (result?.error === "rate_limited") {
+        setError("Too many attempts. Please wait a few minutes before trying again.");
+        return;
+      }
       if (result?.error) {
         setError("Invalid email or password.");
         return;
@@ -64,6 +143,10 @@ export default function LoginPage() {
           </p>
         </div>
 
+        <Suspense>
+          <LoginBanner />
+        </Suspense>
+
         <div className="bg-surface rounded-xl border border-line/60 px-8 py-8">
           <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-6">
             Open your vault
@@ -91,12 +174,20 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label
-                htmlFor="login-password"
-                className="block text-xs font-medium text-muted tracking-wide"
-              >
-                Login Password
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="login-password"
+                  className="block text-xs font-medium text-muted tracking-wide"
+                >
+                  Login Password
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-amber-700 dark:text-amber-400 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <input
                   id="login-password"

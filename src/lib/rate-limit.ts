@@ -1,0 +1,30 @@
+import { RateLimiterMemory, RateLimiterRes } from "rate-limiter-flexible";
+
+// 5 attempts per 10 minutes per IP — login and reset-password endpoints
+export const authLimiter = new RateLimiterMemory({ points: 5, duration: 600 });
+
+// 3 attempts per hour per IP — register and forgot-password endpoints
+export const registrationLimiter = new RateLimiterMemory({ points: 3, duration: 3600 });
+
+// For Next.js route handler Request objects
+export function getIp(req: Request): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
+
+// For next-auth authorize(credentials, req) — headers are a plain Record
+export function getIpFromRecord(
+  headers: Record<string, string | string[] | undefined> | undefined,
+): string {
+  if (!headers) return "unknown";
+  const fwd = headers["x-forwarded-for"];
+  const real = headers["x-real-ip"];
+  const fwdStr = Array.isArray(fwd) ? fwd[0] : fwd;
+  const realStr = Array.isArray(real) ? real[0] : real;
+  return fwdStr?.split(",")[0].trim() ?? realStr ?? "unknown";
+}
+
+export { RateLimiterRes };

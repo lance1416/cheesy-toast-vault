@@ -8,6 +8,14 @@ import { db } from "@/lib/db";
 export const verifySession = cache(async () => {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
+
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { emailVerified: true },
+  });
+  if (!user) redirect("/login");
+  if (!user.emailVerified) redirect("/login?unverified=1");
+
   return { userId: session.user.id, email: session.user.email };
 });
 
