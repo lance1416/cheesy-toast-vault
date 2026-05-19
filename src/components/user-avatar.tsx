@@ -76,7 +76,7 @@ export default function UserAvatar() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+8px)] w-56 rounded-xl border border-line/80 bg-surface shadow-lg shadow-black/10 z-50 p-1.5">
+        <div className="absolute right-0 top-[calc(100%+8px)] w-56 rounded-lg border border-line/60 bg-surface shadow-lg shadow-black/10 z-50 p-1.5">
           {/* Identity */}
           <div className="flex items-center gap-2.5 px-3 py-2.5">
             <div

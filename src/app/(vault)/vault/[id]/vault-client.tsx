@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useVault } from "@/lib/vault-context";
 import { deriveCryptoKey, decryptEntry, base64ToBuffer } from "@/lib/crypto";
+import { isStalePassword } from "@/lib/stale-password";
 import { SearchIcon, LockIcon, DotsHorizontalIcon } from "@/components/icons";
 import type { EntryPayload, EncryptedEntryProp, DecryptedEntry } from "@/types/vault";
 import type { Tag } from "../../tag-selector";
@@ -15,12 +16,6 @@ import EditEntryModal from "../../edit-entry-modal";
 import ManageTagsModal from "../../manage-tags-modal";
 
 const PAGE_NOW = Date.now();
-const STALE_DAYS = 90;
-
-function isStalePassword(passwordChangedAt: string | undefined): boolean {
-  if (!passwordChangedAt) return false;
-  return (PAGE_NOW - new Date(passwordChangedAt).getTime()) / 86_400_000 >= STALE_DAYS;
-}
 
 // ─── Vault menu ───────────────────────────────────────────────────────────────
 
@@ -339,7 +334,7 @@ export default function VaultClient({
   }, [cryptoKey, entries]);
 
   const staleCount = useMemo(
-    () => (decrypted ?? []).filter((e) => isStalePassword(e.passwordChangedAt)).length,
+    () => (decrypted ?? []).filter((e) => isStalePassword(e.passwordChangedAt, PAGE_NOW)).length,
     [decrypted],
   );
 
@@ -350,7 +345,7 @@ export default function VaultClient({
       result = result.filter((e) => e.tags.some((t) => selectedTagIds.includes(t.id)));
     }
     if (filterStale) {
-      result = result.filter((e) => isStalePassword(e.passwordChangedAt));
+      result = result.filter((e) => isStalePassword(e.passwordChangedAt, PAGE_NOW));
     }
     const q = query.trim().toLowerCase();
     if (q) {
@@ -370,9 +365,9 @@ export default function VaultClient({
         case "name-desc":
           return b.name.localeCompare(a.name);
         case "updated-asc":
-          return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+          return a.updatedAt < b.updatedAt ? -1 : a.updatedAt > b.updatedAt ? 1 : 0;
         case "updated-desc":
-          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+          return b.updatedAt < a.updatedAt ? -1 : b.updatedAt > a.updatedAt ? 1 : 0;
       }
     });
   }, [decrypted, query, selectedTagIds, sort, filterStale]);
@@ -458,7 +453,7 @@ export default function VaultClient({
           }
         }
 
-        await fetch("/api/vault", {
+        const vaultRes = await fetch("/api/vault", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -468,7 +463,7 @@ export default function VaultClient({
             tagIds,
           }),
         });
-        imported++;
+        if (vaultRes.ok) imported++;
       }
 
       setImportStatus({ imported });
