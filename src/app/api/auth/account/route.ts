@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { verifySession } from "@/lib/dal";
-import { db } from "@/lib/db";
-import { handleApiError } from "@/lib/api-error";
+import { verifySession } from "@/server/dal";
+import { db } from "@/server/db";
+import { handleApiError } from "@/server/api-error";
 
 const patchSchema = z.object({
   currentPassword: z.string().min(1),

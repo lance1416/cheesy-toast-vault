@@ -1,4 +1,4 @@
-import { getUser, getVault, getVaultEntries, getTags } from "@/lib/dal";
+import { getUser, getVault, getVaultEntries, getTags } from "@/server/dal";
 import VaultClient from "./vault-client";
 
 export default async function VaultDetailPage({ params }: { params: Promise<{ id: string }> }) {

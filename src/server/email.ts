@@ -1,13 +1,16 @@
-"use server";
-
+// Server-only utility — only import in route handlers or server components
 import { Resend } from "resend";
 
 const FROM = "Cheesy Toast Vault <noreply@cheesytoast.vault>";
 
+let cachedResend: Resend | null = null;
+
 function getResend(): Resend {
+  if (cachedResend) return cachedResend;
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new Error("RESEND_API_KEY is not configured");
-  return new Resend(key);
+  cachedResend = new Resend(key);
+  return cachedResend;
 }
 
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {

@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { db } from "@/lib/db";
-import { authLimiter, getIp } from "@/lib/rate-limit";
+import { db } from "@/server/db";
+import { authLimiter, enforceRateLimit } from "@/server/rate-limit";
 
 const schema = z.object({
   token: z.string().min(1),
@@ -11,15 +11,8 @@ const schema = z.object({
 });
 
 export async function POST(req: Request) {
-  try {
-    const ip = getIp(req);
-    await authLimiter.consume(ip);
-  } catch {
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429 },
-    );
-  }
+  const limited = await enforceRateLimit(authLimiter, req);
+  if (limited) return limited;
 
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) {

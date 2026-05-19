@@ -1,8 +1,8 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { db } from "@/lib/db";
-import { authLimiter, getIpFromRecord } from "@/lib/rate-limit";
+import { db } from "@/server/db";
+import { authLimiter, getIpFromRecord } from "@/server/rate-limit";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -42,7 +42,7 @@ export const authOptions: NextAuthOptions = {
     jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
-        token.emailVerified = (user as { emailVerified?: boolean }).emailVerified ?? false;
+        token.emailVerified = !!user.emailVerified;
       }
       return token;
     },

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
-export type Tag = { id: string; name: string };
+import type { Tag } from "@/types/vault";
 
 export default function TagSelector({
   available,

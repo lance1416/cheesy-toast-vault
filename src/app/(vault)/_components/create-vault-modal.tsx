@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useVault } from "@/lib/vault-context";
+import { useVault } from "@/context/vault";
 import { deriveCryptoKey, generateSalt, bufferToBase64 } from "@/lib/crypto";
 import Field from "@/components/field";
 import Modal from "@/components/modal";

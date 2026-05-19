@@ -1,3 +1,5 @@
+export type Tag = { id: string; name: string };
+
 export type EntryPayload = {
   name: string;
   url?: string;

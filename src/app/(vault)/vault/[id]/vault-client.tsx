@@ -2,18 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useVault } from "@/lib/vault-context";
+import { useVault } from "@/context/vault";
 import { deriveCryptoKey, decryptEntry, base64ToBuffer } from "@/lib/crypto";
 import { isStalePassword } from "@/lib/stale-password";
 import { SearchIcon, LockIcon, DotsHorizontalIcon } from "@/components/icons";
 import type { EntryPayload, EncryptedEntryProp, DecryptedEntry } from "@/types/vault";
-import type { Tag } from "../../tag-selector";
-import EntryCard from "../../entry-card";
-import LockScreen from "../../lock-screen";
-import VaultHeader from "../../vault-header";
-import NewEntryModal from "../../new-entry-modal";
-import EditEntryModal from "../../edit-entry-modal";
-import ManageTagsModal from "../../manage-tags-modal";
+import type { Tag } from "@/types/vault";
+import EntryCard from "../../_components/entry-card";
+import LockScreen from "../../_components/lock-screen";
+import VaultHeader from "../../_components/vault-header";
+import NewEntryModal from "../../_components/new-entry-modal";
+import EditEntryModal from "../../_components/edit-entry-modal";
+import ManageTagsModal from "../../_components/manage-tags-modal";
 
 const PAGE_NOW = Date.now();
 

@@ -2,30 +2,10 @@
 
 import { useState } from "react";
 import { signOut } from "next-auth/react";
-import { passwordStrength } from "@/lib/crypto";
-import { useVault } from "@/lib/vault-context";
+import { useVault } from "@/context/vault";
 import Field from "@/components/field";
-import VaultHeader from "../vault-header";
-
-function StrengthBar({ password }: { password: string }) {
-  const { score, label } = passwordStrength(password);
-  const colors = ["bg-red-500", "bg-red-400", "bg-amber-400", "bg-lime-500", "bg-green-500"];
-  return (
-    <div className="mt-1.5 space-y-1">
-      <div className="flex gap-1" aria-hidden="true">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className={`h-1 flex-1 rounded-full transition-colors ${i <= score ? colors[score] : "bg-line"}`}
-          />
-        ))}
-      </div>
-      <p className="text-xs text-muted" aria-live="polite">
-        {label}
-      </p>
-    </div>
-  );
-}
+import StrengthBar from "@/components/strength-bar";
+import VaultHeader from "../_components/vault-header";
 
 const TIMEOUTS = [
   { value: 1, label: "1 min" },

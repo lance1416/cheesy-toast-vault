@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Modal from "@/components/modal";
 import { EditIcon, TrashIcon } from "@/components/icons";
-import type { Tag } from "./tag-selector";
+import type { Tag } from "@/types/vault";
 
 function TagRow({
   tag,

@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { RateLimiterMemory, RateLimiterRes } from "rate-limiter-flexible";
 
 // 5 attempts per 10 minutes per IP — login and reset-password endpoints
@@ -5,6 +6,23 @@ export const authLimiter = new RateLimiterMemory({ points: 5, duration: 600 });
 
 // 3 attempts per hour per IP — register and forgot-password endpoints
 export const registrationLimiter = new RateLimiterMemory({ points: 3, duration: 3600 });
+
+// Returns a 429 NextResponse if the limiter rejects the request, otherwise null.
+// Use as: `const limited = await enforceRateLimit(limiter, req); if (limited) return limited;`
+export async function enforceRateLimit(
+  limiter: RateLimiterMemory,
+  req: Request,
+): Promise<NextResponse | null> {
+  try {
+    await limiter.consume(getIp(req));
+    return null;
+  } catch {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 },
+    );
+  }
+}
 
 // For Next.js route handler Request objects
 export function getIp(req: Request): string {

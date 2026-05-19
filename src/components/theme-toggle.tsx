@@ -1,6 +1,6 @@
 "use client";
 
-import { useColorScheme, type ColorScheme } from "@/lib/color-scheme";
+import { useColorScheme, type ColorScheme } from "@/context/color-scheme";
 
 function SunIcon() {
   return (

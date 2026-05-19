@@ -1,22 +1,15 @@
 import { NextResponse } from "next/server";
 import { randomBytes, createHash } from "crypto";
 import { z } from "zod";
-import { db } from "@/lib/db";
-import { sendPasswordResetEmail } from "@/lib/email";
-import { registrationLimiter, getIp } from "@/lib/rate-limit";
+import { db } from "@/server/db";
+import { sendPasswordResetEmail } from "@/server/email";
+import { enforceRateLimit, registrationLimiter } from "@/server/rate-limit";
 
 const schema = z.object({ email: z.email() });
 
 export async function POST(req: Request) {
-  try {
-    const ip = getIp(req);
-    await registrationLimiter.consume(ip);
-  } catch {
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429 },
-    );
-  }
+  const limited = await enforceRateLimit(registrationLimiter, req);
+  if (limited) return limited;
 
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) {

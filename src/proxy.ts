@@ -13,7 +13,7 @@ export default withAuth(
       "/reset-password",
       "/verify-email",
     ];
-    const isVerified = !!(req.nextauth.token as { emailVerified?: boolean } | null)?.emailVerified;
+    const isVerified = !!req.nextauth.token?.emailVerified;
     if (req.nextauth.token && isVerified && authPages.includes(pathname)) {
       return NextResponse.redirect(new URL("/", req.url));
     }

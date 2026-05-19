@@ -2,8 +2,8 @@ import "server-only";
 import { cache } from "react";
 import { getServerSession } from "next-auth";
 import { notFound, redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { authOptions } from "@/server/auth";
+import { db } from "@/server/db";
 
 export const verifySession = cache(async () => {
   const session = await getServerSession(authOptions);
@@ -13,7 +13,7 @@ export const verifySession = cache(async () => {
     where: { id: session.user.id },
     select: { emailVerified: true },
   });
-  if (!user) redirect("/login");
+  if (!user) redirect("/api/auth/clear-session");
   if (!user.emailVerified) redirect("/login?unverified=1");
 
   return { userId: session.user.id, email: session.user.email };
