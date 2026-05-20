@@ -31,10 +31,10 @@ Edit `docker/docker-compose.prod.yml` and replace the placeholder values:
 ## 3. Start the stack
 
 ```sh
-docker compose -f docker/docker-compose.prod.yml up -d --build
+docker compose -f docker/docker-compose.prod.yml up -d
 ```
 
-The app container runs database migrations automatically on every start before launching the server.
+Docker pulls the pre-built image from Docker Hub. The app container runs database migrations automatically on every start before launching the server.
 
 ## 4. Set up HTTPS with Nginx (recommended)
 
@@ -81,11 +81,9 @@ nginx -t && systemctl reload nginx
 ## Updating
 
 ```sh
-git pull
-docker compose -f docker/docker-compose.prod.yml up -d --build
+docker compose -f docker/docker-compose.prod.yml pull
+docker compose -f docker/docker-compose.prod.yml up -d
 ```
-
-> Re-apply your local edits to `docker-compose.prod.yml` after pulling if the file changed upstream.
 
 Migrations run automatically on restart.
 

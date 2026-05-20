@@ -1,8 +1,6 @@
 services:
   app:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
+    image: lance1416/cheesy-toast-vault:latest
     restart: unless-stopped
     ports:
       - "3000:3000"
