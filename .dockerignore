@@ -1,0 +1,9 @@
+node_modules
+.next
+src/generated
+.env*
+e2e/.auth
+test-results
+playwright-report
+coverage
+*.tsbuildinfo

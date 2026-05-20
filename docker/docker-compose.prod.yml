@@ -1,0 +1,44 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Must match POSTGRES_PASSWORD below
+      DATABASE_URL: postgresql://postgres:changeme@db:5432/cheesy_toast_vault
+      # Generate with: openssl rand -hex 32
+      NEXTAUTH_SECRET: replace-with-openssl-rand-hex-32
+      NEXTAUTH_URL: https://yourdomain.com
+      RESEND_API_KEY: re_your_resend_api_key
+      RESET_BASE_URL: https://yourdomain.com
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: cheesy_toast_vault
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+
+volumes:
+  pgdata:
+
+networks:
+  internal:
+    driver: bridge
