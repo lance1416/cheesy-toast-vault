@@ -31,10 +31,10 @@ function makeEntry(overrides: Partial<DecryptedEntry> = {}): DecryptedEntry {
 }
 
 describe("EntryCard", () => {
-  let onEdit: ReturnType<typeof vi.fn>;
+  let onEdit: ReturnType<typeof vi.fn<() => void>>;
 
   beforeEach(() => {
-    onEdit = vi.fn();
+    onEdit = vi.fn<() => void>();
   });
 
   it("renders the entry name", () => {
