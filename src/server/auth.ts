@@ -15,11 +15,13 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const ip = getIpFromRecord(req.headers as Record<string, string | undefined>);
-        try {
-          await authLimiter.consume(ip);
-        } catch {
-          throw new Error("rate_limited");
+        if (process.env.BYPASS_RATE_LIMIT !== "1") {
+          const ip = getIpFromRecord(req.headers as Record<string, string | undefined>);
+          try {
+            await authLimiter.consume(ip);
+          } catch {
+            throw new Error("rate_limited");
+          }
         }
 
         const user = await db.user.findUnique({

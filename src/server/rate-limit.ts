@@ -7,12 +7,17 @@ export const authLimiter = new RateLimiterMemory({ points: 5, duration: 600 });
 // 3 attempts per hour per IP — register and forgot-password endpoints
 export const registrationLimiter = new RateLimiterMemory({ points: 3, duration: 3600 });
 
+// Set BYPASS_RATE_LIMIT=1 in E2E test environments to prevent the in-memory
+// bucket from accumulating across runs on a reused dev server.
+const bypass = process.env.BYPASS_RATE_LIMIT === "1";
+
 // Returns a 429 NextResponse if the limiter rejects the request, otherwise null.
 // Use as: `const limited = await enforceRateLimit(limiter, req); if (limited) return limited;`
 export async function enforceRateLimit(
   limiter: RateLimiterMemory,
   req: Request,
 ): Promise<NextResponse | null> {
+  if (bypass) return null;
   try {
     await limiter.consume(getIp(req));
     return null;
