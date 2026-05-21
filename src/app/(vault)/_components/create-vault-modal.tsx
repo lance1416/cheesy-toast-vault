@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useVault } from "@/context/vault";
+import AlertBanner from "@/components/alert-banner";
 import { deriveCryptoKey, generateSalt, bufferToBase64 } from "@/lib/crypto";
 import Field from "@/components/field";
 import Modal from "@/components/modal";
@@ -110,14 +111,7 @@ export default function CreateVaultModal({
           This password encrypts your vault data — it never leaves your browser.
         </p>
 
-        {error && (
-          <div
-            role="alert"
-            className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
-          >
-            {error}
-          </div>
-        )}
+        {error && <AlertBanner message={error} />}
 
         <div className="flex gap-3 pt-2">
           <button

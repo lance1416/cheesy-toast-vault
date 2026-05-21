@@ -3,13 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/server/db";
 import { authLimiter, totpLimiter, getIpFromRecord } from "@/server/rate-limit";
-import {
-  verifyTotpToken,
-  createMfaToken,
-  verifyMfaToken,
-  hashBackupCode,
-  normalizeBackupCode,
-} from "@/server/totp";
+import { verifyTotpToken, createMfaToken, verifyMfaToken, hashBackupCode } from "@/server/totp";
 import logger from "@/server/logger";
 
 export const authOptions: NextAuthOptions = {
@@ -63,7 +57,7 @@ export const authOptions: NextAuthOptions = {
             valid = await verifyTotpToken(code, user.totpSecret);
           } else {
             // Backup code — find, verify, and consume it
-            const hash = hashBackupCode(normalizeBackupCode(code));
+            const hash = hashBackupCode(code);
             const idx = user.totpBackupCodes.indexOf(hash);
             if (idx >= 0) {
               valid = true;

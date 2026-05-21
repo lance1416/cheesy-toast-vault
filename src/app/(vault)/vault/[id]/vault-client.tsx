@@ -6,8 +6,7 @@ import { useVault } from "@/context/vault";
 import { deriveCryptoKey, decryptEntry, base64ToBuffer } from "@/lib/crypto";
 import { isStalePassword } from "@/lib/stale-password";
 import { SearchIcon, LockIcon, DotsHorizontalIcon } from "@/components/icons";
-import type { EntryPayload, EncryptedEntryProp, DecryptedEntry } from "@/types/vault";
-import type { Tag } from "@/types/vault";
+import type { EntryPayload, EncryptedEntryProp, DecryptedEntry, Tag } from "@/types/vault";
 import EntryCard from "../../_components/entry-card";
 import LockScreen from "../../_components/lock-screen";
 import VaultHeader from "../../_components/vault-header";
@@ -586,35 +585,43 @@ export default function VaultClient({
       />
 
       <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-5 space-y-4">
-        {importStatus !== "idle" && (
-          <div
-            role={typeof importStatus === "object" && "error" in importStatus ? "alert" : "status"}
-            className={`flex items-center justify-between rounded-lg border px-4 py-3 text-sm ${
-              importStatus === "importing"
-                ? "border-line/60 bg-surface text-muted"
-                : "error" in (importStatus as object)
-                  ? "border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400"
-                  : "border-green-200 bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400"
-            }`}
-          >
-            <span>
-              {importStatus === "importing"
-                ? "Importing…"
-                : "error" in (importStatus as object)
-                  ? (importStatus as { error: string }).error
-                  : `Imported ${(importStatus as { imported: number }).imported} entries successfully.`}
-            </span>
-            {importStatus !== "importing" && (
-              <button
-                type="button"
-                onClick={() => setImportStatus("idle")}
-                className="ml-4 text-xs underline opacity-60 hover:opacity-100"
+        {importStatus !== "idle" &&
+          (() => {
+            const isImporting = importStatus === "importing";
+            const isError = typeof importStatus === "object" && "error" in importStatus;
+            const tone = isImporting
+              ? "border-line/60 bg-surface text-muted"
+              : isError
+                ? "border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400"
+                : "border-green-200 bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400";
+
+            let message: string;
+            if (isImporting) {
+              message = "Importing…";
+            } else if (isError) {
+              message = importStatus.error;
+            } else {
+              message = `Imported ${importStatus.imported} entries successfully.`;
+            }
+
+            return (
+              <div
+                role={isError ? "alert" : "status"}
+                className={`flex items-center justify-between rounded-lg border px-4 py-3 text-sm ${tone}`}
               >
-                Dismiss
-              </button>
-            )}
-          </div>
-        )}
+                <span>{message}</span>
+                {!isImporting && (
+                  <button
+                    type="button"
+                    onClick={() => setImportStatus("idle")}
+                    className="ml-4 text-xs underline opacity-60 hover:opacity-100"
+                  >
+                    Dismiss
+                  </button>
+                )}
+              </div>
+            );
+          })()}
 
         {decrypted.length > 0 && (
           <div className="space-y-2">

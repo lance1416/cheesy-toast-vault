@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { encryptEntry, decryptEntry } from "@/lib/crypto";
+import AlertBanner from "@/components/alert-banner";
 import Field from "@/components/field";
 import Modal from "@/components/modal";
 import StrengthBar from "@/components/strength-bar";
@@ -210,14 +211,7 @@ export default function EditEntryModal({
               }}
             />
 
-            {error && (
-              <div
-                role="alert"
-                className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
-              >
-                {error}
-              </div>
-            )}
+            {error && <AlertBanner message={error} />}
 
             <div className="flex gap-3 pt-1">
               <button

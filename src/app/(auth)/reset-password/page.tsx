@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import AlertBanner from "@/components/alert-banner";
 import PasswordInput from "../password-input";
 import StrengthBar from "@/components/strength-bar";
 import AuthShell from "../auth-shell";
@@ -47,15 +48,12 @@ function ResetForm() {
 
   if (!token) {
     return (
-      <div
-        role="alert"
-        className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
-      >
+      <AlertBanner>
         This link is invalid.{" "}
         <Link href="/forgot-password" className="underline">
           Request a new one.
         </Link>
-      </div>
+      </AlertBanner>
     );
   }
 
@@ -126,17 +124,14 @@ function ResetForm() {
       </div>
 
       {error && (
-        <div
-          role="alert"
-          className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
-        >
+        <AlertBanner>
           {error}{" "}
           {error.includes("expired") && (
             <Link href="/forgot-password" className="underline">
               Request a new link.
             </Link>
           )}
-        </div>
+        </AlertBanner>
       )}
 
       <button

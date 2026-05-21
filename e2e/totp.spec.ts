@@ -17,26 +17,18 @@ import {
   TEST_BACKUP_CODE_1,
   TEST_BACKUP_CODE_2,
 } from "./test-data";
+import { submitPasswordStep } from "./helpers";
 
 // ─── Login with TOTP ──────────────────────────────────────────────────────────
 
 test.describe("Login with TOTP enabled", () => {
   test("password step redirects to /login/totp", async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(TEST_TOTP_EMAIL);
-    await page.locator("#login-password").fill(TEST_TOTP_LOGIN_PW);
-    await page.getByRole("button", { name: /open vault/i }).click();
-    await page.waitForURL(/\/login\/totp/, { timeout: 10_000 });
+    await submitPasswordStep(page, TEST_TOTP_EMAIL, TEST_TOTP_LOGIN_PW);
     await expect(page.getByText(/two-factor authentication/i)).toBeVisible();
   });
 
   test("correct TOTP code completes login", async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(TEST_TOTP_EMAIL);
-    await page.locator("#login-password").fill(TEST_TOTP_LOGIN_PW);
-    await page.getByRole("button", { name: /open vault/i }).click();
-    await page.waitForURL(/\/login\/totp/, { timeout: 10_000 });
-
+    await submitPasswordStep(page, TEST_TOTP_EMAIL, TEST_TOTP_LOGIN_PW);
     const code = await generate({ secret: TEST_TOTP_SECRET });
     await page.locator("#totp-code").fill(code);
     await page.getByRole("button", { name: /verify/i }).click();
@@ -44,18 +36,12 @@ test.describe("Login with TOTP enabled", () => {
   });
 
   test("wrong TOTP code shows an error", async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(TEST_TOTP_EMAIL);
-    await page.locator("#login-password").fill(TEST_TOTP_LOGIN_PW);
-    await page.getByRole("button", { name: /open vault/i }).click();
-    await page.waitForURL(/\/login\/totp/, { timeout: 10_000 });
-
+    await submitPasswordStep(page, TEST_TOTP_EMAIL, TEST_TOTP_LOGIN_PW);
     await page.locator("#totp-code").fill("000000");
     await page.getByRole("button", { name: /verify/i }).click();
     await expect(page.getByRole("alert").filter({ hasText: /invalid code/i })).toBeVisible({
       timeout: 5_000,
     });
-    // Should stay on the TOTP page
     await expect(page).toHaveURL(/\/login\/totp/);
   });
 
@@ -66,12 +52,7 @@ test.describe("Login with TOTP enabled", () => {
   });
 
   test("/login/totp page shows a 'Back to login' link", async ({ page }) => {
-    // First trigger a valid TOTP challenge so the page renders
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(TEST_TOTP_EMAIL);
-    await page.locator("#login-password").fill(TEST_TOTP_LOGIN_PW);
-    await page.getByRole("button", { name: /open vault/i }).click();
-    await page.waitForURL(/\/login\/totp/, { timeout: 10_000 });
+    await submitPasswordStep(page, TEST_TOTP_EMAIL, TEST_TOTP_LOGIN_PW);
     await expect(page.getByRole("link", { name: /back to login/i })).toBeVisible();
   });
 });
@@ -80,12 +61,7 @@ test.describe("Login with TOTP enabled", () => {
 
 test.describe("Login with a backup code", () => {
   test("valid backup code completes login and is consumed", async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(TEST_TOTP_EMAIL);
-    await page.locator("#login-password").fill(TEST_TOTP_LOGIN_PW);
-    await page.getByRole("button", { name: /open vault/i }).click();
-    await page.waitForURL(/\/login\/totp/, { timeout: 10_000 });
-
+    await submitPasswordStep(page, TEST_TOTP_EMAIL, TEST_TOTP_LOGIN_PW);
     // Enter backup code (no hyphen — the input accepts either format)
     await page.locator("#totp-code").fill(TEST_BACKUP_CODE_1);
     await page.getByRole("button", { name: /verify/i }).click();
@@ -93,12 +69,7 @@ test.describe("Login with a backup code", () => {
   });
 
   test("second backup code still works after the first is consumed", async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(TEST_TOTP_EMAIL);
-    await page.locator("#login-password").fill(TEST_TOTP_LOGIN_PW);
-    await page.getByRole("button", { name: /open vault/i }).click();
-    await page.waitForURL(/\/login\/totp/, { timeout: 10_000 });
-
+    await submitPasswordStep(page, TEST_TOTP_EMAIL, TEST_TOTP_LOGIN_PW);
     await page.locator("#totp-code").fill(TEST_BACKUP_CODE_2);
     await page.getByRole("button", { name: /verify/i }).click();
     await page.waitForURL("/vaults", { timeout: 10_000 });
@@ -153,9 +124,6 @@ test.describe("Enroll TOTP from Settings", () => {
       page.waitForResponse("**/api/auth/totp/verify"),
       page.getByRole("button", { name: /enable 2fa/i }).click(),
     ]);
-    const verifyBody = (await verifyResponse.json().catch(() => null)) as unknown;
-    if (verifyResponse.status() !== 200)
-      console.error("verify 400 body:", JSON.stringify(verifyBody));
     expect(verifyResponse.status()).toBe(200);
 
     // Backup codes step

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { useVault } from "@/context/vault";
+import AlertBanner from "@/components/alert-banner";
 import Field from "@/components/field";
 import StrengthBar from "@/components/strength-bar";
 import VaultHeader from "../_components/vault-header";
@@ -174,14 +175,7 @@ export default function SettingsClient({
               )}
             </div>
 
-            {error && (
-              <div
-                role="alert"
-                className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
-              >
-                {error}
-              </div>
-            )}
+            {error && <AlertBanner message={error} />}
 
             {success && (
               <div
@@ -287,14 +281,7 @@ export default function SettingsClient({
                   className="w-full rounded-lg border border-line bg-sunken/50 px-3.5 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-surface text-center tracking-[0.25em] font-mono"
                 />
               </div>
-              {disableError && (
-                <div
-                  role="alert"
-                  className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
-                >
-                  {disableError}
-                </div>
-              )}
+              {disableError && <AlertBanner message={disableError} />}
               <div className="flex gap-3">
                 <button
                   type="button"
@@ -351,14 +338,7 @@ export default function SettingsClient({
                 required
                 autoFocus
               />
-              {deleteError && (
-                <div
-                  role="alert"
-                  className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
-                >
-                  {deleteError}
-                </div>
-              )}
+              {deleteError && <AlertBanner message={deleteError} />}
               <div className="flex gap-3">
                 <button
                   type="button"

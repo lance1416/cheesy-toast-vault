@@ -2,13 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { verifySession } from "@/server/dal";
 import { db } from "@/server/db";
-import {
-  generateSecret,
-  generateTotpUri,
-  verifyTotpToken,
-  hashBackupCode,
-  normalizeBackupCode,
-} from "@/server/totp";
+import { generateSecret, generateTotpUri, verifyTotpToken, hashBackupCode } from "@/server/totp";
 import { handleApiError } from "@/server/api-error";
 import { enforceRateLimit, authLimiter } from "@/server/rate-limit";
 
@@ -80,8 +74,7 @@ export async function DELETE(req: Request) {
     if (isNumericOtp) {
       valid = await verifyTotpToken(code, user.totpSecret);
     } else {
-      const hash = hashBackupCode(normalizeBackupCode(code));
-      valid = user.totpBackupCodes.includes(hash);
+      valid = user.totpBackupCodes.includes(hashBackupCode(code));
     }
 
     if (!valid) {

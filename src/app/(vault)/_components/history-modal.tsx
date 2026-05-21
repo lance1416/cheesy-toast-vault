@@ -122,7 +122,7 @@ function SnapshotRow({
                   ["Username", payload.username],
                   ["Email", payload.email],
                   ["Notes", payload.notes],
-                ] as [string, string | undefined][]
+                ] satisfies [string, string | undefined][]
               )
                 .filter(([, v]) => v)
                 .map(([label, value]) => (

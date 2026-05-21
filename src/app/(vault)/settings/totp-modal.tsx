@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import AlertBanner from "@/components/alert-banner";
 import Modal from "@/components/modal";
 
 type Phase = "setup" | "verify" | "backupCodes";
@@ -32,7 +33,6 @@ export default function TotpModal({
 
   const codeInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch secret on mount
   useEffect(() => {
     let cancelled = false;
     fetch("/api/auth/totp", { method: "POST" })
@@ -108,14 +108,7 @@ export default function TotpModal({
             etc.), then click Continue.
           </p>
 
-          {setupError && (
-            <div
-              role="alert"
-              className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
-            >
-              {setupError}
-            </div>
-          )}
+          {setupError && <AlertBanner message={setupError} />}
 
           <div className="flex flex-col items-center gap-4">
             {qrDataUrl ? (
@@ -203,14 +196,7 @@ export default function TotpModal({
             />
           </div>
 
-          {verifyError && (
-            <div
-              role="alert"
-              className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
-            >
-              {verifyError}
-            </div>
-          )}
+          {verifyError && <AlertBanner message={verifyError} />}
 
           <div className="flex gap-3 pt-2">
             <button

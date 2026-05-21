@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import AlertBanner from "@/components/alert-banner";
 import PasswordInput from "../password-input";
 import AuthShell from "../auth-shell";
 
@@ -25,15 +26,12 @@ function LoginBanner() {
 
   if (params.get("verifyError") === "1") {
     return (
-      <div
-        role="alert"
-        className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400 mb-4"
-      >
+      <AlertBanner className="mb-4">
         Verification link is invalid or already used.{" "}
         <Link href="/login?unverified=1" className="underline">
           Resend?
         </Link>
-      </div>
+      </AlertBanner>
     );
   }
 
@@ -189,14 +187,7 @@ export default function LoginPage() {
           />
         </div>
 
-        {error && (
-          <div
-            role="alert"
-            className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
-          >
-            {error}
-          </div>
-        )}
+        {error && <AlertBanner message={error} />}
 
         <button
           type="submit"

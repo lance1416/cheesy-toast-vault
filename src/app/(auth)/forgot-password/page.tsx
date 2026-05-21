@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import AlertBanner from "@/components/alert-banner";
 import AuthShell from "../auth-shell";
 
 export default function ForgotPasswordPage() {
@@ -79,14 +80,7 @@ export default function ForgotPasswordPage() {
             />
           </div>
 
-          {error && (
-            <div
-              role="alert"
-              className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
-            >
-              {error}
-            </div>
-          )}
+          {error && <AlertBanner message={error} />}
 
           <button
             type="submit"
