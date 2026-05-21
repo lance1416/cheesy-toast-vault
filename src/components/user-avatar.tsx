@@ -104,7 +104,7 @@ export default function UserAvatar() {
 
           <div className="my-1 mx-1 h-px bg-divider" />
 
-          <button type="button" className={ITEM} onClick={() => signOut({ callbackUrl: "/login" })}>
+          <button type="button" className={ITEM} onClick={() => signOut({ callbackUrl: "/" })}>
             Sign out
           </button>
         </div>

@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import { deriveKey, encryptEntry, saltB64, daysAgo } from "./_crypto";
 
-export type EntryDef = {
+type EntryDef = {
   name: string;
   url: string;
   username: string;

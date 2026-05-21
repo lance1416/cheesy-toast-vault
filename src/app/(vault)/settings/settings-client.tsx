@@ -43,7 +43,7 @@ export default function SettingsClient() {
         const data = (await res.json()) as { error?: string };
         throw new Error(data.error ?? "Failed to delete account");
       }
-      await signOut({ callbackUrl: "/login" });
+      await signOut({ callbackUrl: "/" });
     } catch (err) {
       setDeleteError(
         err instanceof Error ? err.message : "Something went wrong. Please try again.",

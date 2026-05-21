@@ -20,8 +20,8 @@ test.describe("Login page", () => {
     await expect(page.getByRole("link", { name: /forgot password/i })).toBeVisible();
   });
 
-  test("shows 'Create one' link to register", async ({ page }) => {
-    await expect(page.getByRole("link", { name: /create one/i })).toBeVisible();
+  test("shows 'Create an account' link to register", async ({ page }) => {
+    await expect(page.getByRole("link", { name: /create an account/i })).toBeVisible();
   });
 
   test("shows error for wrong credentials", async ({ page }) => {

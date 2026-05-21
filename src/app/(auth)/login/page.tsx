@@ -126,12 +126,12 @@ export default function LoginPage() {
       }
       footer={
         <>
-          No vault yet?{" "}
+          New here?{" "}
           <Link
             href="/register"
             className="font-medium text-amber-700 dark:text-amber-400 transition hover:text-amber-800 dark:hover:text-amber-300"
           >
-            Create one
+            Create an account
           </Link>
         </>
       }

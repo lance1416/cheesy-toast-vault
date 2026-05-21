@@ -41,5 +41,5 @@ export function saltB64(): { bytes: Uint8Array<ArrayBuffer>; b64: string } {
   return { bytes, b64: Buffer.from(bytes).toString("base64") };
 }
 
-export const DAY = 24 * 60 * 60 * 1000;
+const DAY = 24 * 60 * 60 * 1000;
 export const daysAgo = (n: number) => new Date(Date.now() - n * DAY).toISOString();

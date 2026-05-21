@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 
 export default function AuthShell({
   children,
@@ -20,15 +21,17 @@ export default function AuthShell({
     >
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <span className="text-5xl block mb-4 select-none" aria-hidden="true">
-            🧀
-          </span>
-          <h1
-            className="text-[1.75rem] font-bold text-default leading-tight tracking-tight"
-            style={{ fontFamily: "var(--font-playfair, serif)" }}
-          >
-            Cheesy Toast Vault
-          </h1>
+          <Link href="/" className="inline-block group">
+            <span className="text-5xl block mb-4 select-none" aria-hidden="true">
+              🧀
+            </span>
+            <h1
+              className="text-[1.75rem] font-bold text-default leading-tight tracking-tight group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors"
+              style={{ fontFamily: "var(--font-playfair, serif)" }}
+            >
+              Cheesy Toast Vault
+            </h1>
+          </Link>
           <p className="text-sm text-muted mt-1.5 tracking-wide">
             Your secrets, kept warm &amp; safe.
           </p>

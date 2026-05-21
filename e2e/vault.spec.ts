@@ -49,6 +49,6 @@ test.describe("Sign out", () => {
     // Open user menu
     await page.getByRole("button", { name: "User menu" }).click();
     await page.getByRole("button", { name: /sign out/i }).click();
-    await expect(page).toHaveURL(/\/login/, { timeout: 5_000 });
+    await expect(page).toHaveURL("/", { timeout: 5_000 });
   });
 });
