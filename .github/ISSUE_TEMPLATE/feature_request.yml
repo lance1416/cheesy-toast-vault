@@ -1,0 +1,46 @@
+name: Feature request
+description: Suggest an improvement or new capability
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: What problem does this solve, or what workflow does it improve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe what you'd like to see.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any other approaches you thought about?
+
+  - type: dropdown
+    id: security_impact
+    attributes:
+      label: Security / encryption impact
+      description: Does this feature touch the encryption model or handle vault plaintext?
+      options:
+        - "No — UI / UX / infra only"
+        - "Yes — describe in the fields above"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I have checked the roadmap in README.md and this is not already planned.
+          required: true
+        - label: I have searched existing issues and this is not a duplicate.
+          required: true
