@@ -12,6 +12,8 @@
     "db:studio": "prisma studio",
     "db:push": "prisma db push",
     "db:reset": "prisma migrate reset --force",
+    "db:seed": "prisma db seed",
+    "db:reset:seed": "prisma migrate reset --force && prisma db seed",
     "postinstall": "prisma generate",
     "prepare": "husky",
     "test": "vitest run",
@@ -73,6 +75,7 @@
     "prettier": "^3.8.3",
     "prisma": "7.8.0",
     "tailwindcss": "^4",
+    "tsx": "^4.22.3",
     "typescript": "^5",
     "vitest": "^4.1.6"
   },
