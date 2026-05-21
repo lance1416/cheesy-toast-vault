@@ -11,21 +11,54 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Dummy value — prisma generate (postinstall) needs DATABASE_URL to parse
-      # prisma.config.ts, but no real DB connection is made during CI checks.
+      # prisma.config.ts, but no real DB connection is made during these checks.
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cheesy_toast_vault
     steps:
       - uses: actions/checkout@v6
-
       - uses: pnpm/action-setup@v6
-
       - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
-
       - run: pnpm install --frozen-lockfile
-
       - run: pnpm lint
       - run: pnpm tsc --noEmit
       - run: pnpm knip
       - run: pnpm test
+
+  e2e:
+    needs: ci
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cheesy_toast_vault_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cheesy_toast_vault_test
+      DATABASE_URL_TEST: postgresql://postgres:postgres@localhost:5432/cheesy_toast_vault_test
+      BYPASS_RATE_LIMIT: "1"
+      NEXTAUTH_SECRET: ci-nextauth-secret-not-used-in-production
+      NEXTAUTH_URL: http://localhost:3000
+      RESET_BASE_URL: http://localhost:3000
+      RESEND_API_KEY: re_ci_dummy
+      EMAIL_FROM: "CI <ci@example.com>"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
