@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { TEST_LOCKED_VAULT_NAME } from "./test-data";
 
 /** Navigate to the E2E Vault and unlock it (works with any password when the vault is empty). */
 async function navigateAndUnlock(page: Page): Promise<void> {
@@ -44,6 +45,21 @@ test.describe("Vault detail page (authenticated)", () => {
     await page.goto("/vaults");
     await page.getByText("E2E Vault").click();
     await expect(page.getByText("E2E Vault")).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("wrong vault password shows an error and keeps the vault locked", async ({ page }) => {
+    // Navigate to the seeded locked vault (has a real encrypted entry — empty vaults accept any password)
+    await page.goto("/vaults");
+    await page.getByText(TEST_LOCKED_VAULT_NAME).click();
+    await expect(page.getByPlaceholder(/vault password/i)).toBeVisible({ timeout: 5_000 });
+    await page.getByPlaceholder(/vault password/i).fill("WrongVaultPass1!");
+    await page.getByRole("button", { name: /^unlock$/i }).click();
+    // The lock screen surfaces "Incorrect vault password." via an alert
+    await expect(
+      page.getByRole("alert").filter({ hasText: /incorrect vault password/i }),
+    ).toBeVisible({ timeout: 5_000 });
+    // The vault should remain locked — no entries are visible
+    await expect(page.getByPlaceholder(/vault password/i)).toBeVisible();
   });
 });
 
