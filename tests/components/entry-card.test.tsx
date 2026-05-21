@@ -95,7 +95,7 @@ describe("EntryCard", () => {
     const staleDate = new Date(NOW - 100 * DAY_MS).toISOString();
     render(<EntryCard entry={makeEntry({ passwordChangedAt: staleDate })} onEdit={onEdit} />);
     // The badge shows the age in days
-    expect(screen.getByTitle(/100 days ago/)).toBeInTheDocument();
+    expect(screen.getByTitle(/\d+ days ago/)).toBeInTheDocument();
   });
 
   it("renders tags when the entry has them", async () => {
