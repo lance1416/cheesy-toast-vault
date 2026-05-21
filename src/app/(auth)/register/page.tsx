@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { generateSalt, bufferToBase64 } from "@/lib/crypto";
 import PasswordInput from "../password-input";
 import AuthShell from "../auth-shell";
 
@@ -10,45 +9,27 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginConfirm, setLoginConfirm] = useState("");
-  const [vaultPassword, setVaultPassword] = useState("");
-  const [vaultConfirm, setVaultConfirm] = useState("");
-  const [vaultName, setVaultName] = useState("");
-  const [showLogin, setShowLogin] = useState(false);
-  const [showVault, setShowVault] = useState(false);
-  const [vaultWarningAck, setVaultWarningAck] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
 
   const loginShort = loginPassword.length > 0 && loginPassword.length < 12;
-  const vaultShort = vaultPassword.length > 0 && vaultPassword.length < 12;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (loginPassword !== loginConfirm) {
-      setError("Login passwords do not match.");
-      return;
-    }
-    if (vaultPassword !== vaultConfirm) {
-      setError("Vault passwords do not match.");
+      setError("Passwords do not match.");
       return;
     }
 
     setLoading(true);
     try {
-      const salt = generateSalt();
-      const saltB64 = bufferToBase64(salt);
-
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          loginPassword,
-          vaultSalt: saltB64,
-          vaultName: vaultName || "Personal",
-        }),
+        body: JSON.stringify({ email, loginPassword }),
       });
 
       if (res.status === 409) {
@@ -106,7 +87,6 @@ export default function RegisterPage() {
       }
     >
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Email */}
         <div className="space-y-1.5">
           <label
             htmlFor="register-email"
@@ -119,6 +99,7 @@ export default function RegisterPage() {
             type="email"
             required
             autoComplete="email"
+            autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
@@ -126,148 +107,46 @@ export default function RegisterPage() {
           />
         </div>
 
-        {/* Login credentials section */}
-        <div className="space-y-3 rounded-lg border border-divider bg-sunken/50 p-4">
-          <p className="text-xs font-semibold text-muted uppercase tracking-wider">
-            Login credentials
-          </p>
-          <div className="space-y-1.5">
-            <label
-              htmlFor="login-password"
-              className="block text-xs font-medium text-muted tracking-wide"
-            >
-              Login Password{" "}
-              <span className="text-red-500 dark:text-red-400 ml-0.5" aria-label="required">
-                *
-              </span>
-            </label>
-            <PasswordInput
-              id="login-password"
-              value={loginPassword}
-              onChange={setLoginPassword}
-              placeholder="At least 12 characters"
-              show={showLogin}
-              onToggle={() => setShowLogin((v) => !v)}
-              minLength={12}
-            />
-            {loginShort && (
-              <p className="text-xs text-amber-600 dark:text-amber-400">
-                {12 - loginPassword.length} more character
-                {12 - loginPassword.length !== 1 ? "s" : ""} needed
-              </p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <label
-              htmlFor="login-confirm"
-              className="block text-xs font-medium text-muted tracking-wide"
-            >
-              Confirm Login Password{" "}
-              <span className="text-red-500 dark:text-red-400 ml-0.5" aria-label="required">
-                *
-              </span>
-            </label>
-            <PasswordInput
-              id="login-confirm"
-              value={loginConfirm}
-              onChange={setLoginConfirm}
-              placeholder="Repeat login password"
-              show={showLogin}
-              onToggle={() => setShowLogin((v) => !v)}
-            />
-          </div>
-        </div>
-
-        {/* Vault section */}
-        <div className="space-y-3 rounded-lg border border-amber-100 dark:border-amber-900/30 bg-amber-50/50 dark:bg-amber-900/10 p-4">
-          <div>
-            <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
-              Vault encryption password
-            </p>
-          </div>
-          <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-100/60 dark:bg-amber-900/20 px-3.5 py-3 text-xs text-amber-800 dark:text-amber-300 space-y-1">
-            <p className="font-semibold">Your vault password encrypts all stored data.</p>
-            <p>
-              It is <span className="font-semibold">never sent to our servers</span> — if you forget
-              it, your vault data <span className="font-semibold">cannot be recovered</span>. Write
-              it down somewhere safe.
-            </p>
-          </div>
-          <div className="space-y-1.5">
-            <label
-              htmlFor="vault-name-input"
-              className="block text-xs font-medium text-muted tracking-wide"
-            >
-              Vault Name
-            </label>
-            <input
-              id="vault-name-input"
-              type="text"
-              value={vaultName}
-              onChange={(e) => setVaultName(e.target.value)}
-              placeholder="Personal"
-              className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label
-              htmlFor="vault-password"
-              className="block text-xs font-medium text-muted tracking-wide"
-            >
-              Vault Password{" "}
-              <span className="text-red-500 dark:text-red-400 ml-0.5" aria-label="required">
-                *
-              </span>
-            </label>
-            <PasswordInput
-              id="vault-password"
-              value={vaultPassword}
-              onChange={setVaultPassword}
-              placeholder="At least 12 characters"
-              show={showVault}
-              onToggle={() => setShowVault((v) => !v)}
-              minLength={12}
-            />
-            {vaultShort && (
-              <p className="text-xs text-amber-600 dark:text-amber-400">
-                {12 - vaultPassword.length} more character
-                {12 - vaultPassword.length !== 1 ? "s" : ""} needed
-              </p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <label
-              htmlFor="vault-confirm"
-              className="block text-xs font-medium text-muted tracking-wide"
-            >
-              Confirm Vault Password{" "}
-              <span className="text-red-500 dark:text-red-400 ml-0.5" aria-label="required">
-                *
-              </span>
-            </label>
-            <PasswordInput
-              id="vault-confirm"
-              value={vaultConfirm}
-              onChange={setVaultConfirm}
-              placeholder="Repeat vault password"
-              show={showVault}
-              onToggle={() => setShowVault((v) => !v)}
-            />
-          </div>
-        </div>
-
-        <label className="flex items-start gap-2.5 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={vaultWarningAck}
-            onChange={(e) => setVaultWarningAck(e.target.checked)}
-            className="mt-0.5 shrink-0 accent-amber-600"
+        <div className="space-y-1.5">
+          <label
+            htmlFor="login-password"
+            className="block text-xs font-medium text-muted tracking-wide"
+          >
+            Password
+          </label>
+          <PasswordInput
+            id="login-password"
+            value={loginPassword}
+            onChange={setLoginPassword}
+            placeholder="At least 12 characters"
+            show={showPassword}
+            onToggle={() => setShowPassword((v) => !v)}
+            minLength={12}
           />
-          <span className="text-xs text-muted leading-relaxed">
-            I understand that my vault password{" "}
-            <span className="font-semibold text-default">cannot be recovered</span> if lost.
-          </span>
-        </label>
+          {loginShort && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              {12 - loginPassword.length} more character
+              {12 - loginPassword.length !== 1 ? "s" : ""} needed
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <label
+            htmlFor="login-confirm"
+            className="block text-xs font-medium text-muted tracking-wide"
+          >
+            Confirm password
+          </label>
+          <PasswordInput
+            id="login-confirm"
+            value={loginConfirm}
+            onChange={setLoginConfirm}
+            placeholder="Repeat password"
+            show={showPassword}
+            onToggle={() => setShowPassword((v) => !v)}
+          />
+        </div>
 
         {error && (
           <div
@@ -281,17 +160,11 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={
-            loading ||
-            !email ||
-            loginPassword.length < 12 ||
-            loginPassword !== loginConfirm ||
-            vaultPassword.length < 12 ||
-            vaultPassword !== vaultConfirm ||
-            !vaultWarningAck
+            loading || !email || loginPassword.length < 12 || loginPassword !== loginConfirm
           }
           className="w-full rounded-lg bg-stone-800 dark:bg-amber-600 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? "Creating your account…" : "Create Account"}
+          {loading ? "Creating account…" : "Create account"}
         </button>
       </form>
     </AuthShell>

@@ -58,7 +58,7 @@ setup("create test user and save auth state", async ({ page }) => {
   // The password label is "Login Password" — use a broader selector
   await page.locator("#login-password").fill(TEST_USER_LOGIN_PW);
   await page.getByRole("button", { name: /open vault/i }).click();
-  await page.waitForURL("/", { timeout: 15_000 });
+  await page.waitForURL("/vaults", { timeout: 15_000 });
 
   await page.context().storageState({ path: "e2e/.auth/user.json" });
 });

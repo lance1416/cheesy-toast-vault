@@ -58,15 +58,13 @@ test.describe("Register page", () => {
     await page.goto("/register");
   });
 
-  test("renders all required fields", async ({ page }) => {
+  test("renders email and password fields", async ({ page }) => {
     await expect(page.getByLabel("Email")).toBeVisible();
     await expect(page.locator("#login-password")).toBeVisible();
-    await expect(page.locator("#vault-password")).toBeVisible();
+    await expect(page.locator("#login-confirm")).toBeVisible();
   });
 
-  test("submit is disabled until all fields are filled and checkbox is checked", async ({
-    page,
-  }) => {
+  test("submit is disabled until email and matching passwords are filled", async ({ page }) => {
     const submit = page.getByRole("button", { name: /create account/i });
     await expect(submit).toBeDisabled();
   });
@@ -74,10 +72,6 @@ test.describe("Register page", () => {
   test("shows character count hint when password is too short", async ({ page }) => {
     await page.locator("#login-password").fill("short");
     await expect(page.getByText(/more character/i)).toBeVisible();
-  });
-
-  test("shows irrecoverability warning in vault section", async ({ page }) => {
-    await expect(page.getByText(/never sent to our servers/i)).toBeVisible();
   });
 });
 
@@ -101,8 +95,14 @@ test.describe("Forgot password page", () => {
 // ─── Redirect behaviour ───────────────────────────────────────────────────────
 
 test.describe("Auth redirects", () => {
-  test("unauthenticated users are redirected to /login", async ({ page }) => {
+  test("unauthenticated users see the public landing page at /", async ({ page }) => {
     await page.goto("/");
+    await expect(page).toHaveURL("/");
+    await expect(page.getByRole("link", { name: /sign in/i })).toBeVisible();
+  });
+
+  test("unauthenticated users are redirected to /login for protected routes", async ({ page }) => {
+    await page.goto("/vaults");
     await expect(page).toHaveURL(/\/login/);
   });
 

@@ -11,8 +11,6 @@ import logger from "@/server/logger";
 const schema = z.object({
   email: z.email(),
   loginPassword: z.string().min(12),
-  vaultSalt: z.string().min(1),
-  vaultName: z.string().min(1).max(64).optional(),
 });
 
 export async function POST(req: Request) {
@@ -25,7 +23,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
-    const { email, loginPassword, vaultSalt, vaultName } = parsed.data;
+    const { email, loginPassword } = parsed.data;
 
     const existing = await db.user.findUnique({ where: { email } });
     if (existing) {
@@ -37,18 +35,8 @@ export async function POST(req: Request) {
     const verificationToken = randomBytes(32).toString("hex");
 
     const user = await db.user.create({
-      data: {
-        email,
-        passwordHash,
-        verificationToken,
-        vaults: {
-          create: {
-            name: vaultName ?? "Personal",
-            salt: vaultSalt,
-          },
-        },
-      },
-      select: { id: true, vaults: { select: { id: true } } },
+      data: { email, passwordHash, verificationToken },
+      select: { id: true },
     });
 
     const baseUrl =
@@ -59,7 +47,7 @@ export async function POST(req: Request) {
     );
 
     logger.info({ userId: user.id, email }, "user registered");
-    return NextResponse.json({ ok: true, vaultId: user.vaults[0].id }, { status: 201 });
+    return NextResponse.json({ ok: true }, { status: 201 });
   } catch (err) {
     return handleApiError(err);
   }

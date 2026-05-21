@@ -5,7 +5,7 @@ export default withAuth(
   function middleware(req) {
     const { pathname } = req.nextUrl;
 
-    // Redirect fully authenticated (verified) users away from auth pages
+    // Redirect fully authenticated (verified) users away from auth pages and landing page
     const authPages = [
       "/login",
       "/register",
@@ -14,8 +14,8 @@ export default withAuth(
       "/verify-email",
     ];
     const isVerified = !!req.nextauth.token?.emailVerified;
-    if (req.nextauth.token && isVerified && authPages.includes(pathname)) {
-      return NextResponse.redirect(new URL("/", req.url));
+    if (req.nextauth.token && isVerified && (authPages.includes(pathname) || pathname === "/")) {
+      return NextResponse.redirect(new URL("/vaults", req.url));
     }
 
     return NextResponse.next();
@@ -23,10 +23,11 @@ export default withAuth(
   {
     pages: { signIn: "/login" },
     callbacks: {
-      // Allow unauthenticated access to /login and /register; require auth everywhere else
+      // Allow unauthenticated access to the landing page and auth pages
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
         const publicPaths = [
+          "/",
           "/login",
           "/register",
           "/forgot-password",

@@ -95,7 +95,8 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const callbackUrl = new URLSearchParams(window.location.search).get("callbackUrl") ?? "/";
+      const callbackUrl =
+        new URLSearchParams(window.location.search).get("callbackUrl") ?? "/vaults";
       const result = await signIn("credentials", { email, password, redirect: false, callbackUrl });
 
       if (result?.error === "rate_limited") {

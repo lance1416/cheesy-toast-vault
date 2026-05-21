@@ -15,7 +15,7 @@ export default function VaultHeader({
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
         <div className="flex items-center gap-1.5 min-w-0">
           <Link
-            href="/"
+            href="/vaults"
             className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm text-muted hover:text-default hover:bg-line transition-colors shrink-0 whitespace-nowrap"
           >
             <svg

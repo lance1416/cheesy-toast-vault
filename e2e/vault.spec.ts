@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Vault list page (authenticated)", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/vaults");
   });
 
   test("renders the vault list", async ({ page }) => {
@@ -22,14 +22,14 @@ test.describe("Vault list page (authenticated)", () => {
 
 test.describe("Vault detail page (authenticated)", () => {
   test("shows the lock screen before the vault password is entered", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/vaults");
     await page.getByText("E2E Vault").click();
     // The lock screen has a password input to unlock the vault
     await expect(page.getByPlaceholder(/vault password/i)).toBeVisible({ timeout: 5_000 });
   });
 
   test("shows vault header with vault name", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/vaults");
     await page.getByText("E2E Vault").click();
     await expect(page.getByText("E2E Vault")).toBeVisible({ timeout: 5_000 });
   });
@@ -45,7 +45,7 @@ test.describe("Settings page (authenticated)", () => {
 
 test.describe("Sign out", () => {
   test("signing out redirects to login", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/vaults");
     // Open user menu
     await page.getByRole("button", { name: "User menu" }).click();
     await page.getByRole("button", { name: /sign out/i }).click();
