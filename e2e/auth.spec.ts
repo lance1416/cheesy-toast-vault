@@ -1,7 +1,6 @@
-import { test, expect } from "@playwright/test";
-import { TEST_USER_EMAIL, TEST_USER_LOGIN_PW } from "./test-data";
+import { test, expect } from "./fixtures";
 
-// ─── Login page ───────────────────────────────────────────────────────────────
+// ── Login page ────────────────────────────────────────────────────────────────
 
 test.describe("Login page", () => {
   test.beforeEach(async ({ page }) => {
@@ -12,21 +11,21 @@ test.describe("Login page", () => {
     await page.getByLabel("Email").fill("nobody@example.com");
     await page.locator("#login-password").fill("WrongPassword123!");
     await page.getByRole("button", { name: /open vault/i }).click();
-    // Next.js also renders a route-announcer with role=alert — filter to the visible error div
     await expect(
       page.getByRole("alert").filter({ hasText: /invalid email or password/i }),
     ).toBeVisible();
   });
 
-  test("correct credentials redirect to /vaults", async ({ page }) => {
-    await page.getByLabel("Email").fill(TEST_USER_EMAIL);
-    await page.locator("#login-password").fill(TEST_USER_LOGIN_PW);
+  test("correct credentials redirect to /vaults", async ({ page, userData }) => {
+    // userData is a per-test user seeded in the DB — no shared state.
+    await page.getByLabel("Email").fill(userData.email);
+    await page.locator("#login-password").fill(userData.password);
     await page.getByRole("button", { name: /open vault/i }).click();
     await expect(page).toHaveURL(/\/vaults/, { timeout: 10_000 });
   });
 });
 
-// ─── Register page ────────────────────────────────────────────────────────────
+// ── Register page ─────────────────────────────────────────────────────────────
 
 test.describe("Register page", () => {
   test.beforeEach(async ({ page }) => {
@@ -34,8 +33,7 @@ test.describe("Register page", () => {
   });
 
   test("submit is disabled until email and matching passwords are filled", async ({ page }) => {
-    const submit = page.getByRole("button", { name: /create account/i });
-    await expect(submit).toBeDisabled();
+    await expect(page.getByRole("button", { name: /create account/i })).toBeDisabled();
   });
 
   test("shows character count hint when password is too short", async ({ page }) => {
@@ -44,7 +42,7 @@ test.describe("Register page", () => {
   });
 });
 
-// ─── Forgot password page ─────────────────────────────────────────────────────
+// ── Forgot password page ──────────────────────────────────────────────────────
 
 test.describe("Forgot password page", () => {
   test("shows success message for any email (prevents enumeration)", async ({ page }) => {
@@ -55,7 +53,7 @@ test.describe("Forgot password page", () => {
   });
 });
 
-// ─── Redirect behaviour ───────────────────────────────────────────────────────
+// ── Redirect behaviour ────────────────────────────────────────────────────────
 
 test.describe("Auth redirects", () => {
   test("unauthenticated users see the public landing page at /", async ({ page }) => {
