@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      # Dummy value — prisma generate (postinstall) needs DATABASE_URL to parse
+      # prisma.config.ts, but no real DB connection is made during CI checks.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cheesy_toast_vault
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+      - run: pnpm tsc --noEmit
+      - run: pnpm knip
+      - run: pnpm test

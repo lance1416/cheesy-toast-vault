@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+vi.mock("@/server/logger", () => ({ default: { error: vi.fn() } }));
+
+import logger from "@/server/logger";
 import { handleApiError } from "@/server/api-error";
 
-// Silence console.error for the 500 cases
 beforeEach(() => {
-  vi.spyOn(console, "error").mockImplementation(() => {});
+  vi.clearAllMocks();
 });
 
 function prismaError(code: string): Error {
@@ -41,9 +44,9 @@ describe("handleApiError", () => {
     expect(res.status).toBe(500);
   });
 
-  it("logs the error to console.error", () => {
+  it("logs the error via logger.error", () => {
     const err = new Error("oops");
     handleApiError(err);
-    expect(console.error).toHaveBeenCalledWith(err);
+    expect(logger.error).toHaveBeenCalledWith({ err }, "unhandled API error");
   });
 });

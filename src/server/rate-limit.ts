@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { RateLimiterMemory, RateLimiterRes } from "rate-limiter-flexible";
+import { RateLimiterMemory } from "rate-limiter-flexible";
 import logger from "@/server/logger";
 
 // 5 attempts per 10 minutes per IP — login and reset-password endpoints
@@ -33,7 +33,7 @@ export async function enforceRateLimit(
 }
 
 // For Next.js route handler Request objects
-export function getIp(req: Request): string {
+function getIp(req: Request): string {
   return (
     req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
     req.headers.get("x-real-ip") ??
@@ -52,5 +52,3 @@ export function getIpFromRecord(
   const realStr = Array.isArray(real) ? real[0] : real;
   return fwdStr?.split(",")[0].trim() ?? realStr ?? "unknown";
 }
-
-export { RateLimiterRes };
