@@ -28,3 +28,10 @@ export type CrossVaultEntry = DecryptedEntry & {
   vaultId: string;
   vaultName: string;
 };
+
+export type EntryHistoryItem = {
+  id: string;
+  encryptedBlob: string;
+  iv: string;
+  savedAt: string;
+};

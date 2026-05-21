@@ -73,10 +73,12 @@ function Favicon({ url, name }: { url: string; name: string }) {
 export default function EntryCard({
   entry,
   onEdit,
+  onHistory,
   vaultName,
 }: {
   entry: DecryptedEntry;
   onEdit: () => void;
+  onHistory?: () => void;
   vaultName?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -287,7 +289,21 @@ export default function EntryCard({
                 </span>
               ))}
             </div>
-            <span className="text-xs text-muted shrink-0 ml-2">{formattedDate}</span>
+            <div className="flex items-center gap-3 shrink-0 ml-2">
+              {onHistory && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onHistory();
+                  }}
+                  className="text-xs text-subtle hover:text-default transition-colors"
+                >
+                  History
+                </button>
+              )}
+              <span className="text-xs text-muted">{formattedDate}</span>
+            </div>
           </div>
         </div>
       )}

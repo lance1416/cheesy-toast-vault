@@ -4,6 +4,8 @@ import { verifySession } from "@/server/dal";
 import { db } from "@/server/db";
 import { handleApiError } from "@/server/api-error";
 
+const HISTORY_LIMIT = 10;
+
 const updateSchema = z.object({
   encryptedBlob: z.string().min(1),
   iv: z.string().min(1),
@@ -13,7 +15,7 @@ const updateSchema = z.object({
 async function resolveEntry(id: string, userId: string) {
   return db.vaultEntry.findFirst({
     where: { id, vault: { userId } },
-    select: { id: true },
+    select: { id: true, encryptedBlob: true, iv: true },
   });
 }
 
@@ -28,16 +30,35 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const parsed = updateSchema.safeParse(await req.json());
     if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-    await db.vaultEntry.update({
-      where: { id },
-      data: {
-        encryptedBlob: parsed.data.encryptedBlob,
-        iv: parsed.data.iv,
-        ...(parsed.data.tagIds !== undefined && {
-          tags: { set: parsed.data.tagIds.map((tid) => ({ id: tid })) },
-        }),
-      },
+    const { encryptedBlob, iv, tagIds } = parsed.data;
+
+    // Snapshot the current blob then apply the update atomically
+    await db.$transaction([
+      db.entryHistory.create({
+        data: { entryId: id, encryptedBlob: entry.encryptedBlob, iv: entry.iv },
+      }),
+      db.vaultEntry.update({
+        where: { id },
+        data: {
+          encryptedBlob,
+          iv,
+          ...(tagIds !== undefined && {
+            tags: { set: tagIds.map((tid) => ({ id: tid })) },
+          }),
+        },
+      }),
+    ]);
+
+    // Prune oldest snapshots beyond the limit (best-effort, outside transaction)
+    const overflow = await db.entryHistory.findMany({
+      where: { entryId: id },
+      orderBy: { savedAt: "desc" },
+      skip: HISTORY_LIMIT,
+      select: { id: true },
     });
+    if (overflow.length > 0) {
+      await db.entryHistory.deleteMany({ where: { id: { in: overflow.map((s) => s.id) } } });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

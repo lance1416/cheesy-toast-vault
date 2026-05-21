@@ -14,6 +14,7 @@ import VaultHeader from "../../_components/vault-header";
 import NewEntryModal from "../../_components/new-entry-modal";
 import EditEntryModal from "../../_components/edit-entry-modal";
 import ManageTagsModal from "../../_components/manage-tags-modal";
+import HistoryModal from "../../_components/history-modal";
 
 const PAGE_NOW = Date.now();
 
@@ -301,6 +302,7 @@ export default function VaultClient({
   const [unlocking, setUnlocking] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [editingEntry, setEditingEntry] = useState<EncryptedEntryProp | null>(null);
+  const [historyEntryId, setHistoryEntryId] = useState<string | null>(null);
   const [allTags, setAllTags] = useState<Tag[]>(initialTags);
   const [query, setQuery] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -742,6 +744,7 @@ export default function VaultClient({
                 key={entry.id}
                 entry={entry}
                 onEdit={() => setEditingEntry(entries.find((e) => e.id === entry.id) ?? null)}
+                onHistory={() => setHistoryEntryId(entry.id)}
               />
             ))}
           </div>
@@ -782,6 +785,18 @@ export default function VaultClient({
           onClose={() => setShowManageTags(false)}
           onTagUpdated={handleTagUpdated}
           onTagDeleted={handleTagDeleted}
+        />
+      )}
+
+      {historyEntryId && cryptoKey && (
+        <HistoryModal
+          entryId={historyEntryId}
+          cryptoKey={cryptoKey}
+          onClose={() => setHistoryEntryId(null)}
+          onSuccess={() => {
+            setHistoryEntryId(null);
+            router.refresh();
+          }}
         />
       )}
     </div>
