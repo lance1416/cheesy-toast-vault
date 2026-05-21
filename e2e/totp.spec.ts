@@ -16,7 +16,7 @@ import {
   TEST_TOTP_SECRET,
   TEST_BACKUP_CODE_1,
   TEST_BACKUP_CODE_2,
-} from "./global-setup";
+} from "./test-data";
 
 // ─── Login with TOTP ──────────────────────────────────────────────────────────
 

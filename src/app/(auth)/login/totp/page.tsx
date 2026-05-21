@@ -11,23 +11,27 @@ function TotpChallengeForm() {
   const params = useSearchParams();
   const callbackUrl = params.get("callbackUrl") ?? "/vaults";
 
+  // useRef avoids setState-in-effect lint error and prevents a re-render from
+  // clearing the token after sessionStorage.removeItem() runs in handleSubmit.
+  const mfaTokenRef = useRef<string | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Redirect to login if no MFA token is available (direct navigation to this page)
-  const mfaToken = typeof window !== "undefined" ? sessionStorage.getItem("mfaToken") : null;
   useEffect(() => {
-    if (!mfaToken) router.replace("/login");
-  }, [mfaToken, router]);
-
-  useEffect(() => {
+    const token = sessionStorage.getItem("mfaToken");
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+    mfaTokenRef.current = token;
     inputRef.current?.focus();
-  }, []);
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const mfaToken = mfaTokenRef.current;
     if (!mfaToken) return;
     setError("");
     setLoading(true);

@@ -8,30 +8,26 @@
  *    so authenticated tests can skip the login step.
  */
 import "dotenv/config"; // load .env so DATABASE_URL is available
-import { test as setup, expect } from "@playwright/test";
+import { test as setup } from "@playwright/test";
 import { Client } from "pg";
 import bcrypt from "bcryptjs";
 import { createHash } from "crypto";
 import { mkdir } from "fs/promises";
+import {
+  TEST_USER_EMAIL,
+  TEST_USER_LOGIN_PW,
+  TEST_VAULT_SALT,
+  TEST_VAULT_NAME,
+  TEST_TOTP_EMAIL,
+  TEST_TOTP_LOGIN_PW,
+  TEST_TOTP_SECRET,
+  TEST_BACKUP_CODE_1,
+  TEST_BACKUP_CODE_2,
+} from "./test-data";
 
 const DB_URL =
   process.env.DATABASE_URL_TEST ??
   "postgresql://postgres:postgres@localhost:5433/cheesy_toast_vault_test";
-
-export const TEST_USER_EMAIL = "e2e@example.com";
-export const TEST_USER_LOGIN_PW = "TestLogin123!";
-// A fixed 16-zero-byte salt (base64). Tests that unlock the vault use this.
-export const TEST_VAULT_SALT = "AAAAAAAAAAAAAAAAAAAAAA==";
-export const TEST_VAULT_NAME = "E2E Vault";
-
-/** User with TOTP pre-enabled — used for 2FA login tests. */
-export const TEST_TOTP_EMAIL = "e2e-totp@example.com";
-export const TEST_TOTP_LOGIN_PW = "TestTotp123!";
-/** Well-known base32 TOTP secret shared between setup and TOTP test specs. */
-export const TEST_TOTP_SECRET = "JBSWY3DPEHPK3PXP";
-/** Two single-use backup codes stored for TOTP recovery tests. */
-export const TEST_BACKUP_CODE_1 = "23456-789AB";
-export const TEST_BACKUP_CODE_2 = "BCDEF-GHJKM";
 
 function hashBackupCode(code: string): string {
   return createHash("sha256").update(code.toUpperCase().replace(/-/g, "")).digest("hex");
