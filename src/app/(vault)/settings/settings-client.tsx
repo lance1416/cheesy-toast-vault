@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useVault } from "@/context/vault";
 import AlertBanner from "@/components/alert-banner";
 import Field from "@/components/field";
@@ -23,12 +23,21 @@ export default function SettingsClient({
   totpEnabled: boolean;
 }) {
   const { lockTimeout, setLockTimeout } = useVault();
+  const { data: session } = useSession();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  // Email change state
+  const [emailPhase, setEmailPhase] = useState<"idle" | "form">("idle");
+  const [emailCurrentPassword, setEmailCurrentPassword] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [emailSubmitting, setEmailSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [emailSuccess, setEmailSuccess] = useState(false);
 
   // 2FA state
   const [totpEnabled, setTotpEnabled] = useState(initialTotpEnabled);
@@ -91,6 +100,33 @@ export default function SettingsClient({
     }
   }
 
+  async function handleEmailChange(e: React.FormEvent) {
+    e.preventDefault();
+    setEmailError("");
+    setEmailSubmitting(true);
+    try {
+      const res = await fetch("/api/auth/account", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "changeEmail",
+          currentPassword: emailCurrentPassword,
+          newEmail,
+        }),
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        throw new Error(data.error ?? "Failed to update email");
+      }
+      setEmailSuccess(true);
+      setTimeout(() => signOut({ callbackUrl: "/" }), 1500);
+    } catch (err) {
+      setEmailError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setEmailSubmitting(false);
+    }
+  }
+
   const mismatch = confirmPassword.length > 0 && confirmPassword !== newPassword;
   const canSubmit =
     currentPassword.length > 0 && newPassword.length >= 12 && newPassword === confirmPassword;
@@ -105,7 +141,7 @@ export default function SettingsClient({
       const res = await fetch("/api/auth/account", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword, newPassword }),
+        body: JSON.stringify({ action: "changePassword", currentPassword, newPassword }),
       });
       if (!res.ok) {
         const data = (await res.json()) as { error?: string };
@@ -194,6 +230,81 @@ export default function SettingsClient({
               {submitting ? "Updating…" : "Update password"}
             </button>
           </form>
+        </section>
+
+        <section className="mt-8 bg-surface rounded-lg border border-line/60 p-6">
+          <h2 className="text-base font-semibold text-default mb-1">Change email</h2>
+          {session?.user?.email && (
+            <p className="text-sm text-muted mb-4">
+              Current: <span className="font-medium text-default">{session.user.email}</span>
+            </p>
+          )}
+
+          {emailSuccess ? (
+            <div
+              role="status"
+              className="rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 px-4 py-3 text-sm text-green-700 dark:text-green-400"
+            >
+              Verification email sent. Signing you out…
+            </div>
+          ) : emailPhase === "idle" ? (
+            <button
+              type="button"
+              onClick={() => setEmailPhase("form")}
+              className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-muted hover:text-default hover:bg-sunken transition-colors"
+            >
+              Change email
+            </button>
+          ) : (
+            <form onSubmit={handleEmailChange} className="space-y-4">
+              <Field
+                label="New email"
+                id="new-email"
+                type="email"
+                value={newEmail}
+                onChange={setNewEmail}
+                required
+                autoFocus
+              />
+              <Field
+                label="Current password"
+                id="email-current-password"
+                type="password"
+                value={emailCurrentPassword}
+                onChange={setEmailCurrentPassword}
+                required
+              />
+              {emailError && (
+                <div
+                  role="alert"
+                  className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
+                >
+                  {emailError}
+                </div>
+              )}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmailPhase("idle");
+                    setNewEmail("");
+                    setEmailCurrentPassword("");
+                    setEmailError("");
+                  }}
+                  className="flex-1 rounded-lg border border-line py-2.5 text-sm font-semibold text-muted hover:bg-sunken transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={emailSubmitting || !newEmail || !emailCurrentPassword}
+                  className="flex-1 rounded-lg bg-stone-800 dark:bg-amber-600 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {emailSubmitting ? "Updating…" : "Update email"}
+                </button>
+              </div>
+            </form>
+          )}
         </section>
 
         <section className="mt-8 bg-surface rounded-lg border border-line/60 p-6">

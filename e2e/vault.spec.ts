@@ -1,4 +1,16 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+
+/** Navigate to the E2E Vault and unlock it (works with any password when the vault is empty). */
+async function navigateAndUnlock(page: Page): Promise<void> {
+  await page.goto("/vaults");
+  await page.getByText("E2E Vault").click();
+  await expect(page.getByPlaceholder(/vault password/i)).toBeVisible({ timeout: 5_000 });
+  await page.getByPlaceholder(/vault password/i).fill("any-password");
+  await page.getByRole("button", { name: /^unlock$/i }).click();
+  await expect(page.getByRole("button", { name: /\+ add entry/i })).toBeVisible({
+    timeout: 10_000,
+  });
+}
 // storageState from playwright.config.ts gives us the authenticated session
 
 test.describe("Vault list page (authenticated)", () => {
@@ -32,6 +44,70 @@ test.describe("Vault detail page (authenticated)", () => {
     await page.goto("/vaults");
     await page.getByText("E2E Vault").click();
     await expect(page.getByText("E2E Vault")).toBeVisible({ timeout: 5_000 });
+  });
+});
+
+test.describe.serial("Vault entry CRUD (authenticated)", () => {
+  test("unlocking an empty vault shows the empty state", async ({ page }) => {
+    await navigateAndUnlock(page);
+    await expect(page.getByText(/this vault is empty/i)).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("creating an entry shows it in the grid", async ({ page }) => {
+    await navigateAndUnlock(page);
+    await page.getByRole("button", { name: /\+ add entry/i }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.getByLabel(/^name$/i).fill("E2E Test Entry");
+    await page.getByRole("button", { name: /^save entry$/i }).click();
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("E2E Test Entry")).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("editing an entry updates its name", async ({ page }) => {
+    await navigateAndUnlock(page);
+    // Expand the card by clicking the chevron / anywhere on the header
+    await page.getByText("E2E Test Entry").click();
+    await page
+      .getByRole("button", { name: /^edit$/i })
+      .first()
+      .click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    const nameField = page.getByLabel(/^name$/i);
+    await nameField.clear();
+    await nameField.fill("E2E Renamed Entry");
+    await page.getByRole("button", { name: /^save$/i }).click();
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("E2E Renamed Entry")).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("search filters entries by name", async ({ page }) => {
+    await navigateAndUnlock(page);
+    // Create a second entry to verify filtering works
+    await page.getByRole("button", { name: /\+ add entry/i }).click();
+    await page.getByLabel(/^name$/i).fill("Filtered Out Entry");
+    await page.getByRole("button", { name: /^save entry$/i }).click();
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
+
+    await page.locator("#vault-search").fill("E2E Renamed");
+    await expect(page.getByText("E2E Renamed Entry")).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByText("Filtered Out Entry")).not.toBeVisible();
+  });
+
+  test("deleting an entry removes it from the grid", async ({ page }) => {
+    await navigateAndUnlock(page);
+    // Open edit modal for the renamed entry
+    await page.locator("#vault-search").fill("E2E Renamed");
+    await page.getByText("E2E Renamed Entry").click();
+    await page
+      .getByRole("button", { name: /^edit$/i })
+      .first()
+      .click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.getByRole("button", { name: /delete entry/i }).click();
+    await page.getByRole("button", { name: /yes, delete/i }).click();
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
+    await page.locator("#vault-search").fill("E2E Renamed");
+    await expect(page.getByText("E2E Renamed Entry")).not.toBeVisible({ timeout: 3_000 });
   });
 });
 

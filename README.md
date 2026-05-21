@@ -98,6 +98,8 @@ pnpm test:e2e          # end-to-end tests (needs dev server running)
 pnpm check             # lint + tsc + knip + tests
 ```
 
+## Stack
+
 |            |                                 |
 | ---------- | ------------------------------- |
 | Framework  | Next.js 16 (App Router)         |

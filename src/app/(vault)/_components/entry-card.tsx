@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { EyeIcon, ChevronIcon, CopyIcon, ShieldIcon, CloseIcon } from "@/components/icons";
 import { checkBreach } from "@/lib/crypto";
 import { isStalePassword, passwordAgeDays as getPasswordAgeDays } from "@/lib/stale-password";
@@ -65,6 +65,78 @@ function Favicon({ url, name }: { url: string; name: string }) {
       className="w-6 h-6 rounded-md object-contain shrink-0"
       onError={() => setFailed(true)}
     />
+  );
+}
+
+// ─── TOTP row ─────────────────────────────────────────────────────────────────
+
+function TotpRow({ secret }: { secret: string }) {
+  const [code, setCode] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(30); // set on first tick
+  const [error, setError] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function generate() {
+      try {
+        const { generate: otpGenerate } = await import("otplib");
+        const token = await otpGenerate({ secret });
+        if (!cancelled) setCode(token);
+      } catch {
+        if (!cancelled) setError(true);
+      }
+    }
+
+    void generate();
+
+    const interval = setInterval(() => {
+      const remaining = 30 - (Math.floor(Date.now() / 1000) % 30);
+      if (!cancelled) setSecondsLeft(remaining);
+      if (remaining === 30) void generate(); // window rolled over
+    }, 1000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [secret]);
+
+  function handleCopy() {
+    if (!code) return;
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-20 shrink-0 text-xs font-medium text-muted">2FA Code</span>
+      {error ? (
+        <span className="flex-1 text-xs text-red-500 dark:text-red-400">Invalid secret</span>
+      ) : (
+        <>
+          <span className="flex-1 font-mono text-sm text-default tracking-widest">
+            {code ?? "……"}
+          </span>
+          <span
+            className={`text-xs shrink-0 tabular-nums ${secondsLeft <= 5 ? "text-amber-600 dark:text-amber-400" : "text-muted"}`}
+          >
+            {secondsLeft}s
+          </span>
+          <button
+            type="button"
+            onClick={handleCopy}
+            aria-label={copied ? "Copied" : "Copy 2FA code"}
+            className="text-subtle hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+          >
+            {copied ? <span className="text-xs font-medium text-amber-600">✓</span> : <CopyIcon />}
+          </button>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -268,6 +340,8 @@ export default function EntryCard({
               )}
             </div>
           </div>
+
+          {entry.totpSecret && <TotpRow secret={entry.totpSecret} />}
 
           {entry.notes && (
             <div className="flex gap-2 pt-1">

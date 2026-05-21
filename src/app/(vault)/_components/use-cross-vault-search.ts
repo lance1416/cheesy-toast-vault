@@ -19,6 +19,8 @@ export type CrossVaultSearchResult = {
   fetchState: FetchState;
   searchResults: CrossVaultEntry[];
   unlockedCount: number;
+  rawVaults: RawVault[];
+  keys: Record<string, CryptoKey>;
 };
 
 export function useCrossVaultSearch(): CrossVaultSearchResult {
@@ -30,17 +32,21 @@ export function useCrossVaultSearch(): CrossVaultSearchResult {
 
   function setSearchQuery(q: string) {
     setSearchQueryState(q);
-    if (q.trim() && fetchState === "idle") {
-      setFetchState("loading");
-      fetch("/api/entries")
-        .then((r) => (r.ok ? r.json() : Promise.reject()))
-        .then((data: { vaults: RawVault[] }) => {
-          setRawVaults(data.vaults);
-          setFetchState("ready");
-        })
-        .catch(() => setFetchState({ error: "Failed to load entries." }));
-    }
   }
+
+  // Fetch all encrypted entries as soon as any vault is unlocked (proactive — also feeds health dashboard)
+  useEffect(() => {
+    if (Object.keys(keys).length === 0 || fetchState !== "idle") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFetchState("loading");
+    fetch("/api/entries")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data: { vaults: RawVault[] }) => {
+        setRawVaults(data.vaults);
+        setFetchState("ready");
+      })
+      .catch(() => setFetchState({ error: "Failed to load entries." }));
+  }, [keys, fetchState]);
 
   // Decrypt all entries for currently-unlocked vaults whenever raw data or keys change
   useEffect(() => {
@@ -87,5 +93,5 @@ export function useCrossVaultSearch(): CrossVaultSearchResult {
 
   const unlockedCount = rawVaults.filter((v) => keys[v.id]).length;
 
-  return { searchQuery, setSearchQuery, fetchState, searchResults, unlockedCount };
+  return { searchQuery, setSearchQuery, fetchState, searchResults, unlockedCount, rawVaults, keys };
 }

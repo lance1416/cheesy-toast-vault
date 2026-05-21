@@ -35,6 +35,7 @@ export default function EditEntryModal({
   const [originalPassword, setOriginalPassword] = useState("");
   const [originalPasswordChangedAt, setOriginalPasswordChangedAt] = useState<string | undefined>();
   const [notes, setNotes] = useState("");
+  const [totpSecret, setTotpSecret] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showGenerator, setShowGenerator] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(entry.tags.map((t) => t.id));
@@ -57,6 +58,7 @@ export default function EditEntryModal({
       setOriginalPassword(payload.password);
       setOriginalPasswordChangedAt(payload.passwordChangedAt);
       setNotes(payload.notes ?? "");
+      setTotpSecret(payload.totpSecret ?? "");
       setDecrypted(true);
     });
     return () => {
@@ -78,6 +80,7 @@ export default function EditEntryModal({
         password,
         notes: notes || undefined,
         passwordChangedAt: passwordChanged ? new Date().toISOString() : originalPasswordChangedAt,
+        totpSecret: totpSecret.trim().toUpperCase() || undefined,
       });
       const res = await fetch(`/api/vault/${entry.id}`, {
         method: "PUT",
@@ -190,6 +193,14 @@ export default function EditEntryModal({
               onChange={setNotes}
               placeholder="Recovery codes, hints…"
               multiline
+            />
+
+            <Field
+              label="2FA Secret"
+              id="edit-totp-secret"
+              value={totpSecret}
+              onChange={setTotpSecret}
+              placeholder="Base32 seed (leave blank to remove)"
             />
 
             <TagSelector

@@ -32,6 +32,7 @@ export default function NewEntryModal({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [notes, setNotes] = useState("");
+  const [totpSecret, setTotpSecret] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showGenerator, setShowGenerator] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -52,6 +53,7 @@ export default function NewEntryModal({
         password,
         notes: notes || undefined,
         passwordChangedAt: new Date().toISOString(),
+        totpSecret: totpSecret.trim().toUpperCase() || undefined,
       });
       const res = await fetch("/api/vault", {
         method: "POST",
@@ -169,6 +171,14 @@ export default function NewEntryModal({
           onChange={setNotes}
           placeholder="Recovery codes, hints…"
           multiline
+        />
+
+        <Field
+          label="2FA Secret"
+          id="new-totp-secret"
+          value={totpSecret}
+          onChange={setTotpSecret}
+          placeholder="Base32 seed (e.g. JBSWY3DPEHPK3PXP)"
         />
 
         <TagSelector

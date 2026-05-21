@@ -12,6 +12,7 @@ import VaultCard from "./vault-card";
 import EntryCard from "./entry-card";
 import CreateVaultModal from "./create-vault-modal";
 import { useCrossVaultSearch } from "./use-cross-vault-search";
+import HealthDashboard from "./health-dashboard";
 import type { VaultSummary } from "./vault-card";
 
 export default function VaultOverviewClient({ vaults: initialVaults }: { vaults: VaultSummary[] }) {
@@ -21,7 +22,7 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
   const [showCreate, setShowCreate] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const { searchQuery, setSearchQuery, fetchState, searchResults, unlockedCount } =
+  const { searchQuery, setSearchQuery, fetchState, searchResults, unlockedCount, rawVaults, keys } =
     useCrossVaultSearch();
 
   useEffect(() => {
@@ -159,6 +160,11 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
               className="w-full rounded-lg border border-line/60 bg-surface pl-9 pr-4 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
             />
           </div>
+        )}
+
+        {/* Health dashboard — shown when at least one vault is unlocked and not searching */}
+        {unlockedCount > 0 && !searchQuery.trim() && (
+          <HealthDashboard rawVaults={rawVaults} keys={keys} />
         )}
 
         {searchQuery.trim() ? (

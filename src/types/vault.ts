@@ -8,6 +8,7 @@ export type EntryPayload = {
   password: string;
   notes?: string;
   passwordChangedAt?: string; // ISO timestamp; set on create, updated when password field changes
+  totpSecret?: string; // base32 TOTP seed for the site; encrypted in blob, never sent to server
 };
 
 export type EncryptedEntryProp = {
