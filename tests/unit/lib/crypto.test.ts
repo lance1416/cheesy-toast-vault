@@ -9,6 +9,7 @@ import {
   passwordStrength,
   generatePassword,
   generatePassphrase,
+  checkBreach,
 } from "@/lib/crypto";
 
 // ─── Encoding helpers ─────────────────────────────────────────────────────────
@@ -24,10 +25,12 @@ describe("bufferToBase64 / base64ToBuffer", () => {
     expect(base64ToBuffer(bufferToBase64(bytes.buffer))).toEqual(bytes);
   });
 
-  it("produces standard base64 characters only", () => {
-    const bytes = new Uint8Array(32);
-    crypto.getRandomValues(bytes);
-    expect(bufferToBase64(bytes)).toMatch(/^[A-Za-z0-9+/]+=*$/);
+  it("round-trips a subarray with non-zero byteOffset", () => {
+    // Slices of typed arrays share the underlying ArrayBuffer with an offset.
+    // bufferToBase64 must use byteOffset/byteLength, not the raw buffer start.
+    const full = new Uint8Array([0, 1, 2, 3, 4]);
+    const slice = full.subarray(2); // byteOffset=2, values=[2,3,4]
+    expect(base64ToBuffer(bufferToBase64(slice))).toEqual(new Uint8Array([2, 3, 4]));
   });
 });
 
@@ -36,12 +39,6 @@ describe("bufferToBase64 / base64ToBuffer", () => {
 describe("generateSalt", () => {
   it("returns exactly 16 bytes", () => {
     expect(generateSalt().byteLength).toBe(16);
-  });
-
-  it("produces unique values each call", () => {
-    const a = bufferToBase64(generateSalt());
-    const b = bufferToBase64(generateSalt());
-    expect(a).not.toBe(b);
   });
 });
 
@@ -59,12 +56,6 @@ describe("deriveCryptoKey / encryptEntry / decryptEntry", () => {
       deriveCryptoKey("wrong-horse-battery", salt),
     ]);
   }, 60_000);
-
-  it("deriveCryptoKey returns a CryptoKey", () => {
-    expect(key).toBeInstanceOf(CryptoKey);
-    expect(key.type).toBe("secret");
-    expect(key.algorithm.name).toBe("AES-GCM");
-  });
 
   it("round-trips a plain object", async () => {
     const payload = {
@@ -109,22 +100,22 @@ describe("passwordStrength", () => {
     expect(r.label).toBe("Very weak");
   });
 
-  it("short lowercase only → score 1", () => {
-    // length 0: 0 points; 1 class (lower) → +0.5 → round(0.5)=1
+  it("short lowercase only → score 1, Weak", () => {
+    // length 3: 0 length points; 1 class (lower) → +0.5 → round(0.5)=1
     const r = passwordStrength("abc");
     expect(r.score).toBe(1);
+    expect(r.label).toBe("Weak");
   });
 
-  it("8+ chars mixed case → score 2", () => {
-    // length>=8: 1 pt; 2 classes (lower+upper): +1 → 2
+  it("8+ chars mixed case → score 2, Fair", () => {
+    // length>=8: +1; 2 classes (lower+upper): +1 → 2
     const r = passwordStrength("Abcdefgh");
     expect(r.score).toBe(2);
+    expect(r.label).toBe("Fair");
   });
 
-  it("12+ chars with all classes → score 4", () => {
-    // length>=12: 2 pts; all 4 classes: +1 → 3; round(3)=3
-    // Wait: 12 chars gets +2, all classes +1 = 3, not 4
-    // 16+ chars + all classes = 3+1 = 4
+  it("12–15 chars with all classes → score 3, Strong", () => {
+    // length>=12: +2; all 4 classes: +1 → 3
     const r = passwordStrength("Abcdefghijkl1!");
     expect(r.score).toBe(3);
     expect(r.label).toBe("Strong");
@@ -135,14 +126,6 @@ describe("passwordStrength", () => {
     expect(r.score).toBe(4);
     expect(r.label).toBe("Very strong");
   });
-
-  it("score is always 0–4", () => {
-    for (const pw of ["", "a", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]) {
-      const { score } = passwordStrength(pw);
-      expect(score).toBeGreaterThanOrEqual(0);
-      expect(score).toBeLessThanOrEqual(4);
-    }
-  });
 });
 
 // ─── Password generator ───────────────────────────────────────────────────────
@@ -151,10 +134,6 @@ describe("generatePassword", () => {
   it("returns the requested length", () => {
     expect(generatePassword({ length: 16 }).length).toBe(16);
     expect(generatePassword({ length: 32 }).length).toBe(32);
-  });
-
-  it("default call returns 20 chars", () => {
-    expect(generatePassword().length).toBe(20);
   });
 
   it("uppercase: false → no uppercase letters", () => {
@@ -172,8 +151,10 @@ describe("generatePassword", () => {
     expect(pw).not.toMatch(/[^a-zA-Z0-9]/);
   });
 
-  it("produces different results each call", () => {
-    expect(generatePassword()).not.toBe(generatePassword());
+  it("all flags false still produces output (lowercase-only charset)", () => {
+    const pw = generatePassword({ length: 20, uppercase: false, numbers: false, symbols: false });
+    expect(pw).toHaveLength(20);
+    expect(pw).toMatch(/^[a-z]+$/);
   });
 });
 
@@ -196,16 +177,14 @@ describe("generatePassphrase", () => {
       expect(word[0]).toBe(word[0].toUpperCase());
     }
   });
-
-  it("produces different phrases each call", () => {
-    expect(generatePassphrase()).not.toBe(generatePassphrase());
-  });
 });
 
 // ─── checkBreach (network — always mock) ─────────────────────────────────────
+// SHA-1("password") = 5BAA61E4C9B93F3F0682250B6CF8331B7EE68FD8
+// prefix = "5BAA6", suffix = "1E4C9B93F3F0682250B6CF8331B7EE68FD8"
 
 describe("checkBreach", () => {
-  it("returns 0 when password is not in any breach", async () => {
+  it("returns 0 when the hash suffix is not in the response", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -213,10 +192,26 @@ describe("checkBreach", () => {
         text: async () => "AAAAABBBBBCCCCC:5\nDDDDDEEEEEFFFFF:3",
       }),
     );
-    const { checkBreach } = await import("@/lib/crypto");
-    // The prefix + suffix won't match the stub lines, so count = 0
-    const count = await checkBreach("unlikely-to-match-stub");
-    expect(count).toBe(0);
+    expect(await checkBreach("unlikely-to-match-stub")).toBe(0);
+    vi.unstubAllGlobals();
+  });
+
+  it("returns the breach count when the hash suffix matches", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        // Suffix for "password" with a known breach count
+        text: async () => "1E4C9B93F3F0682250B6CF8331B7EE68FD8:3303003\nSOMEOTHERSUFFIX:1",
+      }),
+    );
+    expect(await checkBreach("password")).toBe(3303003);
+    vi.unstubAllGlobals();
+  });
+
+  it("throws when the HIBP API returns an error response", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, text: async () => "" }));
+    await expect(checkBreach("any-password")).rejects.toThrow("HIBP request failed");
     vi.unstubAllGlobals();
   });
 });

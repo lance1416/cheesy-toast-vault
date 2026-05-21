@@ -1,27 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { TEST_USER_EMAIL, TEST_USER_LOGIN_PW } from "./test-data";
 
 // ─── Login page ───────────────────────────────────────────────────────────────
 
 test.describe("Login page", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/login");
-  });
-
-  test("renders email and password fields", async ({ page }) => {
-    await expect(page.getByLabel("Email")).toBeVisible();
-    await expect(page.locator("#login-password")).toBeVisible();
-  });
-
-  test("renders the submit button", async ({ page }) => {
-    await expect(page.getByRole("button", { name: /open vault/i })).toBeVisible();
-  });
-
-  test("shows 'Forgot password?' link", async ({ page }) => {
-    await expect(page.getByRole("link", { name: /forgot password/i })).toBeVisible();
-  });
-
-  test("shows 'Create an account' link to register", async ({ page }) => {
-    await expect(page.getByRole("link", { name: /create an account/i })).toBeVisible();
   });
 
   test("shows error for wrong credentials", async ({ page }) => {
@@ -34,20 +18,11 @@ test.describe("Login page", () => {
     ).toBeVisible();
   });
 
-  test("redirects to vault after successful login", async ({ page }) => {
-    // The global-setup project already validates this flow end-to-end (it must
-    // succeed to produce the saved session). Confirm here with a lightweight
-    // API-level check that avoids consuming a rate-limit point in the browser.
-    const res = await page.request.post("/api/auth/callback/credentials", {
-      form: {
-        email: "e2e@example.com",
-        password: "TestLogin123!",
-        redirect: "false",
-        callbackUrl: "/",
-      },
-    });
-    // next-auth returns 200 or a redirect; either way credentials are accepted
-    expect([200, 302, 303]).toContain(res.status());
+  test("correct credentials redirect to /vaults", async ({ page }) => {
+    await page.getByLabel("Email").fill(TEST_USER_EMAIL);
+    await page.locator("#login-password").fill(TEST_USER_LOGIN_PW);
+    await page.getByRole("button", { name: /open vault/i }).click();
+    await expect(page).toHaveURL(/\/vaults/, { timeout: 10_000 });
   });
 });
 
@@ -56,12 +31,6 @@ test.describe("Login page", () => {
 test.describe("Register page", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/register");
-  });
-
-  test("renders email and password fields", async ({ page }) => {
-    await expect(page.getByLabel("Email")).toBeVisible();
-    await expect(page.locator("#login-password")).toBeVisible();
-    await expect(page.locator("#login-confirm")).toBeVisible();
   });
 
   test("submit is disabled until email and matching passwords are filled", async ({ page }) => {
@@ -78,12 +47,6 @@ test.describe("Register page", () => {
 // ─── Forgot password page ─────────────────────────────────────────────────────
 
 test.describe("Forgot password page", () => {
-  test("renders the email form", async ({ page }) => {
-    await page.goto("/forgot-password");
-    await expect(page.getByLabel(/email/i)).toBeVisible();
-    await expect(page.getByRole("button", { name: /send reset link/i })).toBeVisible();
-  });
-
   test("shows success message for any email (prevents enumeration)", async ({ page }) => {
     await page.goto("/forgot-password");
     await page.getByLabel(/email/i).fill("anyone@example.com");

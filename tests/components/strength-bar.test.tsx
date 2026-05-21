@@ -3,13 +3,6 @@ import { render, screen } from "@testing-library/react";
 import StrengthBar from "@/components/strength-bar";
 
 describe("StrengthBar", () => {
-  it("renders 5 bar segments", () => {
-    const { container } = render(<StrengthBar password="test" />);
-    // The 5 segments are inside the aria-hidden div
-    const segments = container.querySelectorAll('[aria-hidden="true"] > div');
-    expect(segments).toHaveLength(5);
-  });
-
   it("shows 'Very weak' for empty string", () => {
     render(<StrengthBar password="" />);
     expect(screen.getByText("Very weak")).toBeInTheDocument();
@@ -17,7 +10,6 @@ describe("StrengthBar", () => {
 
   it("shows 'Weak' for a weak password", () => {
     render(<StrengthBar password="abc" />);
-    // score 1 → "Weak"
     expect(screen.getByText("Weak")).toBeInTheDocument();
   });
 

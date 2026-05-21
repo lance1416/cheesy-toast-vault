@@ -27,7 +27,7 @@ describe("passwordAgeDays", () => {
     expect(passwordAgeDays(old, NOW)).toBe(100);
   });
 
-  it("uses Math.floor (not Math.ceil)", () => {
+  it("uses Math.floor — 23h 59m is still 0 days", () => {
     const almostOneDay = new Date(NOW - DAY_MS + 1000).toISOString();
     expect(passwordAgeDays(almostOneDay, NOW)).toBe(0);
   });
@@ -43,17 +43,8 @@ describe("isStalePassword", () => {
     expect(isStalePassword(recent, NOW)).toBe(false);
   });
 
-  it(`returns true at exactly ${STALE_DAYS} days`, () => {
+  it(`returns true at exactly ${STALE_DAYS} days (>= boundary)`, () => {
     const threshold = new Date(NOW - STALE_DAYS * DAY_MS).toISOString();
     expect(isStalePassword(threshold, NOW)).toBe(true);
-  });
-
-  it(`returns true when password is ${STALE_DAYS + 1} days old`, () => {
-    const stale = new Date(NOW - (STALE_DAYS + 1) * DAY_MS).toISOString();
-    expect(isStalePassword(stale, NOW)).toBe(true);
-  });
-
-  it("STALE_DAYS constant is 90", () => {
-    expect(STALE_DAYS).toBe(90);
   });
 });

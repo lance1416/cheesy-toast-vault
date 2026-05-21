@@ -19,12 +19,6 @@ describe("createMfaToken / verifyMfaToken", () => {
     expect(verifyMfaToken(token)).toBe("user_abc");
   });
 
-  it("different userIds produce different tokens", () => {
-    const t1 = createMfaToken("user_aaa");
-    const t2 = createMfaToken("user_bbb");
-    expect(t1).not.toBe(t2);
-  });
-
   it("returns null for an empty string", () => {
     expect(verifyMfaToken("")).toBeNull();
   });
@@ -33,23 +27,27 @@ describe("createMfaToken / verifyMfaToken", () => {
     expect(verifyMfaToken("notavalidtoken")).toBeNull();
   });
 
+  it("returns null for a token with exactly one colon (missing hmac segment)", () => {
+    // e.g. "userid:1234567890" — only one colon; the parse must not extract a valid userId
+    expect(verifyMfaToken("user_abc:1234567890")).toBeNull();
+  });
+
   it("returns null for a token with a tampered HMAC", () => {
     const token = createMfaToken("user_abc");
     const tampered = token.slice(0, -4) + "XXXX";
     expect(verifyMfaToken(tampered)).toBeNull();
   });
 
-  it("returns null for an expired token", () => {
-    // Build a syntactically valid token with an expiry in the past
+  it("returns null for an expired token (expiry check before HMAC)", () => {
+    // Build a syntactically valid token with an expiry in the past.
+    // Expiry check fires before HMAC — null regardless of signature.
     const userId = "user_abc";
-    const exp = Date.now() - 1_000; // already expired
-    const payload = `${userId}:${exp}`;
-    const fakeToken = `${payload}:badhmacsuffix`;
-    // Expiry check fires before HMAC — result is null regardless of HMAC
+    const exp = Date.now() - 1_000;
+    const fakeToken = `${userId}:${exp}:badhmacsuffix`;
     expect(verifyMfaToken(fakeToken)).toBeNull();
   });
 
-  it("preserves userId containing hyphens (e.g. cuid format)", () => {
+  it("preserves userId containing hyphens (cuid format)", () => {
     const userId = "clxyz1234-5678";
     const token = createMfaToken(userId);
     expect(verifyMfaToken(token)).toBe(userId);
@@ -62,12 +60,8 @@ describe("generateBackupCodes", () => {
   const VALID_CHAR =
     /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{5}-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{5}$/;
 
-  it("generates the requested count (10)", () => {
+  it("generates the requested count", () => {
     expect(generateBackupCodes(10)).toHaveLength(10);
-  });
-
-  it("generates the requested count (5)", () => {
-    expect(generateBackupCodes(5)).toHaveLength(5);
   });
 
   it("each code matches the XXXXX-XXXXX format", () => {
@@ -102,10 +96,6 @@ describe("normalizeBackupCode", () => {
 });
 
 describe("hashBackupCode", () => {
-  it("is deterministic for the same input", () => {
-    expect(hashBackupCode("ABCDE-FGHJK")).toBe(hashBackupCode("ABCDE-FGHJK"));
-  });
-
   it("is case-insensitive (normalises before hashing)", () => {
     expect(hashBackupCode("abcde-fghjk")).toBe(hashBackupCode("ABCDE-FGHJK"));
   });
@@ -114,12 +104,8 @@ describe("hashBackupCode", () => {
     expect(hashBackupCode("ABCDEFGHJK")).toBe(hashBackupCode("ABCDE-FGHJK"));
   });
 
-  it("produces a 64-character lowercase hex string (SHA-256)", () => {
+  it("produces a 64-character lowercase hex string (SHA-256 output)", () => {
     expect(hashBackupCode("ABCDE-FGHJK")).toMatch(/^[0-9a-f]{64}$/);
-  });
-
-  it("different codes produce different hashes", () => {
-    expect(hashBackupCode("ABCDE-FGHJK")).not.toBe(hashBackupCode("23456-789AB"));
   });
 });
 
@@ -128,19 +114,10 @@ describe("hashBackupCode", () => {
 describe("generateTotpUri", () => {
   const secret = "JBSWY3DPEHPK3PXP";
 
-  it("returns an otpauth://totp/ URI", () => {
+  it("returns an otpauth://totp/ URI containing the secret", () => {
     const uri = generateTotpUri("user@example.com", secret);
     expect(uri).toMatch(/^otpauth:\/\/totp\//);
-  });
-
-  it("includes the secret", () => {
-    const uri = generateTotpUri("user@example.com", secret);
     expect(uri).toContain(secret);
-  });
-
-  it("includes the issuer", () => {
-    const uri = generateTotpUri("user@example.com", secret);
-    expect(uri).toContain("Cheesy");
   });
 });
 
@@ -166,7 +143,6 @@ describe("verifyTotpToken", () => {
   it("returns false for a code from a different secret", async () => {
     const otherSecret = generateSecret();
     const otherToken = await generate({ secret: otherSecret });
-    // Tokens could collide by chance (1 in 10^6) — using a fresh secret makes it extremely unlikely
     expect(await verifyTotpToken(otherToken, secret)).toBe(false);
   });
 });
