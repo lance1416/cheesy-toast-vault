@@ -6,6 +6,7 @@ import { useVault } from "@/context/vault";
 import Field from "@/components/field";
 import StrengthBar from "@/components/strength-bar";
 import VaultHeader from "../_components/vault-header";
+import TotpModal from "./totp-modal";
 
 const TIMEOUTS = [
   { value: 1, label: "1 min" },
@@ -15,7 +16,11 @@ const TIMEOUTS = [
   { value: 0, label: "Never" },
 ] as const;
 
-export default function SettingsClient() {
+export default function SettingsClient({
+  totpEnabled: initialTotpEnabled,
+}: {
+  totpEnabled: boolean;
+}) {
   const { lockTimeout, setLockTimeout } = useVault();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -23,6 +28,14 @@ export default function SettingsClient() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  // 2FA state
+  const [totpEnabled, setTotpEnabled] = useState(initialTotpEnabled);
+  const [showTotpModal, setShowTotpModal] = useState(false);
+  const [disablePhase, setDisablePhase] = useState<"idle" | "confirm">("idle");
+  const [disableCode, setDisableCode] = useState("");
+  const [disabling, setDisabling] = useState(false);
+  const [disableError, setDisableError] = useState("");
 
   const [deletePhase, setDeletePhase] = useState<"idle" | "confirm">("idle");
   const [deletePassword, setDeletePassword] = useState("");
@@ -49,6 +62,31 @@ export default function SettingsClient() {
         err instanceof Error ? err.message : "Something went wrong. Please try again.",
       );
       setDeleting(false);
+    }
+  }
+
+  async function handleDisableTotp(e: React.FormEvent) {
+    e.preventDefault();
+    setDisableError("");
+    setDisabling(true);
+    try {
+      const res = await fetch("/api/auth/totp", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: disableCode.replace(/\s/g, "") }),
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        setDisableError(data.error ?? "Failed to disable 2FA.");
+        return;
+      }
+      setTotpEnabled(false);
+      setDisablePhase("idle");
+      setDisableCode("");
+    } catch {
+      setDisableError("Something went wrong. Please try again.");
+    } finally {
+      setDisabling(false);
     }
   }
 
@@ -188,6 +226,99 @@ export default function SettingsClient() {
           </div>
         </section>
 
+        <section className="mt-8 bg-surface rounded-lg border border-line/60 p-6">
+          <div className="flex items-start justify-between gap-4 mb-1">
+            <div>
+              <h2 className="text-base font-semibold text-default">Two-factor authentication</h2>
+              <p className="text-sm text-muted mt-1">
+                Require an authenticator code after your password on every sign-in.
+              </p>
+            </div>
+            <span
+              className={`shrink-0 mt-0.5 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                totpEnabled
+                  ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                  : "bg-stone-100 dark:bg-stone-800 text-muted"
+              }`}
+            >
+              {totpEnabled ? "Enabled" : "Disabled"}
+            </span>
+          </div>
+
+          {!totpEnabled && disablePhase === "idle" && (
+            <button
+              type="button"
+              onClick={() => setShowTotpModal(true)}
+              className="mt-4 rounded-lg bg-stone-800 dark:bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98]"
+            >
+              Set up authenticator app
+            </button>
+          )}
+
+          {totpEnabled && disablePhase === "idle" && (
+            <button
+              type="button"
+              onClick={() => setDisablePhase("confirm")}
+              className="mt-4 rounded-lg border border-line px-4 py-2 text-sm font-semibold text-muted hover:text-default hover:bg-sunken transition-colors"
+            >
+              Disable 2FA
+            </button>
+          )}
+
+          {totpEnabled && disablePhase === "confirm" && (
+            <form onSubmit={handleDisableTotp} className="mt-4 space-y-4">
+              <p className="text-sm text-default font-medium">
+                Enter your current authenticator code to disable 2FA.
+              </p>
+              <div className="space-y-1.5">
+                <label htmlFor="disable-totp-code" className="block text-xs font-medium text-muted">
+                  Authenticator code
+                </label>
+                <input
+                  id="disable-totp-code"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  autoFocus
+                  value={disableCode}
+                  onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, ""))}
+                  placeholder="000000"
+                  className="w-full rounded-lg border border-line bg-sunken/50 px-3.5 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-surface text-center tracking-[0.25em] font-mono"
+                />
+              </div>
+              {disableError && (
+                <div
+                  role="alert"
+                  className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
+                >
+                  {disableError}
+                </div>
+              )}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDisablePhase("idle");
+                    setDisableCode("");
+                    setDisableError("");
+                  }}
+                  className="flex-1 rounded-lg border border-line py-2.5 text-sm font-semibold text-muted hover:bg-sunken transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={disabling || disableCode.length !== 6}
+                  className="flex-1 rounded-lg bg-stone-800 dark:bg-amber-600 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {disabling ? "Disabling…" : "Confirm disable"}
+                </button>
+              </div>
+            </form>
+          )}
+        </section>
+
         <section className="mt-8 bg-surface rounded-lg border border-red-200 dark:border-red-900/40 p-6">
           <h2 className="text-base font-semibold text-red-600 dark:text-red-400 mb-1">
             Danger zone
@@ -252,6 +383,10 @@ export default function SettingsClient() {
           )}
         </section>
       </main>
+
+      {showTotpModal && (
+        <TotpModal onClose={() => setShowTotpModal(false)} onEnabled={() => setTotpEnabled(true)} />
+      )}
     </div>
   );
 }

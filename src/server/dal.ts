@@ -63,6 +63,16 @@ export const getTags = cache(async () => {
   });
 });
 
+export const getTotpStatus = cache(async () => {
+  const { userId } = await verifySession();
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { totpEnabled: true },
+  });
+  if (!user) redirect("/login");
+  return { totpEnabled: user.totpEnabled };
+});
+
 export const getVaultEntries = cache(async (vaultId: string) => {
   const { userId } = await verifySession();
   // Verify vault ownership

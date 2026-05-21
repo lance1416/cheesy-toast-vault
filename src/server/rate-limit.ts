@@ -5,6 +5,9 @@ import logger from "@/server/logger";
 // 5 attempts per 10 minutes per IP — login and reset-password endpoints
 export const authLimiter = new RateLimiterMemory({ points: 5, duration: 600 });
 
+// 5 attempts per 15 minutes per IP — TOTP code verification during login
+export const totpLimiter = new RateLimiterMemory({ points: 5, duration: 900 });
+
 // 3 attempts per hour per IP — register and forgot-password endpoints
 export const registrationLimiter = new RateLimiterMemory({ points: 3, duration: 3600 });
 

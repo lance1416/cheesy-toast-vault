@@ -103,6 +103,12 @@ export default function LoginPage() {
         setError("Too many attempts. Please wait a few minutes before trying again.");
         return;
       }
+      if (result?.error?.startsWith("mfa_required:")) {
+        const token = result.error.slice("mfa_required:".length);
+        sessionStorage.setItem("mfaToken", token);
+        router.push(`/login/totp?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+        return;
+      }
       if (result?.error) {
         setError("Invalid email or password.");
         return;

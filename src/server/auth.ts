@@ -1,8 +1,16 @@
+import { createHash } from "crypto";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/server/db";
-import { authLimiter, getIpFromRecord } from "@/server/rate-limit";
+import { authLimiter, totpLimiter, getIpFromRecord } from "@/server/rate-limit";
+import {
+  verifyTotpToken,
+  createMfaToken,
+  verifyMfaToken,
+  hashBackupCode,
+  normalizeBackupCode,
+} from "@/server/totp";
 import logger from "@/server/logger";
 
 export const authOptions: NextAuthOptions = {
@@ -12,11 +20,71 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        // TOTP second-factor fields — only present during the MFA challenge step
+        totpToken: { label: "MFA Token", type: "text" },
+        totpCode: { label: "Code", type: "text" },
       },
       async authorize(credentials, req) {
-        if (!credentials?.email || !credentials?.password) return null;
-
         const ip = getIpFromRecord(req.headers as Record<string, string | undefined>);
+
+        // ── TOTP challenge step ───────────────────────────────────────────────
+        if (credentials?.totpToken) {
+          if (process.env.BYPASS_RATE_LIMIT !== "1") {
+            try {
+              await totpLimiter.consume(ip);
+            } catch {
+              logger.warn({ ip }, "TOTP rate limited");
+              throw new Error("rate_limited");
+            }
+          }
+
+          const userId = verifyMfaToken(credentials.totpToken);
+          if (!userId) {
+            logger.warn({ ip }, "TOTP challenge — invalid or expired token");
+            return null;
+          }
+
+          const user = await db.user.findUnique({
+            where: { id: userId },
+            select: {
+              id: true,
+              email: true,
+              emailVerified: true,
+              totpSecret: true,
+              totpBackupCodes: true,
+            },
+          });
+          if (!user?.totpSecret) return null;
+
+          const code = (credentials.totpCode ?? "").trim();
+          const isNumericOtp = /^\d{6}$/.test(code);
+          let valid = false;
+
+          if (isNumericOtp) {
+            valid = await verifyTotpToken(code, user.totpSecret);
+          } else {
+            // Backup code — find, verify, and consume it
+            const hash = hashBackupCode(normalizeBackupCode(code));
+            const idx = user.totpBackupCodes.indexOf(hash);
+            if (idx >= 0) {
+              valid = true;
+              const remaining = user.totpBackupCodes.filter((_, i) => i !== idx);
+              await db.user.update({ where: { id: userId }, data: { totpBackupCodes: remaining } });
+              logger.info({ userId }, "backup code consumed");
+            }
+          }
+
+          if (!valid) {
+            logger.warn({ userId, ip }, "TOTP verification failed");
+            return null;
+          }
+
+          logger.info({ userId }, "TOTP login successful");
+          return { id: user.id, email: user.email!, emailVerified: user.emailVerified };
+        }
+
+        // ── Password step ─────────────────────────────────────────────────────
+        if (!credentials?.email || !credentials?.password) return null;
 
         if (process.env.BYPASS_RATE_LIMIT !== "1") {
           try {
@@ -29,7 +97,13 @@ export const authOptions: NextAuthOptions = {
 
         const user = await db.user.findUnique({
           where: { email: credentials.email },
-          select: { id: true, email: true, passwordHash: true, emailVerified: true },
+          select: {
+            id: true,
+            email: true,
+            passwordHash: true,
+            emailVerified: true,
+            totpEnabled: true,
+          },
         });
 
         if (!user) {
@@ -41,6 +115,13 @@ export const authOptions: NextAuthOptions = {
         if (!valid) {
           logger.warn({ ip, email: credentials.email }, "login failed — wrong password");
           return null;
+        }
+
+        // Password correct — check if TOTP is required
+        if (user.totpEnabled) {
+          const token = createMfaToken(user.id);
+          logger.info({ userId: user.id }, "password ok, MFA required");
+          throw new Error(`mfa_required:${token}`);
         }
 
         logger.info({ userId: user.id, email: user.email }, "login successful");

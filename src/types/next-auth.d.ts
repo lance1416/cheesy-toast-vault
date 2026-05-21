@@ -11,6 +11,7 @@ declare module "next-auth" {
 
   interface User {
     emailVerified?: boolean;
+    totpEnabled?: boolean;
   }
 }
 

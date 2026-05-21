@@ -29,6 +29,7 @@ export default withAuth(
         const publicPaths = [
           "/",
           "/login",
+          "/login/totp",
           "/register",
           "/forgot-password",
           "/reset-password",
