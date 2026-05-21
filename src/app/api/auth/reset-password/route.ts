@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/server/db";
 import { authLimiter, enforceRateLimit } from "@/server/rate-limit";
+import logger from "@/server/logger";
 
 const schema = z.object({
   token: z.string().min(1),
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
   });
 
   if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+    logger.warn("password reset failed — token invalid or expired");
     return NextResponse.json({ error: "This link has expired or is invalid." }, { status: 400 });
   }
 
@@ -38,5 +40,6 @@ export async function POST(req: Request) {
     data: { passwordHash, resetTokenHash: null, resetTokenExpiry: null },
   });
 
+  logger.info({ userId: user.id }, "password reset completed");
   return NextResponse.json({ ok: true });
 }

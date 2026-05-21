@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { RateLimiterMemory, RateLimiterRes } from "rate-limiter-flexible";
+import logger from "@/server/logger";
 
 // 5 attempts per 10 minutes per IP — login and reset-password endpoints
 export const authLimiter = new RateLimiterMemory({ points: 5, duration: 600 });
@@ -22,6 +23,8 @@ export async function enforceRateLimit(
     await limiter.consume(getIp(req));
     return null;
   } catch {
+    const ip = getIp(req);
+    logger.warn({ ip, url: req.url }, "rate limit exceeded");
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
       { status: 429 },

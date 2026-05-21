@@ -6,6 +6,7 @@ import { db } from "@/server/db";
 import { handleApiError } from "@/server/api-error";
 import { enforceRateLimit, registrationLimiter } from "@/server/rate-limit";
 import { sendVerificationEmail } from "@/server/email";
+import logger from "@/server/logger";
 
 const schema = z.object({
   email: z.email(),
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
 
     const existing = await db.user.findUnique({ where: { email } });
     if (existing) {
+      logger.warn({ email }, "registration failed — email already in use");
       return NextResponse.json({ error: "Email already in use" }, { status: 409 });
     }
 
@@ -52,9 +54,11 @@ export async function POST(req: Request) {
     const baseUrl =
       process.env.RESET_BASE_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
     const verifyUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
-    // Send async — don't block registration response
-    void sendVerificationEmail(email, verifyUrl).catch(() => null);
+    void sendVerificationEmail(email, verifyUrl).catch((err) =>
+      logger.error({ err, email }, "failed to send verification email"),
+    );
 
+    logger.info({ userId: user.id, email }, "user registered");
     return NextResponse.json({ ok: true, vaultId: user.vaults[0].id }, { status: 201 });
   } catch (err) {
     return handleApiError(err);

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "@/server/db";
 import { sendPasswordResetEmail } from "@/server/email";
 import { enforceRateLimit, registrationLimiter } from "@/server/rate-limit";
+import logger from "@/server/logger";
 
 const schema = z.object({ email: z.email() });
 
@@ -34,9 +35,11 @@ export async function POST(req: Request) {
         process.env.RESET_BASE_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
       const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
       await sendPasswordResetEmail(email, resetUrl);
+      logger.info({ userId: user.id }, "password reset email sent");
     }
-  } catch {
+  } catch (err) {
     // swallow — never leak whether the email exists
+    logger.error({ err }, "forgot-password handler error");
   }
 
   return NextResponse.json({ ok: true });

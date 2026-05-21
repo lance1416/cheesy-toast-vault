@@ -1,5 +1,6 @@
 // Server-only utility — only import in route handlers or server components
 import { Resend } from "resend";
+import logger from "@/server/logger";
 
 const FROM = "Cheesy Toast Vault <noreply@cheesytoast.vault>";
 
@@ -14,7 +15,7 @@ function getResend(): Resend {
 }
 
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
-  await getResend().emails.send({
+  const { data, error } = await getResend().emails.send({
     from: FROM,
     to,
     subject: "Reset your login password",
@@ -39,10 +40,15 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
       <p style="color:#6b7280;font-size:13px">If you did not request this, you can safely ignore this email.</p>
     `,
   });
+  if (error) {
+    logger.error({ error, to }, "resend: failed to send password reset email");
+    throw error;
+  }
+  logger.debug({ id: data?.id, to }, "resend: password reset email sent");
 }
 
 export async function sendVerificationEmail(to: string, verifyUrl: string): Promise<void> {
-  await getResend().emails.send({
+  const { data, error } = await getResend().emails.send({
     from: FROM,
     to,
     subject: "Verify your email address",
@@ -59,4 +65,9 @@ export async function sendVerificationEmail(to: string, verifyUrl: string): Prom
       <p style="color:#6b7280;font-size:13px">This link expires in 24 hours.</p>
     `,
   });
+  if (error) {
+    logger.error({ error, to }, "resend: failed to send verification email");
+    throw error;
+  }
+  logger.debug({ id: data?.id, to }, "resend: verification email sent");
 }

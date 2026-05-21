@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/server/db";
 import { authLimiter, getIpFromRecord } from "@/server/rate-limit";
+import logger from "@/server/logger";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -15,11 +16,13 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) return null;
 
+        const ip = getIpFromRecord(req.headers as Record<string, string | undefined>);
+
         if (process.env.BYPASS_RATE_LIMIT !== "1") {
-          const ip = getIpFromRecord(req.headers as Record<string, string | undefined>);
           try {
             await authLimiter.consume(ip);
           } catch {
+            logger.warn({ ip }, "login rate limited");
             throw new Error("rate_limited");
           }
         }
@@ -29,11 +32,18 @@ export const authOptions: NextAuthOptions = {
           select: { id: true, email: true, passwordHash: true, emailVerified: true },
         });
 
-        if (!user) return null;
+        if (!user) {
+          logger.warn({ ip, email: credentials.email }, "login failed — user not found");
+          return null;
+        }
 
         const valid = await bcrypt.compare(credentials.password, user.passwordHash);
-        if (!valid) return null;
+        if (!valid) {
+          logger.warn({ ip, email: credentials.email }, "login failed — wrong password");
+          return null;
+        }
 
+        logger.info({ userId: user.id, email: user.email }, "login successful");
         return { id: user.id, email: user.email, emailVerified: user.emailVerified };
       },
     }),

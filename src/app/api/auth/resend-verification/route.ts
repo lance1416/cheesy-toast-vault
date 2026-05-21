@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "@/server/db";
 import { sendVerificationEmail } from "@/server/email";
 import { enforceRateLimit, registrationLimiter } from "@/server/rate-limit";
+import logger from "@/server/logger";
 
 const schema = z.object({ email: z.email() });
 
@@ -27,9 +28,11 @@ export async function POST(req: Request) {
       const baseUrl =
         process.env.RESET_BASE_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
       await sendVerificationEmail(email, `${baseUrl}/verify-email?token=${verificationToken}`);
+      logger.info({ userId: user.id }, "verification email resent");
     }
-  } catch {
+  } catch (err) {
     // swallow — never leak whether the email exists
+    logger.error({ err }, "resend-verification handler error");
   }
 
   return NextResponse.json({ ok: true });
