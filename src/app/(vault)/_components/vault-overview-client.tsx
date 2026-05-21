@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import UserAvatar from "@/components/user-avatar";
+import FooterApp from "@/components/footer-app";
 import CreateVaultModal from "./create-vault-modal";
 
 const PAGE_NOW = Date.now();
@@ -257,18 +259,19 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
 
   return (
     <div
-      className="min-h-screen bg-canvas"
+      className="min-h-screen bg-canvas flex flex-col"
       style={{ fontFamily: "var(--font-dm-sans, sans-serif)" }}
     >
       <header className="sticky top-0 z-10 bg-surface/90 backdrop-blur-sm border-b border-line/80">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-          <span
+        <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+          <Link
+            href="/vaults"
             aria-label="Cheesy Toast Vault"
-            className="text-base font-bold text-default tracking-tight"
+            className="text-base font-bold text-default tracking-tight hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
             style={{ fontFamily: "var(--font-playfair, serif)" }}
           >
             <span aria-hidden="true">🧀 </span>Cheesy Toast Vault
-          </span>
+          </Link>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -283,7 +286,7 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-8">
         {vaults.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <span className="text-6xl mb-5 select-none" aria-hidden="true">
@@ -318,6 +321,8 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
           </div>
         )}
       </main>
+
+      <FooterApp />
 
       {showCreate && (
         <CreateVaultModal
