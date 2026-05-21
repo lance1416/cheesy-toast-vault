@@ -26,6 +26,7 @@ Edit `docker/docker-compose.prod.yml` and replace the placeholder values:
 | `NEXTAUTH_SECRET`   | `openssl rand -hex 32`                                                                  |
 | `NEXTAUTH_URL`      | `https://yourdomain.com`                                                                |
 | `RESEND_API_KEY`    | From your Resend dashboard                                                              |
+| `EMAIL_FROM`        | `Your App <noreply@yourdomain.com>` — must be a verified Resend sender domain           |
 | `RESET_BASE_URL`    | Same as `NEXTAUTH_URL`                                                                  |
 
 ## 3. Start the stack
@@ -34,7 +35,8 @@ Edit `docker/docker-compose.prod.yml` and replace the placeholder values:
 docker compose -f docker/docker-compose.prod.yml up -d
 ```
 
-Docker pulls the pre-built image from Docker Hub. The app container runs database migrations automatically on every start before launching the server.
+Docker pulls the pre-built image from Docker Hub. The app container runs database migrations automatically on every
+start before launching the server.
 
 ## 4. Set up HTTPS with Nginx (recommended)
 

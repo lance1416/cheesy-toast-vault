@@ -11,6 +11,7 @@ services:
       NEXTAUTH_SECRET: replace-with-openssl-rand-hex-32
       NEXTAUTH_URL: https://yourdomain.com
       RESEND_API_KEY: re_your_resend_api_key
+      EMAIL_FROM: Cheesy Toast Vault <noreply@yourdomain.com>
       RESET_BASE_URL: https://yourdomain.com
     depends_on:
       db:

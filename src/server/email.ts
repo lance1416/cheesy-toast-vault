@@ -2,8 +2,6 @@
 import { Resend } from "resend";
 import logger from "@/server/logger";
 
-const FROM = "Cheesy Toast Vault <noreply@cheesytoast.vault>";
-
 let cachedResend: Resend | null = null;
 
 function getResend(): Resend {
@@ -14,9 +12,15 @@ function getResend(): Resend {
   return cachedResend;
 }
 
+function getFrom(): string {
+  const from = process.env.EMAIL_FROM;
+  if (!from) throw new Error("EMAIL_FROM is not configured");
+  return from;
+}
+
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
   const { data, error } = await getResend().emails.send({
-    from: FROM,
+    from: getFrom(),
     to,
     subject: "Reset your login password",
     text: [
@@ -49,7 +53,7 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
 
 export async function sendVerificationEmail(to: string, verifyUrl: string): Promise<void> {
   const { data, error } = await getResend().emails.send({
-    from: FROM,
+    from: getFrom(),
     to,
     subject: "Verify your email address",
     text: [
