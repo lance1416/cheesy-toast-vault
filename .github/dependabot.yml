@@ -7,6 +7,11 @@ updates:
     groups:
       all:
         patterns: ["*"]
+    ignore:
+      # eslint-config-next controls the supported ESLint major version.
+      # Only upgrade ESLint when eslint-config-next bumps its peer dep range.
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /
