@@ -12,9 +12,11 @@ export function generateTotpUri(email: string, secret: string): string {
   });
 }
 
-/** Verify a 6-digit TOTP token against a stored secret. */
+/** Verify a 6-digit TOTP token against a stored secret.
+ *  epochTolerance: 30 accepts codes from the previous 30-second period,
+ *  guarding against client/server clock drift. */
 export async function verifyTotpToken(token: string, secret: string): Promise<boolean> {
-  const result = await otpVerify({ secret, token });
+  const result = await otpVerify({ secret, token, epochTolerance: 30 });
   return result.valid;
 }
 

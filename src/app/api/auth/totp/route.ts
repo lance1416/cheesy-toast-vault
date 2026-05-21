@@ -12,13 +12,19 @@ import {
 import { handleApiError } from "@/server/api-error";
 import { enforceRateLimit, authLimiter } from "@/server/rate-limit";
 
-/** POST — generate a fresh TOTP secret for the enrollment flow.
- *  The secret is NOT persisted here; the client sends it back in /verify. */
+/** POST — begin TOTP setup.
+ *  Stores the pending secret in the DB and returns it (idempotent: returns the
+ *  same secret if setup is already in progress, preventing React Strict Mode
+ *  double-fire from generating two different secrets). */
 export async function POST() {
   try {
     const { userId, email } = await verifySession();
 
-    const user = await db.user.findUnique({ where: { id: userId }, select: { totpEnabled: true } });
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { totpEnabled: true, totpSecret: true },
+    });
+
     if (user?.totpEnabled) {
       return NextResponse.json(
         { error: "Two-factor authentication is already enabled." },
@@ -26,9 +32,14 @@ export async function POST() {
       );
     }
 
-    const secret = generateSecret();
-    const otpAuthUrl = generateTotpUri(email ?? "user", secret);
+    // Idempotent: reuse the pending secret if one already exists
+    const secret = user?.totpSecret ?? generateSecret();
 
+    if (!user?.totpSecret) {
+      await db.user.update({ where: { id: userId }, data: { totpSecret: secret } });
+    }
+
+    const otpAuthUrl = generateTotpUri(email ?? "user", secret);
     return NextResponse.json({ secret, otpAuthUrl });
   } catch (err) {
     return handleApiError(err);
@@ -37,7 +48,7 @@ export async function POST() {
 
 const disableSchema = z.object({ code: z.string().min(1) });
 
-/** DELETE — disable TOTP for the current user; requires a valid TOTP code. */
+/** DELETE — disable TOTP; requires a valid TOTP code. */
 export async function DELETE(req: Request) {
   try {
     const limited = await enforceRateLimit(authLimiter, req);

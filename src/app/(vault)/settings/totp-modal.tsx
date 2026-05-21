@@ -67,7 +67,7 @@ export default function TotpModal({
       const res = await fetch("/api/auth/totp/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ secret, code: code.replace(/\s/g, "") }),
+        body: JSON.stringify({ code: code.replace(/\s/g, "") }),
       });
       const data = (await res.json()) as { backupCodes?: string[]; error?: string };
       if (!res.ok) {

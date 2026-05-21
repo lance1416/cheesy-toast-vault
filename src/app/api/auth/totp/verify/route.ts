@@ -6,11 +6,12 @@ import { verifyTotpToken, generateBackupCodes, hashBackupCode } from "@/server/t
 import { handleApiError } from "@/server/api-error";
 
 const schema = z.object({
-  secret: z.string().min(1),
   code: z.string().length(6),
 });
 
-/** POST — verify the setup code, persist the secret, and return one-time backup codes. */
+/** POST — confirm the setup code and activate TOTP.
+ *  The secret is read from the DB (stored by the setup endpoint) — the client
+ *  does not need to echo it back. */
 export async function POST(req: Request) {
   try {
     const { userId } = await verifySession();
@@ -20,18 +21,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid input." }, { status: 400 });
     }
 
-    const { secret, code } = parsed.data;
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { totpEnabled: true, totpSecret: true },
+    });
 
-    if (!(await verifyTotpToken(code, secret))) {
-      return NextResponse.json({ error: "Invalid code. Please try again." }, { status: 400 });
-    }
-
-    const user = await db.user.findUnique({ where: { id: userId }, select: { totpEnabled: true } });
     if (user?.totpEnabled) {
       return NextResponse.json(
         { error: "Two-factor authentication is already enabled." },
         { status: 409 },
       );
+    }
+    if (!user?.totpSecret) {
+      return NextResponse.json(
+        { error: "No pending setup found. Please restart the setup flow." },
+        { status: 400 },
+      );
+    }
+
+    if (!(await verifyTotpToken(parsed.data.code, user.totpSecret))) {
+      return NextResponse.json({ error: "Invalid code. Please try again." }, { status: 400 });
     }
 
     const plainCodes = generateBackupCodes(10);
@@ -39,7 +48,7 @@ export async function POST(req: Request) {
 
     await db.user.update({
       where: { id: userId },
-      data: { totpSecret: secret, totpEnabled: true, totpBackupCodes: hashedCodes },
+      data: { totpEnabled: true, totpBackupCodes: hashedCodes },
     });
 
     return NextResponse.json({ backupCodes: plainCodes });

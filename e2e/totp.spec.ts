@@ -123,30 +123,39 @@ test.describe("Enroll TOTP from Settings", () => {
   }) => {
     await page.goto("/settings");
 
-    // Intercept the setup response to capture the server-generated secret
-    let enrollSecret = "";
-    const [setupResponse] = await Promise.all([
-      page.waitForResponse("**/api/auth/totp"),
-      page.getByRole("button", { name: /set up authenticator/i }).click(),
-    ]);
-    const setupBody = (await setupResponse.json()) as { secret?: string };
-    enrollSecret = setupBody.secret ?? "";
-    expect(enrollSecret).toBeTruthy();
+    // Open setup modal
+    await page.getByRole("button", { name: /set up authenticator/i }).click();
 
-    // Setup step — QR is loading; Continue button should be visible
-    await expect(page.getByRole("button", { name: /continue/i })).toBeVisible();
+    // Wait until the secret has loaded (Continue button becomes enabled)
+    // React StrictMode fires useEffect twice in dev; reading the DOM secret avoids
+    // capturing the wrong secret from the first (cancelled) fetch.
+    await expect(page.getByRole("button", { name: /continue/i })).toBeEnabled({ timeout: 10_000 });
+
+    // Read the secret from the "enter key manually" code element in the modal
+    // Wait explicitly for the secret to be a real base32 string (not "Loading…")
+    await expect(page.locator('[role="dialog"] code')).not.toHaveText("Loading…", {
+      timeout: 10_000,
+    });
+    const enrollSecret = (await page.locator('[role="dialog"] code').textContent()) ?? "";
+    expect(enrollSecret).toBeTruthy();
+    expect(enrollSecret).not.toBe("Loading…");
 
     // Advance to verify step
     await page.getByRole("button", { name: /continue/i }).click();
 
-    // Generate a fresh TOTP code using the intercepted secret
+    // Generate a fresh TOTP code using the secret shown in the modal
     const code = await generate({ secret: enrollSecret });
     await page.locator("#setup-totp-code").fill(code);
+    // Ensure React processed the input (Enable button should become enabled with 6 digits)
+    await expect(page.getByRole("button", { name: /enable 2fa/i })).toBeEnabled();
 
     const [verifyResponse] = await Promise.all([
       page.waitForResponse("**/api/auth/totp/verify"),
       page.getByRole("button", { name: /enable 2fa/i }).click(),
     ]);
+    const verifyBody = (await verifyResponse.json().catch(() => null)) as unknown;
+    if (verifyResponse.status() !== 200)
+      console.error("verify 400 body:", JSON.stringify(verifyBody));
     expect(verifyResponse.status()).toBe(200);
 
     // Backup codes step
