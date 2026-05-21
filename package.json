@@ -11,7 +11,7 @@
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "db:push": "prisma db push",
-    "db:reset": "prisma migrate reset",
+    "db:reset": "prisma migrate reset --force",
     "postinstall": "prisma generate",
     "prepare": "husky",
     "test": "vitest run",
