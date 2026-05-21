@@ -23,3 +23,8 @@ export type DecryptedEntry = EntryPayload & {
   tags: { id: string; name: string }[];
   updatedAt: string;
 };
+
+export type CrossVaultEntry = DecryptedEntry & {
+  vaultId: string;
+  vaultName: string;
+};

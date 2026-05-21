@@ -73,9 +73,11 @@ function Favicon({ url, name }: { url: string; name: string }) {
 export default function EntryCard({
   entry,
   onEdit,
+  vaultName,
 }: {
   entry: DecryptedEntry;
   onEdit: () => void;
+  vaultName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -149,6 +151,11 @@ export default function EntryCard({
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
+          {vaultName && (
+            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-stone-100 dark:bg-stone-800 text-muted border border-line/60 max-w-[96px] truncate shrink-0">
+              {vaultName}
+            </span>
+          )}
           {isStale && (
             <span
               title={`Password last changed ${passwordAgeDays} days ago`}

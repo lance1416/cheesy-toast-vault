@@ -1,13 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
+import { useVault } from "@/context/vault";
+import { decryptEntry } from "@/lib/crypto";
+import { SearchIcon } from "@/components/icons";
 import UserAvatar from "@/components/user-avatar";
 import ThemeToggle from "@/components/theme-toggle";
 import FooterApp from "@/components/footer-app";
+import EntryCard from "./entry-card";
 import CreateVaultModal from "./create-vault-modal";
+import type { EntryPayload, EncryptedEntryProp, CrossVaultEntry } from "@/types/vault";
+
+type RawVault = { id: string; name: string; entries: EncryptedEntryProp[] };
 
 const PAGE_NOW = Date.now();
 const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
@@ -249,9 +256,80 @@ function VaultCard({
 export default function VaultOverviewClient({ vaults: initialVaults }: { vaults: VaultSummary[] }) {
   const router = useRouter();
   const { data: session } = useSession();
+  const { keys } = useVault();
   const [vaults, setVaults] = useState<VaultSummary[]>(initialVaults);
   const [showCreate, setShowCreate] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // ── Cross-vault search ────────────────────────────────────────────────────────
+  const [searchQuery, setSearchQuery] = useState("");
+  const [fetchState, setFetchState] = useState<"idle" | "loading" | "ready" | { error: string }>(
+    "idle",
+  );
+  const [rawVaults, setRawVaults] = useState<RawVault[]>([]);
+  const [allDecrypted, setAllDecrypted] = useState<CrossVaultEntry[]>([]);
+
+  function handleSearchChange(q: string) {
+    setSearchQuery(q);
+    if (q.trim() && fetchState === "idle") {
+      setFetchState("loading");
+      fetch("/api/entries")
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((data: { vaults: RawVault[] }) => {
+          setRawVaults(data.vaults);
+          setFetchState("ready");
+        })
+        .catch(() => setFetchState({ error: "Failed to load entries." }));
+    }
+  }
+
+  // Decrypt entries for all currently-unlocked vaults whenever data or keys change
+  useEffect(() => {
+    const unlockedVaults = rawVaults.filter((v) => keys[v.id]);
+    // Promise.all([]) resolves immediately to [] when no vaults are unlocked
+    let cancelled = false;
+    Promise.all(
+      unlockedVaults.flatMap((v) =>
+        v.entries.map(async (e) => {
+          try {
+            const payload = await decryptEntry<EntryPayload>(keys[v.id]!, e.encryptedBlob, e.iv);
+            return {
+              ...payload,
+              id: e.id,
+              tags: e.tags,
+              updatedAt: e.updatedAt,
+              vaultId: v.id,
+              vaultName: v.name,
+            } satisfies CrossVaultEntry;
+          } catch {
+            return null;
+          }
+        }),
+      ),
+    ).then((results) => {
+      if (!cancelled) setAllDecrypted(results.filter((r): r is CrossVaultEntry => r !== null));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [rawVaults, keys]);
+
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+    return allDecrypted.filter(
+      (e) =>
+        e.name.toLowerCase().includes(q) ||
+        e.url?.toLowerCase().includes(q) ||
+        e.username.toLowerCase().includes(q) ||
+        e.email.toLowerCase().includes(q) ||
+        e.notes?.toLowerCase().includes(q),
+    );
+  }, [allDecrypted, searchQuery]);
+
+  const unlockedCount = rawVaults.filter((v) => keys[v.id]).length;
+
+  // ─────────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -370,7 +448,69 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
       )}
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        {vaults.length === 0 ? (
+        {/* Search bar — shown when there are vaults to search */}
+        {vaults.length > 0 && (
+          <div className="mb-6">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle pointer-events-none">
+                <SearchIcon />
+              </span>
+              <label htmlFor="cross-vault-search" className="sr-only">
+                Search across unlocked vaults
+              </label>
+              <input
+                id="cross-vault-search"
+                type="search"
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder="Search across unlocked vaults…"
+                className="w-full rounded-lg border border-line/60 bg-surface pl-9 pr-4 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+              />
+            </div>
+          </div>
+        )}
+
+        {searchQuery.trim() ? (
+          // ── Search results ────────────────────────────────────────────────────
+          <div>
+            {fetchState === "loading" && (
+              <p className="text-sm text-muted py-8 text-center">Searching…</p>
+            )}
+            {typeof fetchState === "object" && "error" in fetchState && (
+              <p role="alert" className="text-sm text-red-600 dark:text-red-400 py-8 text-center">
+                {fetchState.error}
+              </p>
+            )}
+            {fetchState === "ready" && unlockedCount === 0 && (
+              <div className="py-16 text-center">
+                <p className="text-sm text-muted mb-1">No unlocked vaults.</p>
+                <p className="text-xs text-subtle">Open a vault first to include it in search.</p>
+              </div>
+            )}
+            {fetchState === "ready" && unlockedCount > 0 && searchResults.length === 0 && (
+              <p className="text-sm text-muted py-8 text-center">No entries match your search.</p>
+            )}
+            {fetchState === "ready" && searchResults.length > 0 && (
+              <>
+                <p className="text-xs text-subtle mb-3">
+                  {searchResults.length} {searchResults.length === 1 ? "result" : "results"} across{" "}
+                  {unlockedCount} {unlockedCount === 1 ? "vault" : "vaults"}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-start">
+                  {searchResults.map((entry) => (
+                    <EntryCard
+                      key={entry.id}
+                      entry={entry}
+                      vaultName={entry.vaultName}
+                      onEdit={() => router.push(`/vault/${entry.vaultId}`)}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        ) : vaults.length === 0 ? (
+          // ── Empty state ───────────────────────────────────────────────────────
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <span className="text-6xl mb-5 select-none" aria-hidden="true">
               🔐
@@ -391,6 +531,7 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
             </button>
           </div>
         ) : (
+          // ── Vault grid ────────────────────────────────────────────────────────
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {vaults.map((vault) => (
               <VaultCard
