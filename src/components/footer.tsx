@@ -1,5 +1,4 @@
 import Link from "next/link";
-import pkg from "../../package.json";
 
 /** Public footer — landing page. */
 export default function Footer() {
@@ -9,7 +8,7 @@ export default function Footer() {
       <div className="max-w-5xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted">
         <span>© {year} Cheesy Toast Vault</span>
         <div className="flex items-center gap-3">
-          <span>v{pkg.version}</span>
+          <span>v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
           <span aria-hidden="true">·</span>
           <Link
             href="https://github.com/lance1416/cheesy-toast-vault"
