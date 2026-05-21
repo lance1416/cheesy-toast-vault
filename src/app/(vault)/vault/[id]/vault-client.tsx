@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useVault } from "@/context/vault";
 import { deriveCryptoKey, decryptEntry, base64ToBuffer } from "@/lib/crypto";
-import { isStalePassword } from "@/lib/stale-password";
+import { isStalePassword, compareByPasswordAge } from "@/lib/stale-password";
 import { SearchIcon, LockIcon, DotsHorizontalIcon } from "@/components/icons";
 import type { EntryPayload, EncryptedEntryProp, DecryptedEntry, Tag } from "@/types/vault";
 import EntryCard from "../../_components/entry-card";
@@ -306,9 +306,9 @@ export default function VaultClient({
   const [query, setQuery] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [showManageTags, setShowManageTags] = useState(false);
-  const [sort, setSort] = useState<"updated-desc" | "updated-asc" | "name-asc" | "name-desc">(
-    "updated-desc",
-  );
+  const [sort, setSort] = useState<
+    "updated-desc" | "updated-asc" | "name-asc" | "name-desc" | "age-asc" | "age-desc"
+  >("updated-desc");
   const [filterStale, setFilterStale] = useState(false);
   const [importStatus, setImportStatus] = useState<
     "idle" | "importing" | { imported: number } | { error: string }
@@ -369,6 +369,10 @@ export default function VaultClient({
           return a.updatedAt < b.updatedAt ? -1 : a.updatedAt > b.updatedAt ? 1 : 0;
         case "updated-desc":
           return b.updatedAt < a.updatedAt ? -1 : b.updatedAt > a.updatedAt ? 1 : 0;
+        case "age-asc":
+          return compareByPasswordAge(a, b, "asc");
+        case "age-desc":
+          return compareByPasswordAge(a, b, "desc");
       }
     });
   }, [decrypted, query, selectedTagIds, sort, filterStale]);
@@ -652,6 +656,8 @@ export default function VaultClient({
                 <option value="updated-asc">Oldest</option>
                 <option value="name-asc">A → Z</option>
                 <option value="name-desc">Z → A</option>
+                <option value="age-asc">Oldest password</option>
+                <option value="age-desc">Newest password</option>
               </select>
             </div>
 
