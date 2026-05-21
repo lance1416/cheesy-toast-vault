@@ -1,5 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
-import { TEST_LOCKED_VAULT_NAME } from "./test-data";
+import { Client } from "pg";
+import { TEST_LOCKED_VAULT_NAME, TEST_USER_EMAIL, TEST_USER_LOGIN_PW } from "./test-data";
+
+const DB_URL =
+  process.env.DATABASE_URL_TEST ??
+  "postgresql://postgres:postgres@localhost:5433/cheesy_toast_vault_test";
 
 /** Navigate to the E2E Vault and unlock it (works with any password when the vault is empty). */
 async function navigateAndUnlock(page: Page): Promise<void> {
@@ -144,5 +149,48 @@ test.describe("Sign out", () => {
     await page.getByRole("button", { name: "User menu" }).click();
     await page.getByRole("button", { name: /sign out/i }).click();
     await expect(page).toHaveURL("/", { timeout: 5_000 });
+  });
+});
+
+// Must run last within this file — the success test mutates the DB (email changed,
+// emailVerified=false). afterAll restores both so the totp project (which runs next
+// and uses the same storageState) is not affected.
+test.describe("Settings — email change", () => {
+  test.afterAll(async () => {
+    // Restore the test user's email and emailVerified so subsequent projects can still
+    // access authenticated pages via the saved storageState session.
+    const db = new Client({ connectionString: DB_URL });
+    await db.connect();
+    await db.query(
+      `UPDATE "User" SET email = $1, "emailVerified" = true WHERE email = 'new-e2e@example.com'`,
+      [TEST_USER_EMAIL],
+    );
+    await db.end();
+  });
+
+  test("wrong password shows an error", async ({ page }) => {
+    await page.goto("/settings");
+    await page.getByRole("button", { name: /^change email$/i }).click();
+    await page.locator("#new-email").fill("new-e2e@example.com");
+    await page.locator("#email-current-password").fill("WrongLoginPass1!");
+    await page.getByRole("button", { name: /^update email$/i }).click();
+    await expect(
+      page.getByRole("alert").filter({ hasText: /current password is incorrect/i }),
+    ).toBeVisible({ timeout: 5_000 });
+    // Form should still be visible — not submitted
+    await expect(page.locator("#new-email")).toBeVisible();
+  });
+
+  test("correct password shows success banner and signs out", async ({ page }) => {
+    await page.goto("/settings");
+    await page.getByRole("button", { name: /^change email$/i }).click();
+    await page.locator("#new-email").fill("new-e2e@example.com");
+    await page.locator("#email-current-password").fill(TEST_USER_LOGIN_PW);
+    await page.getByRole("button", { name: /^update email$/i }).click();
+    await expect(
+      page.getByRole("status").filter({ hasText: /verification email sent/i }),
+    ).toBeVisible({ timeout: 5_000 });
+    // After ~1.5 s the client calls signOut → redirects to /
+    await expect(page).toHaveURL("/", { timeout: 8_000 });
   });
 });
