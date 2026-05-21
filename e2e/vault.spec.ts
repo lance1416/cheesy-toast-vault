@@ -57,8 +57,10 @@ test.describe.serial("Vault entry CRUD (authenticated)", () => {
     await navigateAndUnlock(page);
     await page.getByRole("button", { name: /\+ add entry/i }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    await page.getByLabel(/^name$/i).fill("E2E Test Entry");
-    await page.getByRole("button", { name: /^save entry$/i }).click();
+    // Fill name (required) then submit with Enter — the Save button may be below the fold
+    // now that the "2FA Secret" field was added to the form.
+    await page.locator("#new-name").fill("E2E Test Entry");
+    await page.locator("#new-name").press("Enter");
     await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
     await expect(page.getByText("E2E Test Entry")).toBeVisible({ timeout: 5_000 });
   });
@@ -72,10 +74,10 @@ test.describe.serial("Vault entry CRUD (authenticated)", () => {
       .first()
       .click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    const nameField = page.getByLabel(/^name$/i);
+    const nameField = page.locator("#edit-name");
     await nameField.clear();
     await nameField.fill("E2E Renamed Entry");
-    await page.getByRole("button", { name: /^save$/i }).click();
+    await nameField.press("Enter");
     await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
     await expect(page.getByText("E2E Renamed Entry")).toBeVisible({ timeout: 5_000 });
   });
@@ -84,8 +86,8 @@ test.describe.serial("Vault entry CRUD (authenticated)", () => {
     await navigateAndUnlock(page);
     // Create a second entry to verify filtering works
     await page.getByRole("button", { name: /\+ add entry/i }).click();
-    await page.getByLabel(/^name$/i).fill("Filtered Out Entry");
-    await page.getByRole("button", { name: /^save entry$/i }).click();
+    await page.locator("#new-name").fill("Filtered Out Entry");
+    await page.locator("#new-name").press("Enter");
     await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
 
     await page.locator("#vault-search").fill("E2E Renamed");

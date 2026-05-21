@@ -94,27 +94,39 @@ test.describe("Enroll TOTP from Settings", () => {
   }) => {
     await page.goto("/settings");
 
+    // Capture the secret directly from the API response rather than the DOM.
+    // React StrictMode fires the setup useEffect twice in dev — both requests
+    // complete with different secrets, but only the last one's result is applied
+    // to state.  Reading the DOM can race; reading the final network response is
+    // deterministic: every matching response overwrites enrollSecret, so the last
+    // one wins.
+    let enrollSecret = "";
+    page.on("response", async (response) => {
+      if (
+        response.url().includes("/api/auth/totp") &&
+        !response.url().includes("/verify") &&
+        response.request().method() === "POST"
+      ) {
+        try {
+          const data = (await response.json()) as { secret?: string };
+          if (data.secret) enrollSecret = data.secret;
+        } catch {
+          // ignore parse errors
+        }
+      }
+    });
+
     // Open setup modal
     await page.getByRole("button", { name: /set up authenticator/i }).click();
 
     // Wait until the secret has loaded (Continue button becomes enabled)
-    // React StrictMode fires useEffect twice in dev; reading the DOM secret avoids
-    // capturing the wrong secret from the first (cancelled) fetch.
     await expect(page.getByRole("button", { name: /continue/i })).toBeEnabled({ timeout: 10_000 });
-
-    // Read the secret from the "enter key manually" code element in the modal
-    // Wait explicitly for the secret to be a real base32 string (not "Loading…")
-    await expect(page.locator('[role="dialog"] code')).not.toHaveText("Loading…", {
-      timeout: 10_000,
-    });
-    const enrollSecret = (await page.locator('[role="dialog"] code').textContent()) ?? "";
     expect(enrollSecret).toBeTruthy();
-    expect(enrollSecret).not.toBe("Loading…");
 
     // Advance to verify step
     await page.getByRole("button", { name: /continue/i }).click();
 
-    // Generate a fresh TOTP code using the secret shown in the modal
+    // Generate a fresh TOTP code from the secret we captured above
     const code = await generate({ secret: enrollSecret });
     await page.locator("#setup-totp-code").fill(code);
     // Ensure React processed the input (Enable button should become enabled with 6 digits)
