@@ -540,9 +540,50 @@ export default function VaultClient({
             />
           </>
         }
+        mobileActions={
+          <>
+            <button
+              type="button"
+              onClick={() => setShowNew(true)}
+              className="w-full text-left rounded-xl px-3 py-2.5 text-sm font-semibold text-white bg-stone-800 dark:bg-amber-600 hover:bg-amber-700 dark:hover:bg-amber-500 transition-colors"
+            >
+              + Add entry
+            </button>
+            <div className="h-px bg-line/50 mx-1" />
+            <button
+              type="button"
+              onClick={() => clearKey(vault.id)}
+              className="w-full inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-muted border border-line hover:text-amber-700 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+            >
+              <LockIcon />
+              Lock vault
+            </button>
+            <div className="h-px bg-line/50 my-0.5 mx-1" />
+            <button
+              type="button"
+              onClick={handleExport}
+              className="w-full text-left rounded-xl px-3 py-2.5 text-sm text-muted hover:text-default hover:bg-sunken transition-colors"
+            >
+              Export backup
+            </button>
+            <label className="w-full flex rounded-xl px-3 py-2.5 text-sm text-muted hover:text-default hover:bg-sunken transition-colors cursor-pointer">
+              Import backup
+              <input
+                type="file"
+                accept=".json"
+                className="sr-only"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImport(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </>
+        }
       />
 
-      <main className="max-w-5xl mx-auto px-4 py-5 space-y-4">
+      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-5 space-y-4">
         {importStatus !== "idle" && (
           <div
             role={typeof importStatus === "object" && "error" in importStatus ? "alert" : "status"}
