@@ -81,8 +81,16 @@ function TotpRow({ secret }: { secret: string }) {
 
     async function generate() {
       try {
-        const { generate: otpGenerate } = await import("otplib");
-        const token = await otpGenerate({ secret });
+        const [{ generate: otpGenerate }, { createGuardrails }] = await Promise.all([
+          import("otplib"),
+          import("@otplib/core"),
+        ]);
+        // Lower the minimum from 128 bits (16 bytes) to 80 bits (10 bytes) so that
+        // 16-character base32 secrets — the format GitHub and Google use — are accepted.
+        // RFC 4226 requires ≥ 128 bits for new deployments, but 80-bit secrets are
+        // widely deployed and supported by every major authenticator app.
+        const guardrails = createGuardrails({ MIN_SECRET_BYTES: 10 });
+        const token = await otpGenerate({ secret, guardrails });
         if (!cancelled) setCode(token);
       } catch {
         if (!cancelled) setError(true);
