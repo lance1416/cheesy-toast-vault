@@ -37,6 +37,13 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], storageState: "e2e/.auth/user.json" },
       dependencies: ["setup"],
     },
+    // TOTP/2FA tests — mix of unauthenticated (login flow) and authenticated (settings)
+    {
+      name: "totp",
+      testMatch: "**/totp.spec.ts",
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
+    },
   ],
   webServer: {
     command: `DATABASE_URL="${TEST_DB_URL}" BYPASS_RATE_LIMIT=1 pnpm dev`,
