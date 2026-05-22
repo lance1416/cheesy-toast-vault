@@ -11,10 +11,15 @@ export const verifySession = cache(async () => {
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { emailVerified: true },
+    select: { emailVerified: true, sessionVersion: true },
   });
   if (!user) redirect("/api/auth/clear-session");
   if (!user.emailVerified) redirect("/login?unverified=1");
+  if (
+    session.user.sessionVersion !== undefined &&
+    session.user.sessionVersion !== user.sessionVersion
+  )
+    redirect("/api/auth/clear-session");
 
   return { userId: session.user.id, email: session.user.email };
 });

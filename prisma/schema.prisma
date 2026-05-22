@@ -21,6 +21,8 @@ model User {
   totpEnabled       Boolean   @default(false)
   /// SHA-256 hashes of single-use backup codes; consumed on use
   totpBackupCodes   String[]  @default([])
+  /// Incremented on "sign out everywhere"; JWTs carrying an older version are rejected
+  sessionVersion    Int       @default(1)
   createdAt         DateTime     @default(now())
   vaults            Vault[]
   tags              Tag[]

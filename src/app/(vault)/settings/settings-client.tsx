@@ -63,10 +63,38 @@ export default function SettingsClient({
   const [disabling, setDisabling] = useState(false);
   const [disableError, setDisableError] = useState("");
 
+  const [revokePhase, setRevokePhase] = useState<"idle" | "form">("idle");
+  const [revokePassword, setRevokePassword] = useState("");
+  const [revoking, setRevoking] = useState(false);
+  const [revokeError, setRevokeError] = useState("");
+
   const [deletePhase, setDeletePhase] = useState<"idle" | "confirm">("idle");
   const [deletePassword, setDeletePassword] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+
+  async function handleRevokeAllSessions(e: React.FormEvent) {
+    e.preventDefault();
+    setRevokeError("");
+    setRevoking(true);
+    try {
+      const res = await fetch("/api/auth/account", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "revokeAllSessions", currentPassword: revokePassword }),
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        throw new Error(data.error ?? "Failed to revoke sessions");
+      }
+      await signOut({ callbackUrl: "/" });
+    } catch (err) {
+      setRevokeError(
+        err instanceof Error ? err.message : "Something went wrong. Please try again.",
+      );
+      setRevoking(false);
+    }
+  }
 
   async function handleDelete(e: React.FormEvent) {
     e.preventDefault();
@@ -427,6 +455,60 @@ export default function SettingsClient({
                   className="flex-1 rounded-lg bg-stone-800 dark:bg-amber-600 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {disabling ? "Disabling…" : "Confirm disable"}
+                </button>
+              </div>
+            </form>
+          )}
+        </section>
+
+        <section className="mt-8 bg-surface rounded-lg border border-line/60 p-6">
+          <h2 className="text-base font-semibold text-default mb-1">Sessions</h2>
+          <p className="text-sm text-muted mb-4">
+            Sign out of all devices, including this one. Use this if you think your account may be
+            compromised or you&#39;ve lost a device.
+          </p>
+
+          {revokePhase === "idle" ? (
+            <button
+              type="button"
+              onClick={() => setRevokePhase("form")}
+              className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-muted hover:text-default hover:bg-sunken transition-colors"
+            >
+              Sign out everywhere
+            </button>
+          ) : (
+            <form onSubmit={handleRevokeAllSessions} className="space-y-4">
+              <p className="text-sm font-medium text-default">
+                Enter your password to confirm. You will be signed out of all devices.
+              </p>
+              <Field
+                label="Current password"
+                id="revoke-password"
+                type="password"
+                value={revokePassword}
+                onChange={setRevokePassword}
+                required
+                autoFocus
+              />
+              {revokeError && <AlertBanner message={revokeError} />}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRevokePhase("idle");
+                    setRevokePassword("");
+                    setRevokeError("");
+                  }}
+                  className="flex-1 rounded-lg border border-line py-2.5 text-sm font-semibold text-muted hover:bg-sunken transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={revoking || !revokePassword}
+                  className="flex-1 rounded-lg bg-stone-800 dark:bg-amber-600 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {revoking ? "Signing out…" : "Sign out everywhere"}
                 </button>
               </div>
             </form>

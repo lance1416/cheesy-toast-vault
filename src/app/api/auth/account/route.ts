@@ -19,7 +19,16 @@ const changeEmailSchema = z.object({
   newEmail: z.string().email(),
 });
 
-const patchSchema = z.discriminatedUnion("action", [changePasswordSchema, changeEmailSchema]);
+const revokeAllSessionsSchema = z.object({
+  action: z.literal("revokeAllSessions"),
+  currentPassword: z.string().min(1),
+});
+
+const patchSchema = z.discriminatedUnion("action", [
+  changePasswordSchema,
+  changeEmailSchema,
+  revokeAllSessionsSchema,
+]);
 
 const deleteSchema = z.object({
   password: z.string().min(1),
@@ -45,6 +54,11 @@ export async function PATCH(req: Request) {
     if (parsed.data.action === "changePassword") {
       const passwordHash = await bcrypt.hash(parsed.data.newPassword, 12);
       await db.user.update({ where: { id: userId }, data: { passwordHash } });
+      return NextResponse.json({ ok: true });
+    }
+
+    if (parsed.data.action === "revokeAllSessions") {
+      await db.user.update({ where: { id: userId }, data: { sessionVersion: { increment: 1 } } });
       return NextResponse.json({ ok: true });
     }
 

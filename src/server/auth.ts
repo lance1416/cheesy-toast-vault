@@ -138,15 +138,21 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
         token.emailVerified = !!user.emailVerified;
+        const dbUser = await db.user.findUnique({
+          where: { id: user.id },
+          select: { sessionVersion: true },
+        });
+        token.sessionVersion = dbUser?.sessionVersion ?? 1;
       }
       return token;
     },
     session({ session, token }) {
       if (token.sub) session.user.id = token.sub;
+      if (token.sessionVersion !== undefined) session.user.sessionVersion = token.sessionVersion;
       return session;
     },
   },
