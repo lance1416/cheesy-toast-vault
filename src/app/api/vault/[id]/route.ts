@@ -66,6 +66,24 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   }
 }
 
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const { userId } = await verifySession();
+
+    const entry = await resolveEntry(id, userId);
+    if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    const parsed = z.object({ pinned: z.boolean() }).safeParse(await req.json());
+    if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+
+    await db.vaultEntry.update({ where: { id }, data: { pinned: parsed.data.pinned } });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return handleApiError(err);
+  }
+}
+
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;

@@ -90,7 +90,14 @@ export const getVaultEntries = cache(async (vaultId: string) => {
   if (!vault) notFound();
   return db.vaultEntry.findMany({
     where: { vaultId },
-    include: { tags: { select: { id: true, name: true } } },
+    select: {
+      id: true,
+      encryptedBlob: true,
+      iv: true,
+      pinned: true,
+      updatedAt: true,
+      tags: { select: { id: true, name: true } },
+    },
     orderBy: { updatedAt: "desc" },
   });
 });

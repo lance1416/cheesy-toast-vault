@@ -30,6 +30,7 @@ function makeEntry(overrides: Partial<DecryptedEntry> = {}): DecryptedEntry {
     email: "alice@example.com",
     password: "super-secret-pw",
     notes: "",
+    pinned: false,
     tags: [],
     updatedAt: new Date(NOW - DAY_MS).toISOString(),
     passwordChangedAt: new Date(NOW - DAY_MS).toISOString(), // 1 day old → not stale

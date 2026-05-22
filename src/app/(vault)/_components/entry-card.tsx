@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { EyeIcon, ChevronIcon, CopyIcon, ShieldIcon, CloseIcon } from "@/components/icons";
+import { EyeIcon, ChevronIcon, CopyIcon, ShieldIcon, CloseIcon, PinIcon } from "@/components/icons";
 import { checkBreach } from "@/lib/crypto";
 import { isStalePassword, passwordAgeDays as getPasswordAgeDays } from "@/lib/stale-password";
 import type { DecryptedEntry } from "@/types/vault";
@@ -200,11 +200,13 @@ export default function EntryCard({
   entry,
   onEdit,
   onHistory,
+  onTogglePin,
   vaultName,
 }: {
   entry: DecryptedEntry;
   onEdit: () => void;
   onHistory?: () => void;
+  onTogglePin?: (pinned: boolean) => void;
   vaultName?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -246,7 +248,9 @@ export default function EntryCard({
   }, [entry.url]);
 
   return (
-    <div className="bg-surface rounded-lg border border-line/60 overflow-hidden">
+    <div
+      className={`bg-surface rounded-lg border overflow-hidden transition-colors ${entry.pinned ? "border-amber-300 dark:border-amber-700 border-l-2" : "border-line/60"}`}
+    >
       {/* Header — click anywhere to expand/collapse */}
       <div
         className="px-4 py-3 flex items-center gap-3 cursor-pointer select-none"
@@ -291,6 +295,20 @@ export default function EntryCard({
             >
               {passwordAgeDays}d
             </span>
+          )}
+          {onTogglePin && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePin(!entry.pinned);
+              }}
+              aria-label={entry.pinned ? "Unpin entry" : "Pin entry"}
+              title={entry.pinned ? "Unpin entry" : "Pin entry"}
+              className={`transition-colors ${entry.pinned ? "text-amber-500 dark:text-amber-400 hover:text-muted" : "text-subtle hover:text-amber-500 dark:hover:text-amber-400"}`}
+            >
+              <PinIcon filled={entry.pinned} />
+            </button>
           )}
           <button
             type="button"

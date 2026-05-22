@@ -184,6 +184,37 @@ export function ShieldIcon({ size = 13 }: { size?: number }) {
   );
 }
 
+export function PinIcon({ filled = false, size = 13 }: { filled?: boolean; size?: number }) {
+  return filled ? (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M12 2a1 1 0 011 1v1.382l5.447 2.18A1 1 0 0119 7.5v1a1 1 0 01-1 1h-2v5.586l1.707 1.707A1 1 0 0117 18h-4v3a1 1 0 01-2 0v-3H7a1 1 0 01-.707-1.707L8 14.586V9.5H6a1 1 0 01-1-1v-1a1 1 0 01.553-.894L11 4.382V3a1 1 0 011-1z" />
+    </svg>
+  ) : (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="12" y1="17" x2="12" y2="22" />
+      <path d="M5 17h14v-1.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V6h1a2 2 0 000-4H8a2 2 0 000 4h1v4.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V17z" />
+    </svg>
+  );
+}
+
 export function TrashIcon() {
   return (
     <svg

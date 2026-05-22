@@ -15,12 +15,14 @@ export type EncryptedEntryProp = {
   id: string;
   encryptedBlob: string;
   iv: string;
+  pinned: boolean;
   tags: { id: string; name: string }[];
   updatedAt: string;
 };
 
 export type DecryptedEntry = EntryPayload & {
   id: string;
+  pinned: boolean;
   tags: { id: string; name: string }[];
   updatedAt: string;
 };

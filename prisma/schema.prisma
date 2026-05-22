@@ -50,6 +50,7 @@ model VaultEntry {
   encryptedBlob String
   /// base64-encoded AES-GCM initialization vector; unique per entry, safe to store in plaintext
   iv            String
+  pinned        Boolean        @default(false)
   tags          Tag[]
   history       EntryHistory[]
   createdAt     DateTime       @default(now())

@@ -337,7 +337,7 @@ export default function VaultClient({
     Promise.all(
       entries.map(async (e) => {
         const payload = await decryptEntry<EntryPayload>(cryptoKey, e.encryptedBlob, e.iv);
-        return { ...payload, id: e.id, tags: e.tags, updatedAt: e.updatedAt };
+        return { ...payload, id: e.id, pinned: e.pinned, tags: e.tags, updatedAt: e.updatedAt };
       }),
     )
       .then((results) => {
@@ -377,6 +377,7 @@ export default function VaultClient({
       );
     }
     return [...result].sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
       switch (sort) {
         case "name-asc":
           return a.name.localeCompare(b.name);
@@ -393,6 +394,17 @@ export default function VaultClient({
       }
     });
   }, [decrypted, query, selectedTagIds, sort, filterStale]);
+
+  const handleTogglePin = useCallback(async (entryId: string, pinned: boolean) => {
+    await fetch(`/api/vault/${entryId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pinned }),
+    });
+    setDecrypted((prev) =>
+      prev ? prev.map((e) => (e.id === entryId ? { ...e, pinned } : e)) : prev,
+    );
+  }, []);
 
   function toggleTagFilter(id: string) {
     setSelectedTagIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -776,6 +788,7 @@ export default function VaultClient({
                 entry={entry}
                 onEdit={() => setEditingEntry(entries.find((e) => e.id === entry.id) ?? null)}
                 onHistory={() => setHistoryEntryId(entry.id)}
+                onTogglePin={(pinned) => handleTogglePin(entry.id, pinned)}
               />
             ))}
           </div>

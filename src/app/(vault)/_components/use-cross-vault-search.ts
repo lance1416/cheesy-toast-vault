@@ -60,6 +60,7 @@ export function useCrossVaultSearch(): CrossVaultSearchResult {
             return {
               ...payload,
               id: e.id,
+              pinned: e.pinned,
               tags: e.tags,
               updatedAt: e.updatedAt,
               vaultId: v.id,
