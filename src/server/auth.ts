@@ -18,7 +18,9 @@ export const authOptions: NextAuthOptions = {
         totpCode: { label: "Code", type: "text" },
       },
       async authorize(credentials, req) {
-        const ip = getIpFromRecord(req.headers as Record<string, string | undefined>);
+        const headers = req.headers as Record<string, string | undefined>;
+        const ip = getIpFromRecord(headers);
+        const ua = headers["user-agent"] ?? "";
 
         // ── TOTP challenge step ───────────────────────────────────────────────
         if (credentials?.totpToken) {
@@ -80,7 +82,16 @@ export const authOptions: NextAuthOptions = {
           db.loginAudit
             .create({ data: { userId, ip, success: true, method: totpMethod } })
             .catch(() => {});
-          return { id: user.id, email: user.email!, emailVerified: user.emailVerified };
+          const totpSession = await db.userSession.create({
+            data: { userId, ip, userAgent: ua },
+            select: { id: true },
+          });
+          return {
+            id: user.id,
+            email: user.email!,
+            emailVerified: user.emailVerified,
+            sessionId: totpSession.id,
+          };
         }
 
         // ── Password step ─────────────────────────────────────────────────────
@@ -131,17 +142,34 @@ export const authOptions: NextAuthOptions = {
         db.loginAudit
           .create({ data: { userId: user.id, ip, success: true, method: "password" } })
           .catch(() => {});
-        return { id: user.id, email: user.email, emailVerified: user.emailVerified };
+        const pwSession = await db.userSession.create({
+          data: { userId: user.id, ip, userAgent: ua },
+          select: { id: true },
+        });
+        return {
+          id: user.id,
+          email: user.email,
+          emailVerified: user.emailVerified,
+          sessionId: pwSession.id,
+        };
       },
     }),
   ],
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
+  events: {
+    async signOut({ token }) {
+      if (token?.sessionId) {
+        await db.userSession.delete({ where: { id: token.sessionId } }).catch(() => {});
+      }
+    },
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
         token.emailVerified = !!user.emailVerified;
+        token.sessionId = user.sessionId;
         const dbUser = await db.user.findUnique({
           where: { id: user.id },
           select: { sessionVersion: true },
@@ -153,6 +181,7 @@ export const authOptions: NextAuthOptions = {
     session({ session, token }) {
       if (token.sub) session.user.id = token.sub;
       if (token.sessionVersion !== undefined) session.user.sessionVersion = token.sessionVersion;
+      if (token.sessionId) session.user.sessionId = token.sessionId;
       return session;
     },
   },

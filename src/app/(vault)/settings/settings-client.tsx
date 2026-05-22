@@ -25,6 +25,32 @@ type LoginHistoryEntry = {
   createdAt: Date | string;
 };
 
+type UserSessionEntry = {
+  id: string;
+  ip: string;
+  userAgent: string;
+  createdAt: Date | string;
+};
+
+function parseBrowser(ua: string): string {
+  if (/Edg\//.test(ua)) return "Edge";
+  if (/OPR\/|Opera/.test(ua)) return "Opera";
+  if (/Firefox\//.test(ua)) return "Firefox";
+  if (/Chrome\//.test(ua)) return "Chrome";
+  if (/Safari\//.test(ua)) return "Safari";
+  if (ua === "") return "Unknown";
+  return "Browser";
+}
+
+function parseOS(ua: string): string {
+  if (/Windows NT/.test(ua)) return "Windows";
+  if (/Mac OS X/.test(ua)) return "macOS";
+  if (/Android/.test(ua)) return "Android";
+  if (/iPhone|iPad/.test(ua)) return "iOS";
+  if (/Linux/.test(ua)) return "Linux";
+  return "Unknown OS";
+}
+
 const METHOD_LABELS: Record<string, string> = {
   password: "Password",
   totp: "Authenticator",
@@ -34,9 +60,11 @@ const METHOD_LABELS: Record<string, string> = {
 export default function SettingsClient({
   totpEnabled: initialTotpEnabled,
   loginHistory,
+  sessions,
 }: {
   totpEnabled: boolean;
   loginHistory: LoginHistoryEntry[];
+  sessions: UserSessionEntry[];
 }) {
   const { lockTimeout, setLockTimeout } = useVault();
   const { data: session } = useSession();
@@ -462,11 +490,50 @@ export default function SettingsClient({
         </section>
 
         <section className="mt-8 bg-surface rounded-lg border border-line/60 p-6">
-          <h2 className="text-base font-semibold text-default mb-1">Sessions</h2>
-          <p className="text-sm text-muted mb-4">
-            Sign out of all devices, including this one. Use this if you think your account may be
-            compromised or you&#39;ve lost a device.
-          </p>
+          <h2 className="text-base font-semibold text-default mb-4">Sessions</h2>
+
+          {sessions.length === 0 ? (
+            <p className="text-sm text-subtle mb-4">No active sessions recorded.</p>
+          ) : (
+            <ul className="divide-y divide-line/60 mb-5" role="list">
+              {sessions.map((s) => {
+                const isCurrent = s.id === session?.user?.sessionId;
+                const browser = parseBrowser(s.userAgent);
+                const os = parseOS(s.userAgent);
+                const date = new Date(s.createdAt);
+                return (
+                  <li key={s.id} className="py-3 flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-medium text-default">
+                          {browser} on {os}
+                        </span>
+                        {isCurrent && (
+                          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                            Current
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted mt-0.5 font-mono">{s.ip}</p>
+                    </div>
+                    <time
+                      dateTime={date.toISOString()}
+                      title={date.toLocaleString()}
+                      className="text-xs text-subtle shrink-0 tabular-nums pt-0.5"
+                      suppressHydrationWarning
+                    >
+                      {date.toLocaleDateString("en", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </time>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
 
           {revokePhase === "idle" ? (
             <button
@@ -546,8 +613,12 @@ export default function SettingsClient({
                     </div>
                     <div className="flex items-center gap-3 text-subtle shrink-0 text-xs tabular-nums">
                       <span className="font-mono">{event.ip}</span>
-                      <time dateTime={date.toISOString()} title={date.toLocaleString()}>
-                        {date.toLocaleDateString(undefined, {
+                      <time
+                        dateTime={date.toISOString()}
+                        title={date.toLocaleString()}
+                        suppressHydrationWarning
+                      >
+                        {date.toLocaleDateString("en", {
                           month: "short",
                           day: "numeric",
                           hour: "2-digit",

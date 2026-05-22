@@ -58,7 +58,10 @@ export async function PATCH(req: Request) {
     }
 
     if (parsed.data.action === "revokeAllSessions") {
-      await db.user.update({ where: { id: userId }, data: { sessionVersion: { increment: 1 } } });
+      await db.$transaction([
+        db.userSession.deleteMany({ where: { userId } }),
+        db.user.update({ where: { id: userId }, data: { sessionVersion: { increment: 1 } } }),
+      ]);
       return NextResponse.json({ ok: true });
     }
 

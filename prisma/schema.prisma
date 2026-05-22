@@ -27,6 +27,7 @@ model User {
   vaults            Vault[]
   tags              Tag[]
   loginAudits       LoginAudit[]
+  userSessions      UserSession[]
 }
 
 model Vault {
@@ -81,6 +82,18 @@ model Tag {
   createdAt    DateTime     @default(now())
 
   @@unique([userId, name])
+}
+
+/// One row per successful sign-in; deleted on "sign out everywhere"; cascades on user delete
+model UserSession {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ip        String
+  userAgent String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 /// Login events recorded on every credential attempt where a userId is known; cascades on user delete

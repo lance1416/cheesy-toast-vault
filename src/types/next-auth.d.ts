@@ -7,12 +7,14 @@ declare module "next-auth" {
       id: string;
       email: string;
       sessionVersion?: number;
+      sessionId?: string;
     };
   }
 
   interface User {
     emailVerified?: boolean;
     totpEnabled?: boolean;
+    sessionId?: string;
   }
 }
 
@@ -20,5 +22,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     emailVerified?: boolean;
     sessionVersion?: number;
+    sessionId?: string;
   }
 }
