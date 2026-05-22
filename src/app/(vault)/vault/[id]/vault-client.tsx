@@ -14,6 +14,8 @@ import NewEntryModal from "../../_components/new-entry-modal";
 import EditEntryModal from "../../_components/edit-entry-modal";
 import ManageTagsModal from "../../_components/manage-tags-modal";
 import HistoryModal from "../../_components/history-modal";
+import KeyboardShortcutHelp from "../../_components/keyboard-shortcut-help";
+import { useKeyboardShortcuts } from "@/lib/use-keyboard-shortcuts";
 
 const PAGE_NOW = Date.now();
 
@@ -306,6 +308,7 @@ export default function VaultClient({
   const [query, setQuery] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [showManageTags, setShowManageTags] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [sort, setSort] = useState<
     "updated-desc" | "updated-asc" | "name-asc" | "name-desc" | "age-asc" | "age-desc"
   >("updated-desc");
@@ -313,6 +316,20 @@ export default function VaultClient({
   const [importStatus, setImportStatus] = useState<
     "idle" | "importing" | { imported: number } | { error: string }
   >("idle");
+
+  const searchRef = useRef<HTMLInputElement>(null);
+  const anyModalOpen = showNew || !!editingEntry || !!historyEntryId || showManageTags || showHelp;
+
+  useKeyboardShortcuts(
+    {
+      "/": () => searchRef.current?.focus(),
+      n: () => {
+        if (cryptoKey) setShowNew(true);
+      },
+      "?": () => setShowHelp(true),
+    },
+    anyModalOpen,
+  );
 
   useEffect(() => {
     if (!cryptoKey) return;
@@ -639,6 +656,7 @@ export default function VaultClient({
                 </label>
                 <input
                   id="vault-search"
+                  ref={searchRef}
                   type="search"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -812,6 +830,7 @@ export default function VaultClient({
           }}
         />
       )}
+      {showHelp && <KeyboardShortcutHelp onClose={() => setShowHelp(false)} />}
     </div>
   );
 }

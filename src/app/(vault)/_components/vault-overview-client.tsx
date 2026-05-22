@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
@@ -11,8 +11,10 @@ import FooterApp from "@/components/footer-app";
 import VaultCard from "./vault-card";
 import EntryCard from "./entry-card";
 import CreateVaultModal from "./create-vault-modal";
+import KeyboardShortcutHelp from "./keyboard-shortcut-help";
 import { useCrossVaultSearch } from "./use-cross-vault-search";
 import HealthDashboard from "./health-dashboard";
+import { useKeyboardShortcuts } from "@/lib/use-keyboard-shortcuts";
 import type { VaultSummary } from "./vault-card";
 
 export default function VaultOverviewClient({ vaults: initialVaults }: { vaults: VaultSummary[] }) {
@@ -20,10 +22,21 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
   const { data: session } = useSession();
   const [vaults, setVaults] = useState<VaultSummary[]>(initialVaults);
   const [showCreate, setShowCreate] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const { searchQuery, setSearchQuery, fetchState, searchResults, unlockedCount, rawVaults, keys } =
     useCrossVaultSearch();
+
+  useKeyboardShortcuts(
+    {
+      "/": () => searchRef.current?.focus(),
+      n: () => setShowCreate(true),
+      "?": () => setShowHelp(true),
+    },
+    showCreate || showHelp,
+  );
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -153,6 +166,7 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
             </label>
             <input
               id="cross-vault-search"
+              ref={searchRef}
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -254,6 +268,7 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
           }}
         />
       )}
+      {showHelp && <KeyboardShortcutHelp onClose={() => setShowHelp(false)} />}
     </div>
   );
 }

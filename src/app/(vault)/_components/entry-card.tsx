@@ -11,23 +11,45 @@ const NOW_MS = Date.now();
 // ─── Copy button ──────────────────────────────────────────────────────────────
 
 function CopyButton({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (secondsLeft === null) return;
+    const id = setTimeout(() => {
+      if (secondsLeft <= 1) {
+        navigator.clipboard.writeText("").catch(() => {});
+        setSecondsLeft(null);
+      } else {
+        setSecondsLeft(secondsLeft - 1);
+      }
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [secondsLeft]);
 
   function handleCopy() {
-    navigator.clipboard.writeText(value).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
+    navigator.clipboard
+      .writeText(value)
+      .then(() => setSecondsLeft(30))
+      .catch(() => {});
   }
+
+  const label = secondsLeft !== null ? `Copied — clears in ${secondsLeft}s` : "Copy to clipboard";
 
   return (
     <button
       type="button"
       onClick={handleCopy}
-      aria-label={copied ? "Copied" : "Copy to clipboard"}
+      aria-label={label}
+      title={label}
       className="text-subtle hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
     >
-      {copied ? <span className="text-xs font-medium text-amber-600">✓</span> : <CopyIcon />}
+      {secondsLeft !== null ? (
+        <span className="text-xs font-mono font-medium text-amber-600 dark:text-amber-400 tabular-nums w-5 text-center inline-block">
+          {secondsLeft}
+        </span>
+      ) : (
+        <CopyIcon />
+      )}
     </button>
   );
 }
@@ -74,7 +96,20 @@ function TotpRow({ secret }: { secret: string }) {
   const [code, setCode] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(30); // set on first tick
   const [error, setError] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copyCountdown, setCopyCountdown] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (copyCountdown === null) return;
+    const id = setTimeout(() => {
+      if (copyCountdown <= 1) {
+        navigator.clipboard.writeText("").catch(() => {});
+        setCopyCountdown(null);
+      } else {
+        setCopyCountdown(copyCountdown - 1);
+      }
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [copyCountdown]);
 
   useEffect(() => {
     let cancelled = false;
@@ -113,10 +148,10 @@ function TotpRow({ secret }: { secret: string }) {
 
   function handleCopy() {
     if (!code) return;
-    navigator.clipboard.writeText(code).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
+    navigator.clipboard
+      .writeText(code)
+      .then(() => setCopyCountdown(30))
+      .catch(() => {});
   }
 
   return (
@@ -137,10 +172,21 @@ function TotpRow({ secret }: { secret: string }) {
           <button
             type="button"
             onClick={handleCopy}
-            aria-label={copied ? "Copied" : "Copy 2FA code"}
+            aria-label={
+              copyCountdown !== null ? `Copied — clears in ${copyCountdown}s` : "Copy 2FA code"
+            }
+            title={
+              copyCountdown !== null ? `Copied — clears in ${copyCountdown}s` : "Copy 2FA code"
+            }
             className="text-subtle hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
           >
-            {copied ? <span className="text-xs font-medium text-amber-600">✓</span> : <CopyIcon />}
+            {copyCountdown !== null ? (
+              <span className="text-xs font-mono font-medium text-amber-600 dark:text-amber-400 tabular-nums w-5 text-center inline-block">
+                {copyCountdown}
+              </span>
+            ) : (
+              <CopyIcon />
+            )}
           </button>
         </>
       )}
