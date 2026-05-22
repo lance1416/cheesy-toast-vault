@@ -201,12 +201,18 @@ export default function EntryCard({
   onEdit,
   onHistory,
   onTogglePin,
+  selectionMode = false,
+  selected = false,
+  onToggleSelect,
   vaultName,
 }: {
   entry: DecryptedEntry;
   onEdit: () => void;
   onHistory?: () => void;
   onTogglePin?: (pinned: boolean) => void;
+  selectionMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
   vaultName?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -251,12 +257,29 @@ export default function EntryCard({
     <div
       className={`bg-surface rounded-lg border overflow-hidden transition-colors ${entry.pinned ? "border-amber-300 dark:border-amber-700 border-l-2" : "border-line/60"}`}
     >
-      {/* Header — click anywhere to expand/collapse */}
+      {/* Header — click anywhere to expand/collapse (or toggle selection in selection mode) */}
       <div
         className="px-4 py-3 flex items-center gap-3 cursor-pointer select-none"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (selectionMode ? onToggleSelect?.() : setOpen((v) => !v))}
       >
-        {entry.url ? (
+        {selectionMode ? (
+          <div
+            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${selected ? "bg-amber-500 dark:bg-amber-500 border-amber-500 text-white" : "border-line bg-surface"}`}
+            aria-hidden="true"
+          >
+            {selected && (
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <polyline
+                  points="2,6 5,9 10,3"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+          </div>
+        ) : entry.url ? (
           <Favicon url={entry.url} name={entry.name} />
         ) : (
           <LetterAvatar name={entry.name} />
@@ -296,7 +319,7 @@ export default function EntryCard({
               {passwordAgeDays}d
             </span>
           )}
-          {onTogglePin && (
+          {!selectionMode && onTogglePin && (
             <button
               type="button"
               onClick={(e) => {
@@ -310,34 +333,38 @@ export default function EntryCard({
               <PinIcon filled={entry.pinned} />
             </button>
           )}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-            className="text-xs font-medium text-muted hover:text-amber-700 dark:hover:text-amber-500 transition-colors"
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen((v) => !v);
-            }}
-            aria-expanded={open}
-            aria-controls={`entry-body-${entry.id}`}
-            aria-label={open ? "Collapse entry" : "Expand entry"}
-            className="text-subtle hover:text-default transition-colors"
-          >
-            <ChevronIcon open={open} />
-          </button>
+          {!selectionMode && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="text-xs font-medium text-muted hover:text-amber-700 dark:hover:text-amber-500 transition-colors"
+            >
+              Edit
+            </button>
+          )}
+          {!selectionMode && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen((v) => !v);
+              }}
+              aria-expanded={open}
+              aria-controls={`entry-body-${entry.id}`}
+              aria-label={open ? "Collapse entry" : "Expand entry"}
+              className="text-subtle hover:text-default transition-colors"
+            >
+              <ChevronIcon open={open} />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Body — collapsible */}
-      {open && (
+      {/* Body — collapsible; hidden in selection mode */}
+      {open && !selectionMode && (
         <div
           id={`entry-body-${entry.id}`}
           className="px-4 pt-3 pb-4 border-t border-divider space-y-2"

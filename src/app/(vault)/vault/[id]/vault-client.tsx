@@ -309,6 +309,9 @@ export default function VaultClient({
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [showManageTags, setShowManageTags] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeletePhase, setBulkDeletePhase] = useState<"idle" | "confirm">("idle");
   const [sort, setSort] = useState<
     "updated-desc" | "updated-asc" | "name-asc" | "name-desc" | "age-asc" | "age-desc"
   >("updated-desc");
@@ -324,7 +327,7 @@ export default function VaultClient({
     {
       "/": () => searchRef.current?.focus(),
       n: () => {
-        if (cryptoKey) setShowNew(true);
+        if (cryptoKey && !selectionMode) setShowNew(true);
       },
       "?": () => setShowHelp(true),
     },
@@ -405,6 +408,52 @@ export default function VaultClient({
       prev ? prev.map((e) => (e.id === entryId ? { ...e, pinned } : e)) : prev,
     );
   }, []);
+
+  function exitSelectionMode() {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+    setBulkDeletePhase("idle");
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handleSelectAll() {
+    setSelectedIds(
+      selectedIds.size === filtered.length ? new Set() : new Set(filtered.map((e) => e.id)),
+    );
+  }
+
+  async function handleBulkPin(pinned: boolean) {
+    const ids = [...selectedIds];
+    await Promise.all(
+      ids.map((id) =>
+        fetch(`/api/vault/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pinned }),
+        }),
+      ),
+    );
+    setDecrypted((prev) =>
+      prev ? prev.map((e) => (selectedIds.has(e.id) ? { ...e, pinned } : e)) : prev,
+    );
+    exitSelectionMode();
+  }
+
+  async function handleBulkDelete() {
+    const ids = [...selectedIds];
+    await Promise.all(ids.map((id) => fetch(`/api/vault/${id}`, { method: "DELETE" })));
+    setDecrypted((prev) => (prev ? prev.filter((e) => !selectedIds.has(e.id)) : prev));
+    exitSelectionMode();
+    router.refresh();
+  }
 
   function toggleTagFilter(id: string) {
     setSelectedTagIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -555,6 +604,15 @@ export default function VaultClient({
             >
               + Add entry
             </button>
+            {decrypted && decrypted.length > 0 && (
+              <button
+                type="button"
+                onClick={() => (selectionMode ? exitSelectionMode() : setSelectionMode(true))}
+                className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${selectionMode ? "border-amber-400 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20" : "border-line text-muted hover:border-amber-300 dark:hover:border-amber-700 hover:text-default"}`}
+              >
+                {selectionMode ? "Cancel" : "Select"}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => clearKey(vault.id)}
@@ -789,11 +847,90 @@ export default function VaultClient({
                 onEdit={() => setEditingEntry(entries.find((e) => e.id === entry.id) ?? null)}
                 onHistory={() => setHistoryEntryId(entry.id)}
                 onTogglePin={(pinned) => handleTogglePin(entry.id, pinned)}
+                selectionMode={selectionMode}
+                selected={selectedIds.has(entry.id)}
+                onToggleSelect={() => toggleSelect(entry.id)}
               />
             ))}
           </div>
         )}
       </main>
+
+      {selectionMode && (
+        <div
+          role="toolbar"
+          aria-label="Bulk actions"
+          className="fixed bottom-0 inset-x-0 z-40 bg-surface border-t border-line/60 shadow-lg px-4 py-3 flex flex-wrap items-center justify-between gap-3"
+          style={{ fontFamily: "var(--font-dm-sans, sans-serif)" }}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-default">{selectedIds.size} selected</span>
+            <button
+              type="button"
+              onClick={handleSelectAll}
+              className="text-xs text-muted hover:text-default underline transition-colors"
+            >
+              {selectedIds.size === filtered.length ? "Deselect all" : "Select all"}
+            </button>
+          </div>
+
+          {bulkDeletePhase === "confirm" ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-red-600 dark:text-red-400">
+                Delete {selectedIds.size} {selectedIds.size === 1 ? "entry" : "entries"}?
+              </span>
+              <button
+                type="button"
+                onClick={() => void handleBulkDelete()}
+                className="rounded-lg bg-red-600 dark:bg-red-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 dark:hover:bg-red-600 transition-colors"
+              >
+                Confirm
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkDeletePhase("idle")}
+                className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted hover:bg-sunken transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={selectedIds.size === 0}
+                onClick={() => void handleBulkPin(true)}
+                className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted hover:text-amber-700 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Pin
+              </button>
+              <button
+                type="button"
+                disabled={selectedIds.size === 0}
+                onClick={() => void handleBulkPin(false)}
+                className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted hover:text-default hover:bg-sunken disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Unpin
+              </button>
+              <button
+                type="button"
+                disabled={selectedIds.size === 0}
+                onClick={() => setBulkDeletePhase("confirm")}
+                className="rounded-lg border border-red-300 dark:border-red-800 px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Delete
+              </button>
+              <button
+                type="button"
+                onClick={exitSelectionMode}
+                className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted hover:bg-sunken transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {showNew && (
         <NewEntryModal
