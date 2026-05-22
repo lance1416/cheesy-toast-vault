@@ -91,6 +91,9 @@ export default function SettingsClient({
   const [disabling, setDisabling] = useState(false);
   const [disableError, setDisableError] = useState("");
 
+  const [activeSessions, setActiveSessions] = useState<UserSessionEntry[]>(sessions);
+  const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
+
   const [revokePhase, setRevokePhase] = useState<"idle" | "form">("idle");
   const [revokePassword, setRevokePassword] = useState("");
   const [revoking, setRevoking] = useState(false);
@@ -100,6 +103,16 @@ export default function SettingsClient({
   const [deletePassword, setDeletePassword] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+
+  async function handleRevokeSession(sessionId: string) {
+    setRevokingSessionId(sessionId);
+    try {
+      const res = await fetch(`/api/auth/account/sessions/${sessionId}`, { method: "DELETE" });
+      if (res.ok) setActiveSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    } finally {
+      setRevokingSessionId(null);
+    }
+  }
 
   async function handleRevokeAllSessions(e: React.FormEvent) {
     e.preventDefault();
@@ -492,18 +505,18 @@ export default function SettingsClient({
         <section className="mt-8 bg-surface rounded-lg border border-line/60 p-6">
           <h2 className="text-base font-semibold text-default mb-4">Sessions</h2>
 
-          {sessions.length === 0 ? (
+          {activeSessions.length === 0 ? (
             <p className="text-sm text-subtle mb-4">No active sessions recorded.</p>
           ) : (
             <ul className="divide-y divide-line/60 mb-5" role="list">
-              {sessions.map((s) => {
+              {activeSessions.map((s) => {
                 const isCurrent = s.id === session?.user?.sessionId;
                 const browser = parseBrowser(s.userAgent);
                 const os = parseOS(s.userAgent);
                 const date = new Date(s.createdAt);
                 return (
-                  <li key={s.id} className="py-3 flex items-start justify-between gap-4">
-                    <div className="min-w-0">
+                  <li key={s.id} className="py-3 flex items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-medium text-default">
                           {browser} on {os}
@@ -514,21 +527,36 @@ export default function SettingsClient({
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-muted mt-0.5 font-mono">{s.ip}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs text-muted font-mono">{s.ip}</p>
+                        <span className="text-subtle text-xs" aria-hidden="true">
+                          ·
+                        </span>
+                        <time
+                          dateTime={date.toISOString()}
+                          title={date.toLocaleString()}
+                          className="text-xs text-subtle tabular-nums"
+                          suppressHydrationWarning
+                        >
+                          {date.toLocaleDateString("en", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </time>
+                      </div>
                     </div>
-                    <time
-                      dateTime={date.toISOString()}
-                      title={date.toLocaleString()}
-                      className="text-xs text-subtle shrink-0 tabular-nums pt-0.5"
-                      suppressHydrationWarning
-                    >
-                      {date.toLocaleDateString("en", {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </time>
+                    {!isCurrent && (
+                      <button
+                        type="button"
+                        disabled={revokingSessionId === s.id}
+                        onClick={() => void handleRevokeSession(s.id)}
+                        className="shrink-0 text-xs font-medium text-muted hover:text-red-600 dark:hover:text-red-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {revokingSessionId === s.id ? "Signing out…" : "Sign out"}
+                      </button>
+                    )}
                   </li>
                 );
               })}

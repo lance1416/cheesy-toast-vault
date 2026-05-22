@@ -165,22 +165,16 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
-    async jwt({ token, user }) {
+    jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
         token.emailVerified = !!user.emailVerified;
         token.sessionId = user.sessionId;
-        const dbUser = await db.user.findUnique({
-          where: { id: user.id },
-          select: { sessionVersion: true },
-        });
-        token.sessionVersion = dbUser?.sessionVersion ?? 1;
       }
       return token;
     },
     session({ session, token }) {
       if (token.sub) session.user.id = token.sub;
-      if (token.sessionVersion !== undefined) session.user.sessionVersion = token.sessionVersion;
       if (token.sessionId) session.user.sessionId = token.sessionId;
       return session;
     },

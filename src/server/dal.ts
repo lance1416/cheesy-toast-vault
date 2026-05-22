@@ -11,15 +11,18 @@ export const verifySession = cache(async () => {
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { emailVerified: true, sessionVersion: true },
+    select: { emailVerified: true },
   });
   if (!user) redirect("/api/auth/clear-session");
   if (!user.emailVerified) redirect("/login?unverified=1");
-  if (
-    session.user.sessionVersion !== undefined &&
-    session.user.sessionVersion !== user.sessionVersion
-  )
-    redirect("/api/auth/clear-session");
+
+  if (session.user.sessionId) {
+    const userSession = await db.userSession.findUnique({
+      where: { id: session.user.sessionId },
+      select: { revokedAt: true },
+    });
+    if (!userSession || userSession.revokedAt !== null) redirect("/api/auth/clear-session");
+  }
 
   return { userId: session.user.id, email: session.user.email };
 });
@@ -81,7 +84,7 @@ export const getTotpStatus = cache(async () => {
 export const getUserSessions = cache(async () => {
   const { userId } = await verifySession();
   return db.userSession.findMany({
-    where: { userId },
+    where: { userId, revokedAt: null },
     orderBy: { createdAt: "desc" },
     take: 10,
     select: { id: true, ip: true, userAgent: true, createdAt: true },
