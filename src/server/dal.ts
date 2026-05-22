@@ -73,6 +73,16 @@ export const getTotpStatus = cache(async () => {
   return { totpEnabled: user.totpEnabled };
 });
 
+export const getLoginHistory = cache(async () => {
+  const { userId } = await verifySession();
+  return db.loginAudit.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    select: { id: true, ip: true, success: true, method: true, createdAt: true },
+  });
+});
+
 export const getVaultEntries = cache(async (vaultId: string) => {
   const { userId } = await verifySession();
   // Verify vault ownership

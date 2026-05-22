@@ -21,9 +21,10 @@ model User {
   totpEnabled       Boolean   @default(false)
   /// SHA-256 hashes of single-use backup codes; consumed on use
   totpBackupCodes   String[]  @default([])
-  createdAt         DateTime  @default(now())
+  createdAt         DateTime     @default(now())
   vaults            Vault[]
   tags              Tag[]
+  loginAudits       LoginAudit[]
 }
 
 model Vault {
@@ -77,4 +78,18 @@ model Tag {
   createdAt    DateTime     @default(now())
 
   @@unique([userId, name])
+}
+
+/// Login events recorded on every credential attempt where a userId is known; cascades on user delete
+model LoginAudit {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ip        String
+  success   Boolean
+  /// "password" | "totp" | "backup_code"
+  method    String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
 }

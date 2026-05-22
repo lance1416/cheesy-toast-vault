@@ -51,6 +51,7 @@ export const authOptions: NextAuthOptions = {
 
           const code = (credentials.totpCode ?? "").trim();
           const isNumericOtp = /^\d{6}$/.test(code);
+          const totpMethod = isNumericOtp ? "totp" : "backup_code";
           let valid = false;
 
           if (isNumericOtp) {
@@ -69,10 +70,16 @@ export const authOptions: NextAuthOptions = {
 
           if (!valid) {
             logger.warn({ userId, ip }, "TOTP verification failed");
+            db.loginAudit
+              .create({ data: { userId, ip, success: false, method: totpMethod } })
+              .catch(() => {});
             return null;
           }
 
           logger.info({ userId }, "TOTP login successful");
+          db.loginAudit
+            .create({ data: { userId, ip, success: true, method: totpMethod } })
+            .catch(() => {});
           return { id: user.id, email: user.email!, emailVerified: user.emailVerified };
         }
 
@@ -107,6 +114,9 @@ export const authOptions: NextAuthOptions = {
         const valid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!valid) {
           logger.warn({ ip, email: credentials.email }, "login failed — wrong password");
+          db.loginAudit
+            .create({ data: { userId: user.id, ip, success: false, method: "password" } })
+            .catch(() => {});
           return null;
         }
 
@@ -118,6 +128,9 @@ export const authOptions: NextAuthOptions = {
         }
 
         logger.info({ userId: user.id, email: user.email }, "login successful");
+        db.loginAudit
+          .create({ data: { userId: user.id, ip, success: true, method: "password" } })
+          .catch(() => {});
         return { id: user.id, email: user.email, emailVerified: user.emailVerified };
       },
     }),

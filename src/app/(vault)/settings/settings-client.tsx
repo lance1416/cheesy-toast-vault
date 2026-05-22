@@ -17,10 +17,26 @@ const TIMEOUTS = [
   { value: 0, label: "Never" },
 ] as const;
 
+type LoginHistoryEntry = {
+  id: string;
+  ip: string;
+  success: boolean;
+  method: string;
+  createdAt: Date | string;
+};
+
+const METHOD_LABELS: Record<string, string> = {
+  password: "Password",
+  totp: "Authenticator",
+  backup_code: "Backup code",
+};
+
 export default function SettingsClient({
   totpEnabled: initialTotpEnabled,
+  loginHistory,
 }: {
   totpEnabled: boolean;
+  loginHistory: LoginHistoryEntry[];
 }) {
   const { lockTimeout, setLockTimeout } = useVault();
   const { data: session } = useSession();
@@ -414,6 +430,53 @@ export default function SettingsClient({
                 </button>
               </div>
             </form>
+          )}
+        </section>
+
+        <section className="mt-8 bg-surface rounded-lg border border-line/60 p-6">
+          <h2 className="text-base font-semibold text-default mb-1">Login history</h2>
+          <p className="text-sm text-muted mb-4">Your 20 most recent sign-in attempts.</p>
+
+          {loginHistory.length === 0 ? (
+            <p className="text-sm text-subtle">No login events recorded yet.</p>
+          ) : (
+            <ul className="divide-y divide-line/60" role="list">
+              {loginHistory.map((event) => {
+                const date = new Date(event.createdAt);
+                return (
+                  <li
+                    key={event.id}
+                    className="flex items-center justify-between gap-4 py-3 text-sm"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span
+                        className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          event.success
+                            ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                            : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                        }`}
+                      >
+                        {event.success ? "Success" : "Failed"}
+                      </span>
+                      <span className="text-muted shrink-0">
+                        {METHOD_LABELS[event.method] ?? event.method}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-subtle shrink-0 text-xs tabular-nums">
+                      <span className="font-mono">{event.ip}</span>
+                      <time dateTime={date.toISOString()} title={date.toLocaleString()}>
+                        {date.toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </time>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </section>
 
