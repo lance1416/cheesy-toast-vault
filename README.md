@@ -14,14 +14,50 @@ Losing your vault password means losing your data. By design.
 
 ## Features
 
-- Multiple named vaults per account
-- Per-entry fields: site name, URL, username, email, password, notes, tags
-- Password generator (random or passphrase)
-- [HaveIBeenPwned](https://haveibeenpwned.com) breach check (k-anonymity — password never sent)
-- Stale password detection (flags entries older than 90 days)
-- Auto-lock vault after configurable idle timeout
+**Vault**
+
+- Multiple named vaults per account, each with its own vault password
+- Per-entry fields: site name, URL, username, email, password hint, notes, tags
+- Per-entry TOTP codes — store a site's 2FA secret and see the live rotating code inline
+- Pin favourite entries to the top regardless of sort order
+- Entry history — encrypted snapshots before every save; restore any previous version
+- Password generator (random characters or passphrase from wordlist)
+- Sort entries by last-updated or password age
+- Filter by tag or stale-password flag
+
+**Security**
+
+- [HaveIBeenPwned](https://haveibeenpwned.com) breach check per entry (k-anonymity — your password is never transmitted)
+- Password health dashboard — counts of weak, stale, and duplicate passwords across all unlocked vaults
+- Auto-lock after configurable idle timeout (1 / 5 / 15 / 30 min, or never)
+- Clipboard auto-clear — copied passwords and 2FA codes are wiped after 30 seconds
+- Two-factor authentication (TOTP) on login with backup codes
+
+**Account & sessions**
+
+- Session list — see every signed-in device with browser, OS, IP, and sign-in time
+- Per-session sign-out from settings, or sign out everywhere
+- Login history — last 20 authentication events with IP and method
+- Email verification, password reset, email change, account deletion
+
+**Search & organisation**
+
+- Cross-vault search across all unlocked vaults from the vault list page
+- Bulk select entries for pin, unpin, or delete operations
+- Keyboard shortcuts: `/` focus search, `n` new entry, `?` show shortcut list
+
+**UI**
+
 - Light / dark / system colour scheme
-- Email verification and password reset via [Resend](https://resend.com)
+- Responsive layout with mobile menu
+- Accessible — WCAG AA contrast, focus indicators, screen-reader labels
+
+## Roadmap
+
+- [ ] Custom fields — add arbitrary typed key-value pairs to any entry (text, secret, URL, date)
+- [ ] Entry types — e.g. login, credit card, identity, secure note, each with its own set of fields
+- [ ] Soft delete / trash — 30-day recovery window before permanent deletion
+- [ ] Bitwarden import — migrate in from a Bitwarden JSON export
 
 ## Self-hosting
 
