@@ -11,6 +11,7 @@ import {
   NoteIcon,
   CreditCardIcon,
   IdentityIcon,
+  KeyIcon,
 } from "@/components/icons";
 import { checkBreach } from "@/lib/crypto";
 import { isStalePassword, passwordAgeDays as getPasswordAgeDays } from "@/lib/stale-password";
@@ -67,15 +68,15 @@ function CopyButton({ value }: { value: string }) {
 
 // ─── Favicon ──────────────────────────────────────────────────────────────────
 
-function LetterAvatar({ name }: { name: string }) {
+function LetterAvatar({ name, className }: { name: string; className: string }) {
   return (
-    <div className="w-6 h-6 rounded-md bg-stone-100 dark:bg-stone-700 flex items-center justify-center text-xs font-semibold text-muted shrink-0 select-none">
+    <div className={`flex items-center justify-center text-xs font-bold select-none ${className}`}>
       {name[0]?.toUpperCase() ?? "?"}
     </div>
   );
 }
 
-function Favicon({ url, name }: { url: string; name: string }) {
+function Favicon({ url, name, className }: { url: string; name: string; className: string }) {
   const [failed, setFailed] = useState(false);
 
   const domain = useMemo(() => {
@@ -86,26 +87,114 @@ function Favicon({ url, name }: { url: string; name: string }) {
     }
   }, [url]);
 
-  if (!domain || failed) return <LetterAvatar name={name} />;
+  if (!domain || failed) return <LetterAvatar name={name} className={className} />;
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={`https://icons.duckduckgo.com/ip3/${domain}.ico`}
       alt=""
-      width={24}
-      height={24}
-      className="w-6 h-6 rounded-md object-contain shrink-0"
+      width={16}
+      height={16}
+      className="w-4 h-4 rounded-sm object-contain"
       onError={() => setFailed(true)}
     />
   );
+}
+
+// ─── Type icon ────────────────────────────────────────────────────────────────
+
+function TypeIcon({
+  entry,
+  customTypes,
+}: {
+  entry: DecryptedEntry;
+  customTypes: CustomEntryTypeDef[];
+}) {
+  if (entry.entryType === "note") {
+    return (
+      <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/40 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+        <NoteIcon size={14} />
+      </div>
+    );
+  }
+  if (entry.entryType === "card") {
+    return (
+      <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-100 dark:border-violet-800/40 flex items-center justify-center text-violet-600 dark:text-violet-400 shrink-0">
+        <CreditCardIcon size={14} />
+      </div>
+    );
+  }
+  if (entry.entryType === "identity") {
+    return (
+      <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+        <IdentityIcon size={14} />
+      </div>
+    );
+  }
+  if (!BUILTINS.includes(entry.entryType)) {
+    const ct = customTypes.find((t) => t.id === entry.entryType);
+    return (
+      <div className="w-8 h-8 rounded-lg bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 flex items-center justify-center text-xs font-bold text-stone-600 dark:text-stone-400 shrink-0 select-none">
+        {(ct?.name[0] ?? "?").toUpperCase()}
+      </div>
+    );
+  }
+  // login / undefined
+  if (entry.url) {
+    return (
+      <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 flex items-center justify-center shrink-0">
+        <Favicon
+          url={entry.url}
+          name={entry.name}
+          className="w-4 h-4 text-blue-600 dark:text-blue-400"
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+      <KeyIcon size={14} />
+    </div>
+  );
+}
+
+// ─── Entry subtitle ───────────────────────────────────────────────────────────
+
+function entrySubtitle(entry: DecryptedEntry, customTypes: CustomEntryTypeDef[]): string | null {
+  switch (entry.entryType) {
+    case "login":
+    case undefined:
+      if (entry.username) return entry.username;
+      if (entry.email) return entry.email;
+      if (entry.url) {
+        try {
+          return new URL(entry.url).hostname.replace(/^www\./, "");
+        } catch {
+          return entry.url;
+        }
+      }
+      return null;
+    case "note":
+      return entry.body ? (entry.body.split("\n")[0]?.slice(0, 50) ?? null) : "Secure note";
+    case "card":
+      if (entry.cardholderName) return entry.cardholderName;
+      if (entry.cardNumber) return `•••• ${entry.cardNumber.slice(-4)}`;
+      return "Payment card";
+    case "identity":
+      return entry.fullName ?? entry.email ?? "Identity";
+    default: {
+      const ct = customTypes.find((t) => t.id === entry.entryType);
+      return ct?.name ?? null;
+    }
+  }
 }
 
 // ─── TOTP row ─────────────────────────────────────────────────────────────────
 
 function TotpRow({ secret }: { secret: string }) {
   const [code, setCode] = useState<string | null>(null);
-  const [secondsLeft, setSecondsLeft] = useState(30); // set on first tick
+  const [secondsLeft, setSecondsLeft] = useState(30);
   const [error, setError] = useState(false);
   const [copyCountdown, setCopyCountdown] = useState<number | null>(null);
 
@@ -131,10 +220,6 @@ function TotpRow({ secret }: { secret: string }) {
           import("otplib"),
           import("@otplib/core"),
         ]);
-        // Lower the minimum from 128 bits (16 bytes) to 80 bits (10 bytes) so that
-        // 16-character base32 secrets — the format GitHub and Google use — are accepted.
-        // RFC 4226 requires ≥ 128 bits for new deployments, but 80-bit secrets are
-        // widely deployed and supported by every major authenticator app.
         const guardrails = createGuardrails({ MIN_SECRET_BYTES: 10 });
         const token = await otpGenerate({ secret, guardrails });
         if (!cancelled) setCode(token);
@@ -148,7 +233,7 @@ function TotpRow({ secret }: { secret: string }) {
     const interval = setInterval(() => {
       const remaining = 30 - (Math.floor(Date.now() / 1000) % 30);
       if (!cancelled) setSecondsLeft(remaining);
-      if (remaining === 30) void generate(); // window rolled over
+      if (remaining === 30) void generate();
     }, 1000);
 
     return () => {
@@ -205,7 +290,7 @@ function TotpRow({ secret }: { secret: string }) {
   );
 }
 
-// ─── Entry card ───────────────────────────────────────────────────────────────
+// ─── Entry card (list row) ────────────────────────────────────────────────────
 
 export default function EntryCard({
   entry,
@@ -256,28 +341,19 @@ export default function EntryCard({
 
   const passwordAgeDays = getPasswordAgeDays(entry.passwordChangedAt, NOW_MS);
   const isStale = isStalePassword(entry.passwordChangedAt, NOW_MS);
-
-  const displayHost = useMemo(() => {
-    if (!entry.url) return null;
-    try {
-      return new URL(entry.url).hostname.replace(/^www\./, "");
-    } catch {
-      return entry.url;
-    }
-  }, [entry.url]);
+  const subtitle = entrySubtitle(entry, customTypes);
 
   return (
-    <div
-      className={`bg-surface rounded-lg border overflow-hidden transition-colors ${entry.pinned ? "border-amber-300 dark:border-amber-700 border-l-2" : "border-line/60"}`}
-    >
-      {/* Header — click anywhere to expand/collapse (or toggle selection in selection mode) */}
+    <li className="list-none">
+      {/* ── Collapsed row ── */}
       <div
-        className="px-4 py-3 flex items-center gap-3 cursor-pointer select-none"
+        className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-sunken/40 dark:hover:bg-white/[0.02] transition-colors select-none group"
         onClick={() => (selectionMode ? onToggleSelect?.() : setOpen((v) => !v))}
       >
+        {/* Left: selection or type icon */}
         {selectionMode ? (
           <div
-            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${selected ? "bg-amber-500 dark:bg-amber-500 border-amber-500 text-white" : "border-line bg-surface"}`}
+            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${selected ? "bg-amber-500 border-amber-500 text-white" : "border-line bg-surface"}`}
             aria-hidden="true"
           >
             {selected && (
@@ -292,58 +368,33 @@ export default function EntryCard({
               </svg>
             )}
           </div>
-        ) : entry.entryType === "note" ? (
-          <div className="w-6 h-6 rounded-md bg-stone-100 dark:bg-stone-700 flex items-center justify-center text-muted shrink-0">
-            <NoteIcon size={13} />
-          </div>
-        ) : entry.entryType === "card" ? (
-          <div className="w-6 h-6 rounded-md bg-stone-100 dark:bg-stone-700 flex items-center justify-center text-muted shrink-0">
-            <CreditCardIcon size={13} />
-          </div>
-        ) : entry.entryType === "identity" ? (
-          <div className="w-6 h-6 rounded-md bg-stone-100 dark:bg-stone-700 flex items-center justify-center text-muted shrink-0">
-            <IdentityIcon size={13} />
-          </div>
-        ) : !BUILTINS.includes(entry.entryType) ? (
-          <div className="w-6 h-6 rounded-md bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-xs font-semibold text-amber-700 dark:text-amber-400 shrink-0 select-none">
-            {(customTypes.find((t) => t.id === entry.entryType)?.name[0] ?? "?").toUpperCase()}
-          </div>
-        ) : entry.url ? (
-          <Favicon url={entry.url} name={entry.name} />
         ) : (
-          <LetterAvatar name={entry.name} />
+          <TypeIcon entry={entry} customTypes={customTypes} />
         )}
 
-        <div className="min-w-0 flex-1">
+        {/* Name + subtitle */}
+        <div className="flex-1 min-w-0">
           <p
-            className="text-sm font-semibold text-default leading-snug truncate"
-            style={{ fontFamily: "var(--font-playfair, serif)" }}
+            className={`text-sm font-medium truncate leading-snug ${entry.pinned ? "text-amber-700 dark:text-amber-400" : "text-default"}`}
           >
             {entry.name}
           </p>
-          {displayHost && (
-            <a
-              href={entry.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="text-xs text-muted hover:text-amber-600 dark:hover:text-amber-400 transition-colors truncate inline-block max-w-full leading-none mt-0.5"
-            >
-              {displayHost}
-            </a>
+          {subtitle && (
+            <p className="text-xs text-muted truncate leading-snug mt-0.5">{subtitle}</p>
           )}
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        {/* Right: badges + actions */}
+        <div className="flex items-center gap-1.5 shrink-0">
           {vaultName && (
-            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-stone-100 dark:bg-stone-800 text-muted border border-line/60 max-w-[96px] truncate shrink-0">
+            <span className="hidden sm:inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-stone-100 dark:bg-stone-800 text-muted border border-line/60 max-w-[80px] truncate">
               {vaultName}
             </span>
           )}
           {isStale && (
             <span
               title={`Password last changed ${passwordAgeDays} days ago`}
-              className="inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+              className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
             >
               {passwordAgeDays}d
             </span>
@@ -357,7 +408,7 @@ export default function EntryCard({
               }}
               aria-label={entry.pinned ? "Unpin entry" : "Pin entry"}
               title={entry.pinned ? "Unpin entry" : "Pin entry"}
-              className={`transition-colors ${entry.pinned ? "text-amber-500 dark:text-amber-400 hover:text-muted" : "text-subtle hover:text-amber-500 dark:hover:text-amber-400"}`}
+              className={`transition-colors ${entry.pinned ? "text-amber-500 dark:text-amber-400 hover:text-muted" : "text-subtle opacity-0 group-hover:opacity-100 hover:text-amber-500 dark:hover:text-amber-400"}`}
             >
               <PinIcon filled={entry.pinned} />
             </button>
@@ -369,7 +420,7 @@ export default function EntryCard({
                 e.stopPropagation();
                 onEdit();
               }}
-              className="text-xs font-medium text-muted hover:text-amber-700 dark:hover:text-amber-500 transition-colors"
+              className="text-xs font-medium text-muted opacity-0 group-hover:opacity-100 hover:text-amber-700 dark:hover:text-amber-400 transition-all"
             >
               Edit
             </button>
@@ -382,7 +433,6 @@ export default function EntryCard({
                 setOpen((v) => !v);
               }}
               aria-expanded={open}
-              aria-controls={`entry-body-${entry.id}`}
               aria-label={open ? "Collapse entry" : "Expand entry"}
               className="text-subtle hover:text-default transition-colors"
             >
@@ -392,11 +442,11 @@ export default function EntryCard({
         </div>
       </div>
 
-      {/* Body — collapsible; hidden in selection mode */}
+      {/* ── Expanded body ── */}
       {open && !selectionMode && (
         <div
           id={`entry-body-${entry.id}`}
-          className="px-4 pt-3 pb-4 border-t border-divider space-y-2"
+          className="px-4 pt-3 pb-4 border-t border-divider bg-sunken/30 space-y-2"
         >
           {/* ── Login ── */}
           {(!entry.entryType || entry.entryType === "login") && (
@@ -476,6 +526,20 @@ export default function EntryCard({
                 </div>
               </div>
               {entry.totpSecret && <TotpRow secret={entry.totpSecret} />}
+              {entry.url && (
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs font-medium text-muted">URL</span>
+                  <a
+                    href={entry.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex-1 text-xs text-muted hover:text-amber-600 dark:hover:text-amber-400 transition-colors truncate"
+                  >
+                    {entry.url}
+                  </a>
+                </div>
+              )}
               {entry.notes && (
                 <div className="flex gap-2 pt-1">
                   <span className="w-20 shrink-0 text-xs font-medium text-muted pt-0.5">Notes</span>
@@ -646,6 +710,7 @@ export default function EntryCard({
               );
             })()}
 
+          {/* Footer row */}
           <div className="flex items-center justify-between pt-2 mt-1 border-t border-divider">
             <div className="flex flex-wrap gap-1">
               {entry.tags.map((tag) => (
@@ -675,6 +740,6 @@ export default function EntryCard({
           </div>
         </div>
       )}
-    </div>
+    </li>
   );
 }

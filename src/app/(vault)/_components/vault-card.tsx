@@ -10,6 +10,43 @@ function relativeDay(date: Date): string {
   return rtf.format(days, "day");
 }
 
+function VaultLockIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+function DotsIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      stroke="none"
+      aria-hidden="true"
+    >
+      <circle cx="5" cy="12" r="1.5" />
+      <circle cx="12" cy="12" r="1.5" />
+      <circle cx="19" cy="12" r="1.5" />
+    </svg>
+  );
+}
+
 export type VaultSummary = {
   id: string;
   name: string;
@@ -98,44 +135,62 @@ export default function VaultCard({
   }
 
   return (
-    <div className="bg-surface rounded-lg border border-line/60 overflow-hidden">
-      {/* Main card body */}
+    <div
+      className={`bg-surface rounded-xl border border-line/60 overflow-hidden transition-colors hover:border-amber-200 dark:hover:border-amber-800/60 group ${deleting ? "opacity-50 pointer-events-none" : ""}`}
+    >
+      {/* Main body */}
       <div
-        className="p-5 cursor-pointer hover:bg-sunken/30 transition-colors group"
+        className="p-5 cursor-pointer"
         onClick={() => {
           if (!renaming && !menuOpen && !confirmDelete) onNavigate();
         }}
       >
-        <div className="flex items-start justify-between gap-2 mb-2">
-          {renaming ? (
-            <input
-              ref={inputRef}
-              type="text"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  void handleRename();
-                }
-                if (e.key === "Escape") cancelRename();
-              }}
-              onBlur={() => void handleRename()}
-              onClick={(e) => e.stopPropagation()}
-              disabled={saving}
-              className="flex-1 text-base font-semibold bg-transparent border-b-2 border-amber-400 outline-none text-default"
-              style={{ fontFamily: "var(--font-playfair, serif)" }}
-              aria-label="Vault name"
-            />
-          ) : (
-            <h2
-              className="text-base font-semibold text-default group-hover:text-amber-700 dark:group-hover:text-amber-500 transition-colors"
-              style={{ fontFamily: "var(--font-playfair, serif)" }}
-            >
-              {vault.name}
-            </h2>
-          )}
+        <div className="flex items-start gap-3">
+          {/* Vault icon */}
+          <div className="w-9 h-9 rounded-lg bg-stone-50 dark:bg-stone-800 border border-line/60 flex items-center justify-center shrink-0 text-muted group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors mt-0.5">
+            <VaultLockIcon />
+          </div>
 
+          {/* Name + metadata */}
+          <div className="flex-1 min-w-0">
+            {renaming ? (
+              <input
+                ref={inputRef}
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void handleRename();
+                  }
+                  if (e.key === "Escape") cancelRename();
+                }}
+                onBlur={() => void handleRename()}
+                onClick={(e) => e.stopPropagation()}
+                disabled={saving}
+                className="w-full text-sm font-semibold bg-transparent border-b-2 border-amber-400 outline-none text-default pb-0.5"
+                style={{ fontFamily: "var(--font-playfair, serif)" }}
+                aria-label="Vault name"
+              />
+            ) : (
+              <h2
+                className="text-sm font-semibold text-default group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors truncate leading-tight"
+                style={{ fontFamily: "var(--font-playfair, serif)" }}
+              >
+                {vault.name}
+              </h2>
+            )}
+            <p className="text-xs text-muted mt-1.5">
+              {vault._count.entries} {vault._count.entries === 1 ? "entry" : "entries"}
+              <span className="text-subtle mx-1.5" aria-hidden="true">
+                ·
+              </span>
+              {relativeDay(new Date(vault.updatedAt))}
+            </p>
+          </div>
+
+          {/* Options */}
           <button
             type="button"
             onClick={(e) => {
@@ -145,28 +200,10 @@ export default function VaultCard({
             }}
             aria-label="Vault options"
             aria-expanded={menuOpen}
-            className="shrink-0 text-subtle hover:text-muted transition-colors p-0.5 rounded mt-0.5"
+            className="shrink-0 text-subtle hover:text-muted transition-colors p-1 rounded-lg hover:bg-sunken -mr-1 -mt-1"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              stroke="none"
-            >
-              <circle cx="5" cy="12" r="1.5" />
-              <circle cx="12" cy="12" r="1.5" />
-              <circle cx="19" cy="12" r="1.5" />
-            </svg>
+            <DotsIcon />
           </button>
-        </div>
-
-        <div className="flex items-center justify-between mt-1">
-          <p className="text-sm text-muted">
-            {vault._count.entries} {vault._count.entries === 1 ? "entry" : "entries"}
-          </p>
-          <p className="text-xs text-subtle">{relativeDay(new Date(vault.updatedAt))}</p>
         </div>
       </div>
 
@@ -176,7 +213,7 @@ export default function VaultCard({
           <button
             type="button"
             onClick={openRename}
-            className="flex-1 rounded-lg px-3 py-1.5 text-sm text-muted hover:text-default hover:bg-line transition-colors text-left"
+            className="flex-1 rounded-lg px-3 py-1.5 text-sm text-muted hover:text-default hover:bg-sunken transition-colors text-left"
           >
             Rename
           </button>
@@ -186,7 +223,7 @@ export default function VaultCard({
               setConfirmDelete(true);
               setMenuOpen(false);
             }}
-            className="flex-1 rounded-lg px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
+            className="flex-1 rounded-lg px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
           >
             Delete
           </button>
@@ -210,13 +247,13 @@ export default function VaultCard({
             <button
               type="button"
               onClick={() => setConfirmDelete(false)}
-              className="flex-1 rounded-lg border border-line py-1.5 text-sm font-medium text-muted hover:text-default hover:bg-line transition-colors"
+              className="flex-1 rounded-lg border border-line py-1.5 text-sm font-medium text-muted hover:text-default hover:bg-sunken transition-colors"
             >
               Cancel
             </button>
             <button
               type="button"
-              onClick={handleDelete}
+              onClick={() => void handleDelete()}
               disabled={deleting}
               className="flex-1 rounded-lg bg-red-600 py-1.5 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >

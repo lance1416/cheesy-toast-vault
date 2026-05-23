@@ -955,20 +955,22 @@ export default function VaultClient({
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-start">
-              {filtered.map((entry) => (
-                <EntryCard
-                  key={entry.id}
-                  entry={entry}
-                  onEdit={() => setEditingEntry(entries.find((e) => e.id === entry.id) ?? null)}
-                  onHistory={() => setHistoryEntryId(entry.id)}
-                  onTogglePin={(pinned) => handleTogglePin(entry.id, pinned)}
-                  selectionMode={selectionMode}
-                  selected={selectedIds.has(entry.id)}
-                  onToggleSelect={() => toggleSelect(entry.id)}
-                  customTypes={customTypes}
-                />
-              ))}
+            <div className="bg-surface rounded-xl border border-line/60 overflow-hidden">
+              <ul className="divide-y divide-divider">
+                {filtered.map((entry) => (
+                  <EntryCard
+                    key={entry.id}
+                    entry={entry}
+                    onEdit={() => setEditingEntry(entries.find((e) => e.id === entry.id) ?? null)}
+                    onHistory={() => setHistoryEntryId(entry.id)}
+                    onTogglePin={(pinned) => handleTogglePin(entry.id, pinned)}
+                    selectionMode={selectionMode}
+                    selected={selectedIds.has(entry.id)}
+                    onToggleSelect={() => toggleSelect(entry.id)}
+                    customTypes={customTypes}
+                  />
+                ))}
+              </ul>
             </div>
           )}
         </div>
