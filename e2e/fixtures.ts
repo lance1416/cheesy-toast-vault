@@ -38,6 +38,10 @@ export const FIXTURE_BACKUP_CODE_2 = "DDEE4-55FF6";
 /** Password that unlocks the lockedVaultData fixture vault (internal only). */
 const LOCKED_VAULT_PASSWORD = "CorrectVaultPass1!";
 
+/** Real and decoy passwords for the decoyVaultData fixture. */
+const DECOY_VAULT_REAL_PASSWORD = "RealVaultPass1!";
+const DECOY_VAULT_DECOY_PASSWORD = "DecoyVaultPass1!";
+
 function hashBackupCode(code: string): string {
   return createHash("sha256").update(code.toUpperCase().replace(/-/g, "")).digest("hex");
 }
@@ -79,6 +83,13 @@ type TotpUserData = UserData & {
   backupCode2: string;
 };
 
+type DecoyVaultData = VaultData & {
+  realPassword: string;
+  decoyPassword: string;
+  realEntryName: string;
+  decoyEntryName: string;
+};
+
 type Fixtures = {
   /** Per-test Postgres client. Auto-connects and disconnects. */
   db: Client;
@@ -88,6 +99,8 @@ type Fixtures = {
   vaultData: VaultData;
   /** Vault with one real encrypted entry (accepts only LOCKED_VAULT_PASSWORD). */
   lockedVaultData: LockedVaultData;
+  /** Vault configured with both a real and a decoy password (DECOY_VAULT_*). */
+  decoyVaultData: DecoyVaultData;
   /** Browser page with a valid session for userData (JWT injection, no UI login). */
   authedPage: Page;
   /** Per-test user with TOTP enabled and two known backup codes. Deleted after test. */
@@ -158,6 +171,63 @@ export const test = base.extend<Fixtures>({
     );
 
     await provide({ id, name, correctPassword: LOCKED_VAULT_PASSWORD });
+    // Cleaned up by userData DELETE … CASCADE
+  },
+
+  decoyVaultData: async ({ db, userData }, provide) => {
+    const id = randomUUID();
+    const name = `decoy-${id.slice(0, 8)}`;
+    const realSalt = "CCCCCCCCCCCCCCCCCCCCCC==";
+    const decoySalt = "DDDDDDDDDDDDDDDDDDDDDD==";
+
+    await db.query(
+      `INSERT INTO "Vault" (id, name, salt, "decoySalt", "userId", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, now())`,
+      [id, name, realSalt, decoySalt, userData.id],
+    );
+
+    // Encrypt real entry with real key
+    const realSaltBytes = new Uint8Array(
+      Buffer.from(realSalt, "base64"),
+    ) as Uint8Array<ArrayBuffer>;
+    const realKey = await deriveKey(DECOY_VAULT_REAL_PASSWORD, realSaltBytes);
+    const realEntry = await encryptEntry(realKey, {
+      type: "login",
+      name: "Real Entry",
+      username: "realuser",
+      passwordChangedAt: new Date().toISOString(),
+    });
+    await db.query(
+      `INSERT INTO "VaultEntry" (id, "vaultId", "encryptedBlob", iv, "isDecoy", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, $3, false, now())`,
+      [id, realEntry.encryptedBlob, realEntry.iv],
+    );
+
+    // Encrypt decoy entry with decoy key
+    const decoySaltBytes = new Uint8Array(
+      Buffer.from(decoySalt, "base64"),
+    ) as Uint8Array<ArrayBuffer>;
+    const decoyKey = await deriveKey(DECOY_VAULT_DECOY_PASSWORD, decoySaltBytes);
+    const decoyEntry = await encryptEntry(decoyKey, {
+      type: "login",
+      name: "Decoy Entry",
+      username: "decoyuser",
+      passwordChangedAt: new Date().toISOString(),
+    });
+    await db.query(
+      `INSERT INTO "VaultEntry" (id, "vaultId", "encryptedBlob", iv, "isDecoy", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, $3, true, now())`,
+      [id, decoyEntry.encryptedBlob, decoyEntry.iv],
+    );
+
+    await provide({
+      id,
+      name,
+      realPassword: DECOY_VAULT_REAL_PASSWORD,
+      decoyPassword: DECOY_VAULT_DECOY_PASSWORD,
+      realEntryName: "Real Entry",
+      decoyEntryName: "Decoy Entry",
+    });
     // Cleaned up by userData DELETE … CASCADE
   },
 

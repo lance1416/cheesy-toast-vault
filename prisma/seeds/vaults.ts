@@ -12,10 +12,21 @@ type EntryDef = {
   tags: string[];
 };
 
+type DecoyEntryDef = {
+  name: string;
+  url?: string;
+  username?: string;
+  email?: string;
+  password?: string;
+  passwordChangedAt: string;
+};
+
 export type VaultDef = {
   name: string;
   password: string;
   entries: EntryDef[];
+  decoyPassword?: string;
+  decoyEntries?: DecoyEntryDef[];
 };
 
 // ─── Vault data per user (keyed by email) ────────────────────────────────────
@@ -25,6 +36,33 @@ export const VAULT_DATA: Record<string, VaultDef[]> = {
     {
       name: "Personal",
       password: "PersonalVault1!",
+      decoyPassword: "DecoyVault1!",
+      decoyEntries: [
+        {
+          name: "YouTube",
+          url: "https://youtube.com",
+          username: "dev_viewer",
+          email: "dev@gmail.com",
+          password: "Y0uTub3Watch!",
+          passwordChangedAt: daysAgo(14),
+        },
+        {
+          name: "Twitter",
+          url: "https://twitter.com",
+          username: "dev_tweets",
+          email: "dev@gmail.com",
+          password: "Tw1tt3r#Post",
+          passwordChangedAt: daysAgo(45),
+        },
+        {
+          name: "Reddit",
+          url: "https://reddit.com",
+          username: "dev_lurker",
+          email: "dev@gmail.com",
+          password: "R3dd1t#Browse",
+          passwordChangedAt: daysAgo(7),
+        },
+      ],
       entries: [
         {
           name: "GitHub",
@@ -250,10 +288,19 @@ export async function seedVaults(
     const { bytes, b64 } = saltB64();
     const key = await deriveKey(vaultDef.password, bytes);
 
+    // Generate decoySalt only when a decoy password is configured
+    let decoySaltB64: string | null = null;
+    let decoyKey: CryptoKey | null = null;
+    if (vaultDef.decoyPassword) {
+      const { bytes: decoyBytes, b64: db64 } = saltB64();
+      decoySaltB64 = db64;
+      decoyKey = await deriveKey(vaultDef.decoyPassword, decoyBytes);
+    }
+
     const vault = await db.vault.upsert({
       where: { userId_name: { userId, name: vaultDef.name } },
-      update: { salt: b64 },
-      create: { userId, name: vaultDef.name, salt: b64 },
+      update: { salt: b64, decoySalt: decoySaltB64 },
+      create: { userId, name: vaultDef.name, salt: b64, decoySalt: decoySaltB64 },
     });
 
     await db.vaultEntry.deleteMany({ where: { vaultId: vault.id } });
@@ -271,6 +318,18 @@ export async function seedVaults(
           },
         },
       });
+    }
+
+    if (decoyKey && vaultDef.decoyEntries?.length) {
+      for (const entry of vaultDef.decoyEntries) {
+        const { encryptedBlob, iv } = await encryptEntry(decoyKey, {
+          type: "login",
+          ...entry,
+        });
+        await db.vaultEntry.create({
+          data: { vaultId: vault.id, encryptedBlob, iv, isDecoy: true },
+        });
+      }
     }
   }
 }

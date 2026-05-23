@@ -439,3 +439,47 @@ test.describe("Custom entry types", () => {
     await expect(page.getByText("To Delete")).not.toBeVisible({ timeout: 3_000 });
   });
 });
+
+// ── Decoy vault ───────────────────────────────────────────────────────────────
+
+test.describe("Decoy vault", () => {
+  test("real password reveals real entry and hides decoy entry", async ({
+    authedPage: page,
+    decoyVaultData,
+  }) => {
+    await page.goto(`/vault/${decoyVaultData.id}`);
+    await expect(page.getByPlaceholder(/vault password/i)).toBeVisible({ timeout: 5_000 });
+    await page.getByPlaceholder(/vault password/i).fill(decoyVaultData.realPassword);
+    await page.getByRole("button", { name: /^unlock vault$/i }).click();
+
+    await expect(page.getByText(decoyVaultData.realEntryName)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(decoyVaultData.decoyEntryName)).not.toBeVisible();
+  });
+
+  test("decoy password reveals decoy entry and hides real entry", async ({
+    authedPage: page,
+    decoyVaultData,
+  }) => {
+    await page.goto(`/vault/${decoyVaultData.id}`);
+    await expect(page.getByPlaceholder(/vault password/i)).toBeVisible({ timeout: 5_000 });
+    await page.getByPlaceholder(/vault password/i).fill(decoyVaultData.decoyPassword);
+    await page.getByRole("button", { name: /^unlock vault$/i }).click();
+
+    await expect(page.getByText(decoyVaultData.decoyEntryName)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(decoyVaultData.realEntryName)).not.toBeVisible();
+  });
+
+  test("wrong password is rejected even when decoy is configured", async ({
+    authedPage: page,
+    decoyVaultData,
+  }) => {
+    await page.goto(`/vault/${decoyVaultData.id}`);
+    await expect(page.getByPlaceholder(/vault password/i)).toBeVisible({ timeout: 5_000 });
+    await page.getByPlaceholder(/vault password/i).fill("WrongPassword123!");
+    await page.getByRole("button", { name: /^unlock vault$/i }).click();
+    await expect(
+      page.getByRole("alert").filter({ hasText: /incorrect vault password/i }),
+    ).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByPlaceholder(/vault password/i)).toBeVisible();
+  });
+});
