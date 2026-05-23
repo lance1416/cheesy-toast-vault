@@ -94,7 +94,7 @@ test.describe("Enroll TOTP from Settings", () => {
     await page.goto("/settings");
     await expect(page.getByText(/two-factor authentication/i)).toBeVisible();
     await expect(page.getByText("Disabled")).toBeVisible();
-    await expect(page.getByRole("button", { name: /set up authenticator/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /set up/i })).toBeVisible();
   });
 
   test("full enrollment flow: QR → verify code → backup codes → Enabled badge", async ({
@@ -123,7 +123,7 @@ test.describe("Enroll TOTP from Settings", () => {
       }
     });
 
-    await page.getByRole("button", { name: /set up authenticator/i }).click();
+    await page.getByRole("button", { name: /set up/i }).click();
     await expect(page.getByRole("button", { name: /continue/i })).toBeEnabled({ timeout: 10_000 });
 
     const { secret: enrollSecret } = (await lastSetupResponse!.json()) as { secret: string };
@@ -160,7 +160,7 @@ test.describe("Disable 2FA", () => {
   test("Settings shows Enabled badge and Disable button", async ({ authedTotpPage: page }) => {
     await page.goto("/settings");
     await expect(page.getByText("Enabled")).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByRole("button", { name: /disable 2fa/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /disable/i })).toBeVisible();
   });
 
   test("clicking disable shows the code input; cancel restores Enabled state", async ({
@@ -169,7 +169,7 @@ test.describe("Disable 2FA", () => {
     await page.goto("/settings");
     await expect(page.getByText("Enabled")).toBeVisible({ timeout: 5_000 });
 
-    await page.getByRole("button", { name: /disable 2fa/i }).click();
+    await page.getByRole("button", { name: /disable/i }).click();
     await expect(page.locator("#disable-totp-code")).toBeVisible();
     await expect(page.getByRole("button", { name: /confirm disable/i })).toBeVisible();
 
@@ -182,7 +182,7 @@ test.describe("Disable 2FA", () => {
     await page.goto("/settings");
     await expect(page.getByText("Enabled")).toBeVisible({ timeout: 5_000 });
 
-    await page.getByRole("button", { name: /disable 2fa/i }).click();
+    await page.getByRole("button", { name: /disable/i }).click();
     await page.locator("#disable-totp-code").fill("000000");
     await page.getByRole("button", { name: /confirm disable/i }).click();
     await expect(page.getByRole("alert").filter({ hasText: /invalid code/i })).toBeVisible({

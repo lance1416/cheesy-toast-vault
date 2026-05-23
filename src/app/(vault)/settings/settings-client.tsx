@@ -72,6 +72,9 @@ export default function SettingsClient({
 }) {
   const { lockTimeout, setLockTimeout } = useVault();
   const { data: session } = useSession();
+
+  // Login password
+  const [passwordPhase, setPasswordPhase] = useState<"idle" | "form">("idle");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -79,7 +82,7 @@ export default function SettingsClient({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  // Email change state
+  // Email change
   const [emailPhase, setEmailPhase] = useState<"idle" | "form">("idle");
   const [emailCurrentPassword, setEmailCurrentPassword] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -87,7 +90,7 @@ export default function SettingsClient({
   const [emailError, setEmailError] = useState("");
   const [emailSuccess, setEmailSuccess] = useState(false);
 
-  // 2FA state
+  // 2FA
   const [totpEnabled, setTotpEnabled] = useState(initialTotpEnabled);
   const [showTotpModal, setShowTotpModal] = useState(false);
   const [disablePhase, setDisablePhase] = useState<"idle" | "confirm">("idle");
@@ -95,18 +98,25 @@ export default function SettingsClient({
   const [disabling, setDisabling] = useState(false);
   const [disableError, setDisableError] = useState("");
 
+  // Sessions
   const [activeSessions, setActiveSessions] = useState<UserSessionEntry[]>(sessions);
   const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
-
   const [revokePhase, setRevokePhase] = useState<"idle" | "form">("idle");
   const [revokePassword, setRevokePassword] = useState("");
   const [revoking, setRevoking] = useState(false);
   const [revokeError, setRevokeError] = useState("");
 
+  // Custom types
   const [customTypeList, setCustomTypeList] = useState<CustomEntryTypeDef[]>(initialCustomTypes);
   const [showCreateType, setShowCreateType] = useState(false);
   const [editingType, setEditingType] = useState<CustomEntryTypeDef | undefined>();
   const [deletingTypeId, setDeletingTypeId] = useState<string | null>(null);
+
+  // Delete account
+  const [deletePhase, setDeletePhase] = useState<"idle" | "confirm">("idle");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   async function handleDeleteCustomType(id: string) {
     setDeletingTypeId(id);
@@ -117,11 +127,6 @@ export default function SettingsClient({
       setDeletingTypeId(null);
     }
   }
-
-  const [deletePhase, setDeletePhase] = useState<"idle" | "confirm">("idle");
-  const [deletePassword, setDeletePassword] = useState("");
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState("");
 
   async function handleRevokeSession(sessionId: string) {
     setRevokingSessionId(sessionId);
@@ -252,6 +257,7 @@ export default function SettingsClient({
         throw new Error(data.error ?? "Failed to update password");
       }
       setSuccess(true);
+      setPasswordPhase("idle");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -264,186 +270,114 @@ export default function SettingsClient({
 
   return (
     <div className="bg-canvas min-h-full" style={{ fontFamily: "var(--font-dm-sans, sans-serif)" }}>
-      {/* Mobile-only nav — sidebar handles desktop */}
       <div className="md:hidden">
         <VaultHeader vaultName="Settings" />
       </div>
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
-        {/* Desktop page header */}
-        <div className="hidden md:flex items-end justify-between mb-10">
-          <div>
-            <h1
-              className="text-2xl font-semibold text-default"
-              style={{ fontFamily: "var(--font-playfair, serif)" }}
-            >
-              Settings
-            </h1>
-            {session?.user?.email && (
-              <p className="text-sm text-muted mt-1">{session.user.email}</p>
-            )}
-          </div>
+        <div className="hidden md:block mb-10">
+          <h1
+            className="text-2xl font-semibold text-default"
+            style={{ fontFamily: "var(--font-playfair, serif)" }}
+          >
+            Settings
+          </h1>
+          {session?.user?.email && <p className="text-sm text-muted mt-1">{session.user.email}</p>}
         </div>
 
         {/* ── Security ─────────────────────────────────────────────────────── */}
         <SectionLabel>Security</SectionLabel>
-        {/* Login password */}
-        <section className="border-b border-divider">
-          <div className="flex items-center gap-3.5 py-4 border-b border-divider">
-            <SettingIcon>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0110 0v4" />
-              </svg>
-            </SettingIcon>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-semibold text-default">Login password</h2>
-              <p className="text-xs text-muted">The password used to sign in to your account.</p>
-            </div>
-          </div>
-          <div className="py-5">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Field
-                label="Current password"
-                id="current-password"
-                type="password"
-                value={currentPassword}
-                onChange={setCurrentPassword}
-                required
-                autoFocus
-              />
-              <div>
-                <Field
-                  label="New password"
-                  id="new-password"
-                  type="password"
-                  value={newPassword}
-                  onChange={setNewPassword}
-                  required
-                />
-                {newPassword && <StrengthBar password={newPassword} />}
-                <p className="mt-1.5 text-xs text-muted">Minimum 12 characters.</p>
+        <div className="rounded-xl bg-surface divide-y divide-line/40 overflow-hidden shadow-[0_2px_12px_rgb(0_0_0/0.07),0_1px_3px_rgb(0_0_0/0.05)] border border-transparent dark:border-line/40 dark:shadow-none">
+          {/* Login password */}
+          <div>
+            <div className="flex items-center gap-3.5 p-4">
+              <SettingIcon>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0110 0v4" />
+                </svg>
+              </SettingIcon>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-semibold text-default">Login password</h2>
+                <p className="text-xs text-muted">The password used to sign in to your account.</p>
               </div>
-              <div>
-                <Field
-                  label="Confirm new password"
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={setConfirmPassword}
-                  required
-                />
-                {mismatch && (
-                  <p className="mt-1 text-xs text-red-500 dark:text-red-400" role="alert">
-                    Passwords do not match.
-                  </p>
+              <div className="flex items-center gap-2.5 shrink-0">
+                {success && passwordPhase === "idle" && (
+                  <span className="text-xs font-medium text-green-600 dark:text-green-400">
+                    Updated
+                  </span>
+                )}
+                {passwordPhase === "idle" && (
+                  <button
+                    type="button"
+                    aria-label="Change login password"
+                    onClick={() => {
+                      setPasswordPhase("form");
+                      setSuccess(false);
+                    }}
+                    className="rounded-lg border border-line px-3.5 py-1.5 text-xs font-semibold text-muted hover:text-default hover:bg-sunken transition-colors"
+                  >
+                    Change
+                  </button>
                 )}
               </div>
-              {error && <AlertBanner message={error} />}
-              {success && (
-                <div
-                  role="status"
-                  className="rounded-lg border border-green-200 dark:border-green-900/40 bg-green-50 dark:bg-green-950/20 px-4 py-3 text-sm text-green-700 dark:text-green-400"
-                >
-                  Password updated successfully.
-                </div>
-              )}
-              <div className="flex justify-end pt-1">
-                <button
-                  type="submit"
-                  disabled={submitting || !canSubmit}
-                  className="rounded-lg bg-stone-800 dark:bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {submitting ? "Updating…" : "Update password"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </section>
-
-        {/* Email address */}
-        <section className="border-b border-divider">
-          <div className="flex items-center gap-3.5 py-4 border-b border-divider">
-            <SettingIcon>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                <polyline points="22,6 12,13 2,6" />
-              </svg>
-            </SettingIcon>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-semibold text-default">Email address</h2>
-              {session?.user?.email && (
-                <p className="text-xs text-muted truncate">{session.user.email}</p>
-              )}
             </div>
-            {emailPhase === "idle" && !emailSuccess && (
-              <button
-                type="button"
-                onClick={() => setEmailPhase("form")}
-                className="shrink-0 rounded-lg border border-line px-3.5 py-1.5 text-xs font-semibold text-muted hover:text-default hover:bg-sunken transition-colors"
-              >
-                Change
-              </button>
-            )}
-          </div>
-          {(emailPhase !== "idle" || emailSuccess) && (
-            <div className="py-5">
-              {emailSuccess ? (
-                <div
-                  role="status"
-                  className="rounded-lg border border-green-200 dark:border-green-900/40 bg-green-50 dark:bg-green-950/20 px-4 py-3 text-sm text-green-700 dark:text-green-400"
-                >
-                  Verification email sent. Signing you out…
-                </div>
-              ) : (
-                <form onSubmit={handleEmailChange} className="space-y-4">
+            {passwordPhase === "form" && (
+              <div className="px-4 pb-5 border-t border-line/40">
+                <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                   <Field
-                    label="New email"
-                    id="new-email"
-                    type="email"
-                    value={newEmail}
-                    onChange={setNewEmail}
+                    label="Current password"
+                    id="current-password"
+                    type="password"
+                    value={currentPassword}
+                    onChange={setCurrentPassword}
                     required
                     autoFocus
                   />
-                  <Field
-                    label="Current password"
-                    id="email-current-password"
-                    type="password"
-                    value={emailCurrentPassword}
-                    onChange={setEmailCurrentPassword}
-                    required
-                  />
-                  {emailError && (
-                    <div
-                      role="alert"
-                      className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
-                    >
-                      {emailError}
-                    </div>
-                  )}
-                  <div className="flex gap-3 justify-end">
+                  <div>
+                    <Field
+                      label="New password"
+                      id="new-password"
+                      type="password"
+                      value={newPassword}
+                      onChange={setNewPassword}
+                      required
+                    />
+                    {newPassword && <StrengthBar password={newPassword} />}
+                    <p className="mt-1.5 text-xs text-muted">Minimum 12 characters.</p>
+                  </div>
+                  <div>
+                    <Field
+                      label="Confirm new password"
+                      id="confirm-password"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={setConfirmPassword}
+                      required
+                    />
+                    {mismatch && (
+                      <p className="mt-1 text-xs text-red-500 dark:text-red-400" role="alert">
+                        Passwords do not match.
+                      </p>
+                    )}
+                  </div>
+                  {error && <AlertBanner message={error} />}
+                  <div className="flex items-center justify-between pt-1">
                     <button
                       type="button"
                       onClick={() => {
-                        setEmailPhase("idle");
-                        setNewEmail("");
-                        setEmailCurrentPassword("");
-                        setEmailError("");
+                        setPasswordPhase("idle");
+                        setError("");
+                        setCurrentPassword("");
+                        setNewPassword("");
+                        setConfirmPassword("");
                       }}
                       className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-muted hover:bg-sunken transition-colors"
                     >
@@ -451,209 +385,305 @@ export default function SettingsClient({
                     </button>
                     <button
                       type="submit"
-                      disabled={emailSubmitting || !newEmail || !emailCurrentPassword}
-                      className="rounded-lg bg-stone-800 dark:bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={submitting || !canSubmit}
+                      className="rounded-lg bg-stone-800 dark:bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {emailSubmitting ? "Updating…" : "Update email"}
+                      {submitting ? "Updating…" : "Update password"}
                     </button>
                   </div>
                 </form>
+              </div>
+            )}
+          </div>
+
+          {/* Email address */}
+          <div>
+            <div className="flex items-center gap-3.5 p-4">
+              <SettingIcon>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+              </SettingIcon>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-semibold text-default">Email address</h2>
+                {session?.user?.email && (
+                  <p className="text-xs text-muted truncate">{session.user.email}</p>
+                )}
+              </div>
+              {emailPhase === "idle" && !emailSuccess && (
+                <button
+                  type="button"
+                  aria-label="Change email"
+                  onClick={() => setEmailPhase("form")}
+                  className="shrink-0 rounded-lg border border-line px-3.5 py-1.5 text-xs font-semibold text-muted hover:text-default hover:bg-sunken transition-colors"
+                >
+                  Change
+                </button>
               )}
             </div>
-          )}
-        </section>
-
-        {/* Two-factor authentication */}
-        <section className="border-b border-divider">
-          <div className="flex items-center gap-3.5 py-4 border-b border-divider">
-            <SettingIcon>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-            </SettingIcon>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-semibold text-default">Two-factor authentication</h2>
-              <p className="text-xs text-muted">
-                Require a code from your authenticator app at sign-in.
-              </p>
-            </div>
-            <span
-              className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-                totpEnabled
-                  ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                  : "bg-stone-100 dark:bg-stone-800 text-muted"
-              }`}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${totpEnabled ? "bg-green-500" : "bg-stone-400 dark:bg-stone-500"}`}
-              />
-              {totpEnabled ? "Enabled" : "Disabled"}
-            </span>
-          </div>
-          <div className="py-5">
-            {!totpEnabled && disablePhase === "idle" && (
-              <button
-                type="button"
-                onClick={() => setShowTotpModal(true)}
-                className="rounded-lg bg-stone-800 dark:bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98]"
-              >
-                Set up authenticator app
-              </button>
-            )}
-            {totpEnabled && disablePhase === "idle" && (
-              <button
-                type="button"
-                onClick={() => setDisablePhase("confirm")}
-                className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-muted hover:text-default hover:bg-sunken transition-colors"
-              >
-                Disable 2FA
-              </button>
-            )}
-            {totpEnabled && disablePhase === "confirm" && (
-              <form onSubmit={handleDisableTotp} className="space-y-4">
-                <p className="text-sm text-muted">
-                  Enter your current authenticator code to disable 2FA.
-                </p>
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="disable-totp-code"
-                    className="block text-xs font-medium text-subtle uppercase tracking-wide"
+            {(emailPhase !== "idle" || emailSuccess) && (
+              <div className="px-4 pb-5 border-t border-line/40">
+                {emailSuccess ? (
+                  <div
+                    role="status"
+                    className="rounded-lg border border-green-200 dark:border-green-900/40 bg-green-50 dark:bg-green-950/20 px-4 py-3 text-sm text-green-700 dark:text-green-400 mt-4"
                   >
-                    Authenticator code
-                  </label>
-                  <input
-                    id="disable-totp-code"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={6}
-                    autoFocus
-                    value={disableCode}
-                    onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, ""))}
-                    placeholder="000 000"
-                    className="w-full max-w-[10rem] rounded-lg border border-line bg-sunken/50 px-3.5 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-surface text-center tracking-[0.3em] font-mono"
+                    Verification email sent. Signing you out…
+                  </div>
+                ) : (
+                  <form onSubmit={handleEmailChange} className="space-y-4 pt-4">
+                    <Field
+                      label="New email"
+                      id="new-email"
+                      type="email"
+                      value={newEmail}
+                      onChange={setNewEmail}
+                      required
+                      autoFocus
+                    />
+                    <Field
+                      label="Current password"
+                      id="email-current-password"
+                      type="password"
+                      value={emailCurrentPassword}
+                      onChange={setEmailCurrentPassword}
+                      required
+                    />
+                    {emailError && (
+                      <div
+                        role="alert"
+                        className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-600 dark:text-red-400"
+                      >
+                        {emailError}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmailPhase("idle");
+                          setNewEmail("");
+                          setEmailCurrentPassword("");
+                          setEmailError("");
+                        }}
+                        className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-muted hover:bg-sunken transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={emailSubmitting || !newEmail || !emailCurrentPassword}
+                        className="rounded-lg bg-stone-800 dark:bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {emailSubmitting ? "Updating…" : "Update email"}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Two-factor authentication */}
+          <div>
+            <div className="flex items-center gap-3.5 p-4">
+              <SettingIcon>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+              </SettingIcon>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-semibold text-default">Two-factor authentication</h2>
+                <p className="text-xs text-muted">
+                  Require a code from your authenticator app at sign-in.
+                </p>
+              </div>
+              <div className="flex items-center gap-2.5 shrink-0">
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${totpEnabled ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" : "bg-stone-100 dark:bg-stone-800 text-muted"}`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${totpEnabled ? "bg-green-500" : "bg-stone-400 dark:bg-stone-500"}`}
                   />
-                </div>
-                {disableError && <AlertBanner message={disableError} />}
-                <div className="flex gap-3">
+                  {totpEnabled ? "Enabled" : "Disabled"}
+                </span>
+                {!totpEnabled && disablePhase === "idle" && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setDisablePhase("idle");
-                      setDisableCode("");
-                      setDisableError("");
-                    }}
-                    className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-muted hover:bg-sunken transition-colors"
+                    onClick={() => setShowTotpModal(true)}
+                    className="rounded-lg border border-line px-3.5 py-1.5 text-xs font-semibold text-muted hover:text-default hover:bg-sunken transition-colors"
                   >
-                    Cancel
+                    Set up
                   </button>
+                )}
+                {totpEnabled && disablePhase === "idle" && (
                   <button
-                    type="submit"
-                    disabled={disabling || disableCode.length !== 6}
-                    className="rounded-lg bg-stone-800 dark:bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                    type="button"
+                    onClick={() => setDisablePhase("confirm")}
+                    className="rounded-lg border border-line px-3.5 py-1.5 text-xs font-semibold text-muted hover:text-default hover:bg-sunken transition-colors"
                   >
-                    {disabling ? "Disabling…" : "Confirm disable"}
+                    Disable
                   </button>
-                </div>
-              </form>
+                )}
+              </div>
+            </div>
+            {totpEnabled && disablePhase === "confirm" && (
+              <div className="px-4 pb-5 border-t border-line/40">
+                <form onSubmit={handleDisableTotp} className="space-y-4 pt-4">
+                  <p className="text-sm text-muted">
+                    Enter your current authenticator code to disable 2FA.
+                  </p>
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="disable-totp-code"
+                      className="block text-xs font-medium text-subtle uppercase tracking-wide"
+                    >
+                      Authenticator code
+                    </label>
+                    <input
+                      id="disable-totp-code"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      autoFocus
+                      value={disableCode}
+                      onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, ""))}
+                      placeholder="000 000"
+                      className="w-full max-w-[10rem] rounded-lg border border-line bg-sunken/50 px-3.5 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-surface text-center tracking-[0.3em] font-mono"
+                    />
+                  </div>
+                  {disableError && <AlertBanner message={disableError} />}
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDisablePhase("idle");
+                        setDisableCode("");
+                        setDisableError("");
+                      }}
+                      className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-muted hover:bg-sunken transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={disabling || disableCode.length !== 6}
+                      className="rounded-lg bg-stone-800 dark:bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {disabling ? "Disabling…" : "Confirm disable"}
+                    </button>
+                  </div>
+                </form>
+              </div>
             )}
           </div>
-        </section>
+        </div>
 
         {/* ── Preferences ──────────────────────────────────────────────────── */}
         <SectionLabel>Preferences</SectionLabel>
-        {/* Auto-lock */}
-        <section className="border-b border-divider">
-          <div className="flex items-center gap-3.5 py-4 border-b border-divider">
-            <SettingIcon>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-            </SettingIcon>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-semibold text-default">Auto-lock timeout</h2>
-              <p className="text-xs text-muted">
-                Lock all open vaults after a period of inactivity.
-              </p>
-            </div>
-          </div>
-          <div className="py-5">
-            <div role="group" aria-label="Auto-lock timeout" className="flex flex-wrap gap-2">
-              {TIMEOUTS.map(({ value, label }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setLockTimeout(value)}
-                  aria-pressed={lockTimeout === value}
-                  className={`rounded-lg px-4 py-2 text-sm font-medium border transition-colors ${
-                    lockTimeout === value
-                      ? "bg-stone-800 dark:bg-amber-600 text-white border-transparent shadow-sm"
-                      : "border-line text-muted hover:border-amber-300 dark:hover:border-amber-700 hover:text-default bg-surface"
-                  }`}
+        <div className="rounded-xl bg-surface divide-y divide-line/40 overflow-hidden shadow-[0_2px_12px_rgb(0_0_0/0.07),0_1px_3px_rgb(0_0_0/0.05)] border border-transparent dark:border-line/40 dark:shadow-none">
+          {/* Auto-lock timeout */}
+          <div>
+            <div className="flex items-center gap-3.5 p-4">
+              <SettingIcon>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  {label}
-                </button>
-              ))}
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </SettingIcon>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-semibold text-default">Auto-lock timeout</h2>
+                <p className="text-xs text-muted">
+                  Lock all open vaults after a period of inactivity.
+                </p>
+              </div>
+            </div>
+            <div className="px-4 pb-4 pt-3 border-t border-line/40">
+              <div role="group" aria-label="Auto-lock timeout" className="flex flex-wrap gap-2">
+                {TIMEOUTS.map(({ value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setLockTimeout(value)}
+                    aria-pressed={lockTimeout === value}
+                    className={`rounded-lg px-4 py-2 text-sm font-medium border transition-colors ${
+                      lockTimeout === value
+                        ? "bg-stone-800 dark:bg-amber-600 text-white border-transparent"
+                        : "border-line text-muted hover:border-amber-300 dark:hover:border-amber-700 hover:text-default bg-surface"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </section>
 
-        {/* Custom entry types */}
-        <section className="border-b border-divider">
-          <div className="flex items-center gap-3.5 py-4 border-b border-divider">
-            <SettingIcon>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          {/* Custom entry types */}
+          <div>
+            <div className="flex items-center gap-3.5 p-4">
+              <SettingIcon>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
+              </SettingIcon>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-semibold text-default">Custom entry types</h2>
+                <p className="text-xs text-muted">
+                  Define custom schemas for structured vault entries.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingType(undefined);
+                  setShowCreateType(true);
+                }}
+                className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted hover:text-default hover:bg-sunken transition-colors"
               >
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
-            </SettingIcon>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-semibold text-default">Custom entry types</h2>
-              <p className="text-xs text-muted">
-                Define custom schemas for structured vault entries.
-              </p>
+                + New type
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setEditingType(undefined);
-                setShowCreateType(true);
-              }}
-              className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted hover:text-default hover:bg-sunken transition-colors"
-            >
-              + New type
-            </button>
-          </div>
-          <div className="py-2">
             {customTypeList.length === 0 ? (
-              <p className="text-sm text-subtle py-3">No custom types yet.</p>
+              <div className="px-4 py-3 border-t border-line/40">
+                <p className="text-sm text-subtle">No custom types yet.</p>
+              </div>
             ) : (
-              <ul className="divide-y divide-divider" role="list">
+              <ul className="divide-y divide-line/40 border-t border-line/40" role="list">
                 {customTypeList.map((ct) => (
-                  <li key={ct.id} className="py-3 flex items-center justify-between gap-4">
+                  <li key={ct.id} className="px-4 py-3 flex items-center justify-between gap-4">
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-default">{ct.name}</p>
                       <p className="text-xs text-muted mt-0.5 truncate">
@@ -685,47 +715,49 @@ export default function SettingsClient({
               </ul>
             )}
           </div>
-        </section>
+        </div>
 
         {/* ── Activity ─────────────────────────────────────────────────────── */}
         <SectionLabel>Activity</SectionLabel>
-        {/* Sessions */}
-        <section className="border-b border-divider">
-          <div className="flex items-center gap-3.5 py-4 border-b border-divider">
-            <SettingIcon>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                <line x1="8" y1="21" x2="16" y2="21" />
-                <line x1="12" y1="17" x2="12" y2="21" />
-              </svg>
-            </SettingIcon>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-semibold text-default">Active sessions</h2>
-              <p className="text-xs text-muted">
-                {activeSessions.length} {activeSessions.length === 1 ? "device" : "devices"} signed
-                in
-              </p>
+        <div className="rounded-xl bg-surface divide-y divide-line/40 overflow-hidden shadow-[0_2px_12px_rgb(0_0_0/0.07),0_1px_3px_rgb(0_0_0/0.05)] border border-transparent dark:border-line/40 dark:shadow-none">
+          {/* Active sessions */}
+          <div>
+            <div className="flex items-center gap-3.5 p-4">
+              <SettingIcon>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                  <line x1="8" y1="21" x2="16" y2="21" />
+                  <line x1="12" y1="17" x2="12" y2="21" />
+                </svg>
+              </SettingIcon>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-semibold text-default">Active sessions</h2>
+                <p className="text-xs text-muted">
+                  {activeSessions.length} {activeSessions.length === 1 ? "device" : "devices"}{" "}
+                  signed in
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="py-2">
             {activeSessions.length === 0 ? (
-              <p className="text-sm text-subtle py-3">No active sessions recorded.</p>
+              <div className="px-4 py-3 border-t border-line/40">
+                <p className="text-sm text-subtle">No active sessions recorded.</p>
+              </div>
             ) : (
-              <ul className="divide-y divide-divider" role="list">
+              <ul className="divide-y divide-line/40 border-t border-line/40" role="list">
                 {activeSessions.map((s) => {
                   const isCurrent = s.id === session?.user?.sessionId;
                   const browser = parseBrowser(s.userAgent);
                   const os = parseOS(s.userAgent);
                   const date = new Date(s.createdAt);
                   return (
-                    <li key={s.id} className="py-3.5 flex items-center justify-between gap-4">
+                    <li key={s.id} className="px-4 py-3.5 flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="w-8 h-8 rounded-lg bg-stone-100 dark:bg-stone-800 border border-line/60 flex items-center justify-center shrink-0 text-stone-400">
                           <svg
@@ -763,7 +795,6 @@ export default function SettingsClient({
                             </span>
                             <time
                               dateTime={date.toISOString()}
-                              title={date.toLocaleString()}
                               className="text-xs text-subtle tabular-nums"
                               suppressHydrationWarning
                             >
@@ -792,92 +823,93 @@ export default function SettingsClient({
                 })}
               </ul>
             )}
-          </div>
-          <div className="border-t border-divider pt-4 pb-4">
-            {revokePhase === "idle" ? (
-              <button
-                type="button"
-                onClick={() => setRevokePhase("form")}
-                className="text-sm font-medium text-muted hover:text-default transition-colors"
-              >
-                Sign out of all devices
-              </button>
-            ) : (
-              <form onSubmit={handleRevokeAllSessions} className="space-y-4">
-                <p className="text-sm text-muted">
-                  Enter your password to sign out of all devices, including this one.
-                </p>
-                <Field
-                  label="Current password"
-                  id="revoke-password"
-                  type="password"
-                  value={revokePassword}
-                  onChange={setRevokePassword}
-                  required
-                  autoFocus
-                />
-                {revokeError && <AlertBanner message={revokeError} />}
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRevokePhase("idle");
-                      setRevokePassword("");
-                      setRevokeError("");
-                    }}
-                    className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-muted hover:bg-sunken transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={revoking || !revokePassword}
-                    className="rounded-lg bg-stone-800 dark:bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {revoking ? "Signing out…" : "Sign out everywhere"}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </section>
-
-        {/* Login history */}
-        <section className="border-b border-divider">
-          <div className="flex items-center gap-3.5 py-4 border-b border-divider">
-            <SettingIcon>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="12 8 12 12 14 14" />
-                <path d="M3.05 11a9 9 0 1 0 .5-4" />
-                <polyline points="3 3 3 7 7 7" />
-              </svg>
-            </SettingIcon>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-semibold text-default">Login history</h2>
-              <p className="text-xs text-muted">Your 20 most recent sign-in attempts.</p>
+            <div className="px-4 py-3.5 border-t border-line/40">
+              {revokePhase === "idle" ? (
+                <button
+                  type="button"
+                  onClick={() => setRevokePhase("form")}
+                  className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-muted hover:text-default hover:bg-sunken transition-colors"
+                >
+                  Sign out of all devices
+                </button>
+              ) : (
+                <form onSubmit={handleRevokeAllSessions} className="space-y-4">
+                  <p className="text-sm text-muted">
+                    Enter your password to sign out of all devices, including this one.
+                  </p>
+                  <Field
+                    label="Current password"
+                    id="revoke-password"
+                    type="password"
+                    value={revokePassword}
+                    onChange={setRevokePassword}
+                    required
+                    autoFocus
+                  />
+                  {revokeError && <AlertBanner message={revokeError} />}
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRevokePhase("idle");
+                        setRevokePassword("");
+                        setRevokeError("");
+                      }}
+                      className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-muted hover:bg-sunken transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={revoking || !revokePassword}
+                      className="rounded-lg bg-stone-800 dark:bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {revoking ? "Signing out…" : "Sign out everywhere"}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
-          <div className="py-2">
+
+          {/* Login history */}
+          <div>
+            <div className="flex items-center gap-3.5 p-4">
+              <SettingIcon>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="12 8 12 12 14 14" />
+                  <path d="M3.05 11a9 9 0 1 0 .5-4" />
+                  <polyline points="3 3 3 7 7 7" />
+                </svg>
+              </SettingIcon>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-semibold text-default">Login history</h2>
+                <p className="text-xs text-muted">Your 20 most recent sign-in attempts.</p>
+              </div>
+            </div>
             {loginHistory.length === 0 ? (
-              <p className="text-sm text-subtle py-3">No login events recorded yet.</p>
+              <div className="px-4 py-3 border-t border-line/40">
+                <p className="text-sm text-subtle">No login events recorded yet.</p>
+              </div>
             ) : (
-              <ul className="divide-y divide-divider" role="list">
+              <ul className="divide-y divide-line/40 border-t border-line/40" role="list">
                 {loginHistory.map((event) => {
                   const date = new Date(event.createdAt);
                   return (
-                    <li key={event.id} className="flex items-center justify-between gap-4 py-3">
+                    <li
+                      key={event.id}
+                      className="px-4 flex items-center justify-between gap-4 py-3"
+                    >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <span
-                          className={`shrink-0 w-2 h-2 rounded-full ${
-                            event.success ? "bg-green-500" : "bg-red-500"
-                          }`}
+                          className={`shrink-0 w-2 h-2 rounded-full ${event.success ? "bg-green-500" : "bg-red-500"}`}
                           aria-label={event.success ? "Success" : "Failed"}
                         />
                         <span className="text-sm text-default font-medium">
@@ -889,11 +921,7 @@ export default function SettingsClient({
                       </div>
                       <div className="flex items-center gap-3 text-subtle shrink-0 text-xs tabular-nums">
                         <span className="font-mono hidden sm:inline">{event.ip}</span>
-                        <time
-                          dateTime={date.toISOString()}
-                          title={date.toLocaleString()}
-                          suppressHydrationWarning
-                        >
+                        <time dateTime={date.toISOString()} suppressHydrationWarning>
                           {date.toLocaleDateString("en", {
                             month: "short",
                             day: "numeric",
@@ -908,12 +936,12 @@ export default function SettingsClient({
               </ul>
             )}
           </div>
-        </section>
+        </div>
 
         {/* ── Danger zone ──────────────────────────────────────────────────── */}
         <SectionLabel danger>Danger zone</SectionLabel>
-        <section className="border-b border-divider">
-          <div className="flex items-center gap-3.5 py-4 border-b border-divider">
+        <div className="rounded-xl bg-surface overflow-hidden mb-10 shadow-[0_2px_12px_rgb(0_0_0/0.07),0_1px_3px_rgb(0_0_0/0.05)] border border-red-200/60 dark:border-red-900/40 dark:shadow-none">
+          <div className="flex items-center gap-3.5 p-4">
             <div className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-950/30 flex items-center justify-center shrink-0 text-red-500 dark:text-red-400 [&>svg]:w-4 [&>svg]:h-4">
               <svg
                 viewBox="0 0 24 24"
@@ -938,18 +966,19 @@ export default function SettingsClient({
                 Permanently erase your account and all vault data. Cannot be undone.
               </p>
             </div>
-          </div>
-          <div className="py-5">
-            {deletePhase === "idle" ? (
+            {deletePhase === "idle" && (
               <button
                 type="button"
                 onClick={() => setDeletePhase("confirm")}
-                className="rounded-lg border border-red-300 dark:border-red-800 px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                className="shrink-0 rounded-lg border border-red-300 dark:border-red-800 px-3.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
               >
-                Delete my account
+                Delete
               </button>
-            ) : (
-              <form onSubmit={handleDelete} className="space-y-4">
+            )}
+          </div>
+          {deletePhase === "confirm" && (
+            <div className="px-4 pb-5 border-t border-red-200/70 dark:border-red-900/50">
+              <form onSubmit={handleDelete} className="space-y-4 pt-4">
                 <p className="text-sm text-muted">
                   Enter your password to confirm. This will permanently delete your account and all
                   vaults.
@@ -964,7 +993,7 @@ export default function SettingsClient({
                   autoFocus
                 />
                 {deleteError && <AlertBanner message={deleteError} />}
-                <div className="flex gap-3">
+                <div className="flex items-center justify-between">
                   <button
                     type="button"
                     onClick={() => {
@@ -985,9 +1014,9 @@ export default function SettingsClient({
                   </button>
                 </div>
               </form>
-            )}
-          </div>
-        </section>
+            </div>
+          )}
+        </div>
       </main>
 
       {showTotpModal && (
@@ -1016,13 +1045,16 @@ export default function SettingsClient({
 
 function SectionLabel({ children, danger }: { children: React.ReactNode; danger?: boolean }) {
   return (
-    <p
-      className={`text-xs font-semibold uppercase tracking-widest mt-10 mb-0 border-t border-line/40 pt-8 ${
-        danger ? "text-red-500 dark:text-red-400" : "text-subtle"
-      }`}
-    >
-      {children}
-    </p>
+    <div className="flex items-center gap-3 mt-8 mb-3">
+      <span
+        className={`text-xs font-semibold uppercase tracking-widest shrink-0 ${danger ? "text-red-500 dark:text-red-400" : "text-subtle"}`}
+      >
+        {children}
+      </span>
+      <div
+        className={`flex-1 h-px ${danger ? "bg-red-200/50 dark:bg-red-900/30" : "bg-line/40"}`}
+      />
+    </div>
   );
 }
 

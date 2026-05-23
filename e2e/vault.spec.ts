@@ -291,10 +291,10 @@ test.describe("Settings page", () => {
 test.describe("Settings — email change", () => {
   test("wrong password shows an error", async ({ authedPage: page }) => {
     await page.goto("/settings");
-    await page.getByRole("button", { name: /^change$/i }).click();
+    await page.getByRole("button", { name: /change email/i }).click();
     await page.locator("#new-email").fill("changed@test.example");
     await page.locator("#email-current-password").fill("WrongLoginPass1!");
-    await page.getByRole("button", { name: /^update email$/i }).click();
+    await page.getByRole("button", { name: /update email/i }).click();
     await expect(
       page.getByRole("alert").filter({ hasText: /current password is incorrect/i }),
     ).toBeVisible({ timeout: 5_000 });
@@ -303,10 +303,10 @@ test.describe("Settings — email change", () => {
 
   test("correct password shows success banner and signs out", async ({ authedPage: page }) => {
     await page.goto("/settings");
-    await page.getByRole("button", { name: /^change$/i }).click();
+    await page.getByRole("button", { name: /change email/i }).click();
     await page.locator("#new-email").fill("changed@test.example");
     await page.locator("#email-current-password").fill(FIXTURE_PASSWORD);
-    await page.getByRole("button", { name: /^update email$/i }).click();
+    await page.getByRole("button", { name: /update email/i }).click();
     await expect(
       page.getByRole("status").filter({ hasText: /verification email sent/i }),
     ).toBeVisible({ timeout: 5_000 });
