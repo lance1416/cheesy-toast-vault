@@ -8,7 +8,7 @@ const createSchema = z.object({
   vaultId: z.string().min(1),
   encryptedBlob: z.string().min(1),
   iv: z.string().min(1),
-  entryType: z.enum(["login", "note", "card", "identity"]).default("login"),
+  entryType: z.string().min(1).default("login"),
   tagIds: z.array(z.string()).optional(),
 });
 

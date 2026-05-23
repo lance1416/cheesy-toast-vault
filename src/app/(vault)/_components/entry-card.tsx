@@ -14,7 +14,8 @@ import {
 } from "@/components/icons";
 import { checkBreach } from "@/lib/crypto";
 import { isStalePassword, passwordAgeDays as getPasswordAgeDays } from "@/lib/stale-password";
-import type { DecryptedEntry } from "@/types/vault";
+import type { DecryptedEntry, CustomEntryTypeDef } from "@/types/vault";
+import { BUILTIN_ENTRY_TYPES as BUILTINS } from "@/types/vault";
 
 const NOW_MS = Date.now();
 
@@ -215,6 +216,7 @@ export default function EntryCard({
   selected = false,
   onToggleSelect,
   vaultName,
+  customTypes = [],
 }: {
   entry: DecryptedEntry;
   onEdit: () => void;
@@ -224,6 +226,7 @@ export default function EntryCard({
   selected?: boolean;
   onToggleSelect?: () => void;
   vaultName?: string;
+  customTypes?: CustomEntryTypeDef[];
 }) {
   const [open, setOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -300,6 +303,10 @@ export default function EntryCard({
         ) : entry.entryType === "identity" ? (
           <div className="w-6 h-6 rounded-md bg-stone-100 dark:bg-stone-700 flex items-center justify-center text-muted shrink-0">
             <IdentityIcon size={13} />
+          </div>
+        ) : !BUILTINS.includes(entry.entryType) ? (
+          <div className="w-6 h-6 rounded-md bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-xs font-semibold text-amber-700 dark:text-amber-400 shrink-0 select-none">
+            {(customTypes.find((t) => t.id === entry.entryType)?.name[0] ?? "?").toUpperCase()}
           </div>
         ) : entry.url ? (
           <Favicon url={entry.url} name={entry.name} />
@@ -592,6 +599,52 @@ export default function EntryCard({
               )}
             </>
           )}
+
+          {/* ── Custom type ── */}
+          {!BUILTINS.includes(entry.entryType) &&
+            (() => {
+              const ct = customTypes.find((t) => t.id === entry.entryType);
+              if (!ct) {
+                return (
+                  <p className="text-xs text-subtle italic">Custom type definition was deleted.</p>
+                );
+              }
+              return (
+                <>
+                  {ct.fields.map((field) => {
+                    const value = entry.customFields?.[field.id];
+                    if (!value) return null;
+                    return (
+                      <div key={field.id} className="flex items-center gap-2">
+                        <span className="w-20 shrink-0 text-xs font-medium text-muted truncate">
+                          {field.label}
+                        </span>
+                        {field.kind === "multiline" ? (
+                          <p className="flex-1 text-sm text-default whitespace-pre-wrap break-words">
+                            {value}
+                          </p>
+                        ) : field.kind === "secret" ? (
+                          <span className="flex-1 font-mono text-sm text-default">••••••••</span>
+                        ) : (
+                          <span className="flex-1 truncate text-sm text-default">{value}</span>
+                        )}
+                        <CopyButton value={value} />
+                      </div>
+                    );
+                  })}
+                  {entry.notes && (
+                    <div className="flex gap-2 pt-1">
+                      <span className="w-20 shrink-0 text-xs font-medium text-muted pt-0.5">
+                        Notes
+                      </span>
+                      <p className="flex-1 text-sm text-muted whitespace-pre-wrap break-words">
+                        {entry.notes}
+                      </p>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
           <div className="flex items-center justify-between pt-2 mt-1 border-t border-divider">
             <div className="flex flex-wrap gap-1">

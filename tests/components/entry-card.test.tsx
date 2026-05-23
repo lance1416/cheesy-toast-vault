@@ -343,6 +343,75 @@ describe("EntryCard", () => {
     });
   });
 
+  describe("custom entry type", () => {
+    const CUSTOM_TYPE = {
+      id: "ct-server",
+      name: "Server",
+      fields: [
+        { id: "f-host", label: "Host", kind: "text" as const },
+        { id: "f-key", label: "API Key", kind: "secret" as const },
+      ],
+    };
+
+    function makeCustomEntry(overrides: Partial<DecryptedEntry> = {}): DecryptedEntry {
+      return makeEntry({
+        entryType: "ct-server",
+        name: "My Server",
+        customFields: { "f-host": "example.com", "f-key": "secret-key-123" },
+        username: undefined,
+        email: undefined,
+        password: undefined,
+        url: undefined,
+        ...overrides,
+      });
+    }
+
+    it("shows the custom type initial letter in the header avatar", () => {
+      render(<EntryCard entry={makeCustomEntry()} onEdit={onEdit} customTypes={[CUSTOM_TYPE]} />);
+      // Amber avatar shows first letter of the type name ("S" for "Server")
+      expect(screen.getByText("S")).toBeInTheDocument();
+    });
+
+    it("shows field labels and text values when expanded", async () => {
+      const user = userEvent.setup();
+      render(<EntryCard entry={makeCustomEntry()} onEdit={onEdit} customTypes={[CUSTOM_TYPE]} />);
+      await user.click(screen.getByText("My Server"));
+      expect(screen.getByText("Host")).toBeInTheDocument();
+      expect(screen.getByText("example.com")).toBeInTheDocument();
+    });
+
+    it("masks secret-kind field values with bullets", async () => {
+      const user = userEvent.setup();
+      render(<EntryCard entry={makeCustomEntry()} onEdit={onEdit} customTypes={[CUSTOM_TYPE]} />);
+      await user.click(screen.getByText("My Server"));
+      expect(screen.getByText("••••••••")).toBeInTheDocument();
+      expect(screen.queryByText("secret-key-123")).not.toBeInTheDocument();
+    });
+
+    it("omits fields whose value is absent from customFields", async () => {
+      const user = userEvent.setup();
+      const entry = makeCustomEntry({ customFields: { "f-host": "example.com" } }); // no f-key
+      render(<EntryCard entry={entry} onEdit={onEdit} customTypes={[CUSTOM_TYPE]} />);
+      await user.click(screen.getByText("My Server"));
+      expect(screen.getByText("example.com")).toBeInTheDocument();
+      expect(screen.queryByText("API Key")).not.toBeInTheDocument();
+    });
+
+    it("shows deleted-type message when no matching type definition is found", async () => {
+      const user = userEvent.setup();
+      render(<EntryCard entry={makeCustomEntry()} onEdit={onEdit} customTypes={[]} />);
+      await user.click(screen.getByText("My Server"));
+      expect(screen.getByText(/custom type definition was deleted/i)).toBeInTheDocument();
+    });
+
+    it("does not show the breach-check button", async () => {
+      const user = userEvent.setup();
+      render(<EntryCard entry={makeCustomEntry()} onEdit={onEdit} customTypes={[CUSTOM_TYPE]} />);
+      await user.click(screen.getByText("My Server"));
+      expect(screen.queryByRole("button", { name: /check for breaches/i })).not.toBeInTheDocument();
+    });
+  });
+
   // ── Breach check ────────────────────────────────────────────────────────────
 
   it("breach check: shows Safe when password is not in any breach", async () => {

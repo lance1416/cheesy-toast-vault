@@ -6,7 +6,13 @@ import { useVault } from "@/context/vault";
 import { deriveCryptoKey, decryptEntry, base64ToBuffer } from "@/lib/crypto";
 import { isStalePassword, compareByPasswordAge } from "@/lib/stale-password";
 import { SearchIcon, LockIcon, DotsHorizontalIcon } from "@/components/icons";
-import type { EntryPayload, EncryptedEntryProp, DecryptedEntry, Tag } from "@/types/vault";
+import type {
+  EntryPayload,
+  EncryptedEntryProp,
+  DecryptedEntry,
+  Tag,
+  CustomEntryTypeDef,
+} from "@/types/vault";
 import EntryCard from "../../_components/entry-card";
 import LockScreen from "../../_components/lock-screen";
 import VaultHeader from "../../_components/vault-header";
@@ -288,10 +294,12 @@ export default function VaultClient({
   vault,
   entries,
   tags: initialTags,
+  customTypes = [],
 }: {
   vault: { id: string; name: string; salt: string };
   entries: EncryptedEntryProp[];
   tags: Tag[];
+  customTypes?: CustomEntryTypeDef[];
 }) {
   const router = useRouter();
   const { keys, setKey, clearKey } = useVault();
@@ -860,6 +868,7 @@ export default function VaultClient({
                 selectionMode={selectionMode}
                 selected={selectedIds.has(entry.id)}
                 onToggleSelect={() => toggleSelect(entry.id)}
+                customTypes={customTypes}
               />
             ))}
           </div>
@@ -953,6 +962,7 @@ export default function VaultClient({
             setShowNew(false);
             router.refresh();
           }}
+          customTypes={customTypes}
         />
       )}
 
@@ -967,6 +977,7 @@ export default function VaultClient({
             setEditingEntry(null);
             router.refresh();
           }}
+          customTypes={customTypes}
         />
       )}
 

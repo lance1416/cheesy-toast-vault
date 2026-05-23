@@ -1,13 +1,14 @@
-import { getUser, getVault, getVaultEntries, getTags } from "@/server/dal";
+import { getUser, getVault, getVaultEntries, getTags, getCustomEntryTypes } from "@/server/dal";
 import VaultClient from "./vault-client";
 
 export default async function VaultDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [, vault, entries, tags] = await Promise.all([
+  const [, vault, entries, tags, customTypes] = await Promise.all([
     getUser(),
     getVault(id),
     getVaultEntries(id),
     getTags(),
+    getCustomEntryTypes(),
   ]);
 
   return (
@@ -23,6 +24,7 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
         updatedAt: e.updatedAt.toISOString(),
       }))}
       tags={tags}
+      customTypes={customTypes}
     />
   );
 }

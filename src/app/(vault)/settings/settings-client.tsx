@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
+import type { CustomEntryTypeDef } from "@/types/vault";
+import CreateCustomTypeModal from "../_components/create-custom-type-modal";
 import { useVault } from "@/context/vault";
 import AlertBanner from "@/components/alert-banner";
 import Field from "@/components/field";
@@ -61,10 +63,12 @@ export default function SettingsClient({
   totpEnabled: initialTotpEnabled,
   loginHistory,
   sessions,
+  customTypes: initialCustomTypes = [],
 }: {
   totpEnabled: boolean;
   loginHistory: LoginHistoryEntry[];
   sessions: UserSessionEntry[];
+  customTypes?: CustomEntryTypeDef[];
 }) {
   const { lockTimeout, setLockTimeout } = useVault();
   const { data: session } = useSession();
@@ -98,6 +102,21 @@ export default function SettingsClient({
   const [revokePassword, setRevokePassword] = useState("");
   const [revoking, setRevoking] = useState(false);
   const [revokeError, setRevokeError] = useState("");
+
+  const [customTypeList, setCustomTypeList] = useState<CustomEntryTypeDef[]>(initialCustomTypes);
+  const [showCreateType, setShowCreateType] = useState(false);
+  const [editingType, setEditingType] = useState<CustomEntryTypeDef | undefined>();
+  const [deletingTypeId, setDeletingTypeId] = useState<string | null>(null);
+
+  async function handleDeleteCustomType(id: string) {
+    setDeletingTypeId(id);
+    try {
+      const res = await fetch(`/api/entry-types/${id}`, { method: "DELETE" });
+      if (res.ok) setCustomTypeList((prev) => prev.filter((t) => t.id !== id));
+    } finally {
+      setDeletingTypeId(null);
+    }
+  }
 
   const [deletePhase, setDeletePhase] = useState<"idle" | "confirm">("idle");
   const [deletePassword, setDeletePassword] = useState("");
@@ -611,6 +630,59 @@ export default function SettingsClient({
         </section>
 
         <section className="mt-8 bg-surface rounded-lg border border-line/60 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-default">Custom entry types</h2>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingType(undefined);
+                setShowCreateType(true);
+              }}
+              className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted hover:text-default hover:bg-sunken transition-colors"
+            >
+              + New type
+            </button>
+          </div>
+
+          {customTypeList.length === 0 ? (
+            <p className="text-sm text-subtle">No custom types yet.</p>
+          ) : (
+            <ul className="divide-y divide-line/60" role="list">
+              {customTypeList.map((ct) => (
+                <li key={ct.id} className="py-3 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-default">{ct.name}</p>
+                    <p className="text-xs text-muted mt-0.5">
+                      {ct.fields.map((f) => f.label).join(", ")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingType(ct);
+                        setShowCreateType(true);
+                      }}
+                      className="text-xs font-medium text-muted hover:text-default transition-colors"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      disabled={deletingTypeId === ct.id}
+                      onClick={() => void handleDeleteCustomType(ct.id)}
+                      className="text-xs font-medium text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {deletingTypeId === ct.id ? "Deleting…" : "Delete"}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="mt-8 bg-surface rounded-lg border border-line/60 p-6">
           <h2 className="text-base font-semibold text-default mb-1">Login history</h2>
           <p className="text-sm text-muted mb-4">Your 20 most recent sign-in attempts.</p>
 
@@ -721,6 +793,23 @@ export default function SettingsClient({
 
       {showTotpModal && (
         <TotpModal onClose={() => setShowTotpModal(false)} onEnabled={() => setTotpEnabled(true)} />
+      )}
+
+      {showCreateType && (
+        <CreateCustomTypeModal
+          existing={editingType}
+          onClose={() => {
+            setShowCreateType(false);
+            setEditingType(undefined);
+          }}
+          onSaved={(saved) => {
+            setCustomTypeList((prev) =>
+              editingType ? prev.map((t) => (t.id === saved.id ? saved : t)) : [...prev, saved],
+            );
+            setShowCreateType(false);
+            setEditingType(undefined);
+          }}
+        />
       )}
     </div>
   );

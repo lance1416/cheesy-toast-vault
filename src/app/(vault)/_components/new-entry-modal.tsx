@@ -7,9 +7,59 @@ import Field from "@/components/field";
 import Modal from "@/components/modal";
 import StrengthBar from "@/components/strength-bar";
 import { EyeIcon, LockIcon, NoteIcon, CreditCardIcon, IdentityIcon } from "@/components/icons";
-import type { EntryType, Tag } from "@/types/vault";
+import type { EntryType, Tag, CustomEntryTypeDef, FieldKind } from "@/types/vault";
 import TagSelector from "./tag-selector";
 import PasswordGenerator from "./password-generator";
+
+function CustomFieldInput({
+  field,
+  value,
+  onChange,
+  idPrefix,
+}: {
+  field: { id: string; label: string; kind: FieldKind };
+  value: string;
+  onChange: (v: string) => void;
+  idPrefix: string;
+}) {
+  const [show, setShow] = useState(false);
+  const inputType =
+    field.kind === "secret"
+      ? show
+        ? "text"
+        : "password"
+      : field.kind === "url"
+        ? "url"
+        : field.kind === "email"
+          ? "email"
+          : field.kind === "date"
+            ? "date"
+            : "text";
+
+  return (
+    <Field
+      label={field.label}
+      id={`${idPrefix}-${field.id}`}
+      type={inputType}
+      value={value}
+      onChange={onChange}
+      multiline={field.kind === "multiline"}
+      suffix={
+        field.kind === "secret" ? (
+          <button
+            type="button"
+            onClick={() => setShow((v) => !v)}
+            aria-pressed={show}
+            aria-label={show ? `Hide ${field.label}` : `Show ${field.label}`}
+            className="text-subtle hover:text-default transition-colors"
+          >
+            <EyeIcon open={show} />
+          </button>
+        ) : undefined
+      }
+    />
+  );
+}
 
 const TYPE_META: { type: EntryType; label: string; icon: React.ReactNode }[] = [
   { type: "login", label: "Login", icon: <LockIcon /> },
@@ -43,6 +93,7 @@ export default function NewEntryModal({
   onTagCreated,
   onClose,
   onSuccess,
+  customTypes = [],
 }: {
   vaultId: string;
   cryptoKey: CryptoKey;
@@ -50,8 +101,9 @@ export default function NewEntryModal({
   onTagCreated: (tag: Tag) => void;
   onClose: () => void;
   onSuccess: () => void;
+  customTypes?: CustomEntryTypeDef[];
 }) {
-  const [entryType, setEntryType] = useState<EntryType>("login");
+  const [entryType, setEntryType] = useState<string>("login");
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
   // login
@@ -77,10 +129,15 @@ export default function NewEntryModal({
   const [address, setAddress] = useState("");
   const [idNumber, setIdNumber] = useState("");
 
+  const [customValues, setCustomValues] = useState<Record<string, string>>({});
+
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<Tag[]>(initialTags);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  const isBuiltin = ["login", "note", "card", "identity"].includes(entryType);
+  const customType = isBuiltin ? undefined : customTypes.find((t) => t.id === entryType);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -113,16 +170,23 @@ export default function NewEntryModal({
                   cardPin: cardPin || undefined,
                   notes: notes || undefined,
                 }
-              : {
-                  type: entryType,
-                  name,
-                  fullName: fullName || undefined,
-                  email: email || undefined,
-                  phone: phone || undefined,
-                  address: address || undefined,
-                  idNumber: idNumber || undefined,
-                  notes: notes || undefined,
-                };
+              : entryType === "identity"
+                ? {
+                    type: entryType,
+                    name,
+                    fullName: fullName || undefined,
+                    email: email || undefined,
+                    phone: phone || undefined,
+                    address: address || undefined,
+                    idNumber: idNumber || undefined,
+                    notes: notes || undefined,
+                  }
+                : {
+                    type: entryType,
+                    name,
+                    customFields: customValues,
+                    notes: notes || undefined,
+                  };
 
       const { encryptedBlob, iv } = await encryptEntry(cryptoKey, payload);
       const res = await fetch("/api/vault", {
@@ -142,12 +206,17 @@ export default function NewEntryModal({
     }
   }
 
-  const meta = TYPE_META.find((t) => t.type === entryType)!;
+  const builtinMeta = TYPE_META.find((t) => t.type === entryType);
+  const modalTitle = builtinMeta
+    ? `New ${builtinMeta.label}`
+    : customType
+      ? `New ${customType.name}`
+      : "New Entry";
 
   return (
-    <Modal title={`New ${meta.label}`} titleId="new-entry-title" onClose={onClose} scrollable>
+    <Modal title={modalTitle} titleId="new-entry-title" onClose={onClose} scrollable>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Type picker */}
+        {/* Built-in type picker */}
         <div
           role="group"
           aria-label="Entry type"
@@ -170,6 +239,27 @@ export default function NewEntryModal({
             </button>
           ))}
         </div>
+
+        {/* Custom types */}
+        {customTypes.length > 0 && (
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Custom entry types">
+            {customTypes.map((ct) => (
+              <button
+                key={ct.id}
+                type="button"
+                onClick={() => setEntryType(ct.id)}
+                aria-pressed={entryType === ct.id}
+                className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+                  entryType === ct.id
+                    ? "bg-stone-800 dark:bg-amber-600 text-white border-transparent"
+                    : "border-line text-muted hover:border-amber-300 dark:hover:border-amber-700 hover:text-default"
+                }`}
+              >
+                {ct.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         <Field
           label="Name"
@@ -396,6 +486,29 @@ export default function NewEntryModal({
             <Field
               label="Notes"
               id="new-id-notes"
+              value={notes}
+              onChange={setNotes}
+              placeholder="Additional info…"
+              multiline
+            />
+          </>
+        )}
+
+        {/* Custom type fields */}
+        {customType && (
+          <>
+            {customType.fields.map((field) => (
+              <CustomFieldInput
+                key={field.id}
+                field={field}
+                value={customValues[field.id] ?? ""}
+                onChange={(v) => setCustomValues((prev) => ({ ...prev, [field.id]: v }))}
+                idPrefix="new-custom"
+              />
+            ))}
+            <Field
+              label="Notes"
+              id="new-custom-notes"
               value={notes}
               onChange={setNotes}
               placeholder="Additional info…"

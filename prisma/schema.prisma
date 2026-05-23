@@ -26,6 +26,7 @@ model User {
   tags              Tag[]
   loginAudits       LoginAudit[]
   userSessions      UserSession[]
+  customEntryTypes  CustomEntryType[]
 }
 
 model Vault {
@@ -95,6 +96,19 @@ model UserSession {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt(sort: Desc)])
+}
+
+/// User-defined entry type; fields stores a CustomFieldDef[] JSON array
+model CustomEntryType {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  fields    Json
+  createdAt DateTime @default(now())
+
+  @@unique([userId, name])
+  @@index([userId])
 }
 
 /// Login events recorded on every credential attempt where a userId is known; cascades on user delete

@@ -81,6 +81,20 @@ export const getTotpStatus = cache(async () => {
   return { totpEnabled: user.totpEnabled };
 });
 
+export const getCustomEntryTypes = cache(async () => {
+  const { userId } = await verifySession();
+  const rows = await db.customEntryType.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true, fields: true },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    fields: r.fields as import("@/types/vault").CustomFieldDef[],
+  }));
+});
+
 export const getUserSessions = cache(async () => {
   const { userId } = await verifySession();
   return db.userSession.findMany({

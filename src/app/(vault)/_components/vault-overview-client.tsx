@@ -16,6 +16,7 @@ import { useCrossVaultSearch } from "./use-cross-vault-search";
 import HealthDashboard from "./health-dashboard";
 import { useKeyboardShortcuts } from "@/lib/use-keyboard-shortcuts";
 import type { VaultSummary } from "./vault-card";
+import type { CustomEntryTypeDef } from "@/types/vault";
 
 export default function VaultOverviewClient({ vaults: initialVaults }: { vaults: VaultSummary[] }) {
   const router = useRouter();
@@ -24,7 +25,15 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
   const [showCreate, setShowCreate] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [customTypes, setCustomTypes] = useState<CustomEntryTypeDef[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch("/api/entry-types")
+      .then((r) => r.json() as Promise<{ types: CustomEntryTypeDef[] }>)
+      .then((d) => setCustomTypes(d.types ?? []))
+      .catch(() => {});
+  }, []);
 
   const { searchQuery, setSearchQuery, fetchState, searchResults, unlockedCount, rawVaults, keys } =
     useCrossVaultSearch();
@@ -214,6 +223,7 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
                       entry={entry}
                       vaultName={entry.vaultName}
                       onEdit={() => router.push(`/vault/${entry.vaultId}`)}
+                      customTypes={customTypes}
                     />
                   ))}
                 </div>

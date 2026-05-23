@@ -2,9 +2,25 @@ export type Tag = { id: string; name: string };
 
 export type EntryType = "login" | "note" | "card" | "identity";
 
+export const BUILTIN_ENTRY_TYPES: readonly string[] = ["login", "note", "card", "identity"];
+
+export type FieldKind = "text" | "secret" | "url" | "email" | "date" | "multiline";
+
+export type CustomFieldDef = {
+  id: string;
+  label: string;
+  kind: FieldKind;
+};
+
+export type CustomEntryTypeDef = {
+  id: string;
+  name: string;
+  fields: CustomFieldDef[];
+};
+
 export type EntryPayload = {
-  // undefined means "login" for entries created before type support was added
-  type?: EntryType;
+  // undefined means "login" for entries created before type support was added; custom types use their cuid
+  type?: string;
   name: string;
   notes?: string;
   // login
@@ -27,6 +43,8 @@ export type EntryPayload = {
   phone?: string;
   address?: string;
   idNumber?: string;
+  // custom entry types — fieldId → value
+  customFields?: Record<string, string>;
 };
 
 export type EncryptedEntryProp = {

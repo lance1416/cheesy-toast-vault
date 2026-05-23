@@ -324,3 +324,118 @@ test.describe("Sign out", () => {
     await expect(page).toHaveURL("/", { timeout: 5_000 });
   });
 });
+
+// ── Custom entry types ────────────────────────────────────────────────────────
+
+test.describe("Custom entry types", () => {
+  /** Create a custom type from the settings page. */
+  async function createCustomType(
+    page: Page,
+    typeName: string,
+    fields: { label: string }[],
+  ): Promise<void> {
+    await page.goto("/settings");
+    await page.getByRole("button", { name: /\+ new type/i }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+
+    await page.locator("#ct-name").fill(typeName);
+    for (let i = 0; i < fields.length; i++) {
+      if (i > 0) await page.getByRole("button", { name: /\+ add field/i }).click();
+      await page.getByPlaceholder(`Field ${i + 1} label`).fill(fields[i].label);
+    }
+
+    await page.getByRole("button", { name: /create type/i }).click();
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(typeName)).toBeVisible({ timeout: 5_000 });
+  }
+
+  test("creates a custom type in settings and sees it listed", async ({ authedPage: page }) => {
+    await createCustomType(page, "Network Device", [{ label: "IP Address" }]);
+    // Verify field summary is shown
+    await expect(page.getByText("IP Address")).toBeVisible();
+  });
+
+  test("custom type appears in the new-entry modal type picker", async ({
+    authedPage: page,
+    vaultData,
+  }) => {
+    await createCustomType(page, "Wi-Fi", [{ label: "SSID" }]);
+
+    // Navigate to vault — server re-renders with the new custom type
+    await unlockVault(page, vaultData);
+    await page.getByRole("button", { name: /\+ add entry/i }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+
+    await expect(
+      page
+        .getByRole("group", { name: /custom entry types/i })
+        .getByRole("button", { name: "Wi-Fi" }),
+    ).toBeVisible();
+  });
+
+  test("creates an entry with a custom type and sees field value on expand", async ({
+    authedPage: page,
+    vaultData,
+  }) => {
+    await createCustomType(page, "SSH Key", [{ label: "Host" }, { label: "User" }]);
+
+    await unlockVault(page, vaultData);
+    await page.getByRole("button", { name: /\+ add entry/i }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+
+    // Select the custom type
+    await page
+      .getByRole("group", { name: /custom entry types/i })
+      .getByRole("button", { name: "SSH Key" })
+      .click();
+    await expect(page.getByRole("heading", { name: "New SSH Key" })).toBeVisible();
+
+    // Fill fields
+    const dialog = page.getByRole("dialog");
+    await dialog.locator("#new-name").fill("Production box");
+    await dialog.getByLabel("Host").fill("192.168.1.100");
+    await dialog.getByLabel("User").fill("deploy");
+    await page.getByRole("button", { name: /save entry/i }).click();
+
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Production box")).toBeVisible({ timeout: 5_000 });
+
+    // Expand and verify field values
+    await page.getByText("Production box").click();
+    await expect(page.getByText("192.168.1.100")).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByText("deploy")).toBeVisible();
+
+    // No password or breach-check
+    await expect(page.getByText("Password")).not.toBeVisible();
+  });
+
+  test("can edit a custom type name and fields from settings", async ({ authedPage: page }) => {
+    await createCustomType(page, "Edit Me", [{ label: "Old Field" }]);
+
+    await page
+      .getByRole("button", { name: /^edit$/i })
+      .first()
+      .click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Edit entry type" })).toBeVisible();
+
+    const nameInput = page.locator("#ct-name");
+    await nameInput.clear();
+    await nameInput.fill("Edited Type");
+    await page.getByRole("button", { name: /save changes/i }).click();
+
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Edited Type")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Edit Me")).not.toBeVisible();
+  });
+
+  test("can delete a custom type from settings", async ({ authedPage: page }) => {
+    await createCustomType(page, "To Delete", [{ label: "Field" }]);
+
+    await page
+      .getByRole("button", { name: /^delete$/i })
+      .first()
+      .click();
+    await expect(page.getByText("To Delete")).not.toBeVisible({ timeout: 3_000 });
+  });
+});

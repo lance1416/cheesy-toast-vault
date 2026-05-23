@@ -200,4 +200,82 @@ describe("NewEntryModal — type picker", () => {
     const body = JSON.parse((options as RequestInit).body as string) as Record<string, unknown>;
     expect(body.entryType).toBe("login");
   });
+
+  // ── Custom types ──────────────────────────────────────────────────────────────
+
+  const CUSTOM_TYPES = [
+    {
+      id: "ct-server",
+      name: "Server",
+      fields: [
+        { id: "f-host", label: "Host", kind: "text" as const },
+        { id: "f-key", label: "API Key", kind: "secret" as const },
+      ],
+    },
+  ];
+
+  it("renders custom type pill buttons when customTypes are provided", () => {
+    render(<NewEntryModal {...BASE_PROPS} customTypes={CUSTOM_TYPES} />);
+    const group = screen.getByRole("group", { name: /custom entry types/i });
+    expect(within(group).getByRole("button", { name: "Server" })).toBeInTheDocument();
+  });
+
+  it("does not render the custom types section when customTypes is empty", () => {
+    setup(); // no customTypes prop → default []
+    expect(screen.queryByRole("group", { name: /custom entry types/i })).not.toBeInTheDocument();
+  });
+
+  it("selecting a custom type shows its fields by id", async () => {
+    const user = userEvent.setup();
+    render(<NewEntryModal {...BASE_PROPS} customTypes={CUSTOM_TYPES} />);
+    await user.click(
+      within(screen.getByRole("group", { name: /custom entry types/i })).getByRole("button", {
+        name: "Server",
+      }),
+    );
+    expect(document.getElementById("new-custom-f-host")).toBeInTheDocument();
+    expect(document.getElementById("new-custom-f-key")).toBeInTheDocument();
+  });
+
+  it("selecting a custom type hides built-in login fields", async () => {
+    const user = userEvent.setup();
+    render(<NewEntryModal {...BASE_PROPS} customTypes={CUSTOM_TYPES} />);
+    await user.click(
+      within(screen.getByRole("group", { name: /custom entry types/i })).getByRole("button", {
+        name: "Server",
+      }),
+    );
+    expect(document.getElementById("new-username")).not.toBeInTheDocument();
+    expect(document.getElementById("new-password")).not.toBeInTheDocument();
+  });
+
+  it("modal title shows custom type name", async () => {
+    const user = userEvent.setup();
+    render(<NewEntryModal {...BASE_PROPS} customTypes={CUSTOM_TYPES} />);
+    await user.click(
+      within(screen.getByRole("group", { name: /custom entry types/i })).getByRole("button", {
+        name: "Server",
+      }),
+    );
+    expect(screen.getByRole("heading", { name: "New Server" })).toBeInTheDocument();
+  });
+
+  it("submitting with a custom type sends its ID as entryType", async () => {
+    const user = userEvent.setup();
+    render(<NewEntryModal {...BASE_PROPS} customTypes={CUSTOM_TYPES} />);
+    await user.click(
+      within(screen.getByRole("group", { name: /custom entry types/i })).getByRole("button", {
+        name: "Server",
+      }),
+    );
+    await user.type(document.getElementById("new-name")!, "Prod box");
+    await user.click(screen.getByRole("button", { name: /save entry/i }));
+
+    await waitFor(() => expect(BASE_PROPS.onSuccess).toHaveBeenCalledOnce());
+
+    const calls = vi.mocked(fetch as typeof globalThis.fetch).mock.calls;
+    const [, options] = calls[calls.length - 1];
+    const body = JSON.parse((options as RequestInit).body as string) as Record<string, unknown>;
+    expect(body.entryType).toBe("ct-server");
+  });
 });

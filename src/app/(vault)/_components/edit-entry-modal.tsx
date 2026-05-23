@@ -7,10 +7,66 @@ import Field from "@/components/field";
 import Modal from "@/components/modal";
 import StrengthBar from "@/components/strength-bar";
 import { EyeIcon } from "@/components/icons";
-import type { EntryPayload, EntryType, EncryptedEntryProp } from "@/types/vault";
+import type {
+  EntryPayload,
+  EntryType,
+  EncryptedEntryProp,
+  CustomEntryTypeDef,
+  FieldKind,
+} from "@/types/vault";
 import type { Tag } from "@/types/vault";
 import TagSelector from "./tag-selector";
 import PasswordGenerator from "./password-generator";
+
+function CustomFieldInput({
+  field,
+  value,
+  onChange,
+  idPrefix,
+}: {
+  field: { id: string; label: string; kind: FieldKind };
+  value: string;
+  onChange: (v: string) => void;
+  idPrefix: string;
+}) {
+  const [show, setShow] = useState(false);
+  const inputType =
+    field.kind === "secret"
+      ? show
+        ? "text"
+        : "password"
+      : field.kind === "url"
+        ? "url"
+        : field.kind === "email"
+          ? "email"
+          : field.kind === "date"
+            ? "date"
+            : "text";
+
+  return (
+    <Field
+      label={field.label}
+      id={`${idPrefix}-${field.id}`}
+      type={inputType}
+      value={value}
+      onChange={onChange}
+      multiline={field.kind === "multiline"}
+      suffix={
+        field.kind === "secret" ? (
+          <button
+            type="button"
+            onClick={() => setShow((v) => !v)}
+            aria-pressed={show}
+            aria-label={show ? `Hide ${field.label}` : `Show ${field.label}`}
+            className="text-subtle hover:text-default transition-colors"
+          >
+            <EyeIcon open={show} />
+          </button>
+        ) : undefined
+      }
+    />
+  );
+}
 
 const TYPE_LABELS: Record<EntryType, string> = {
   login: "Login",
@@ -44,6 +100,7 @@ export default function EditEntryModal({
   onTagCreated,
   onClose,
   onSuccess,
+  customTypes = [],
 }: {
   entry: EncryptedEntryProp;
   cryptoKey: CryptoKey;
@@ -51,8 +108,11 @@ export default function EditEntryModal({
   onTagCreated: (tag: Tag) => void;
   onClose: () => void;
   onSuccess: () => void;
+  customTypes?: CustomEntryTypeDef[];
 }) {
-  const entryType: EntryType = (entry.entryType as EntryType) || "login";
+  const entryType: string = entry.entryType || "login";
+  const isBuiltin = ["login", "note", "card", "identity"].includes(entryType);
+  const customType = isBuiltin ? undefined : customTypes.find((t) => t.id === entryType);
 
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
@@ -83,6 +143,8 @@ export default function EditEntryModal({
 
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(entry.tags.map((t) => t.id));
   const [availableTags, setAvailableTags] = useState<Tag[]>(initialTags);
+  const [customValues, setCustomValues] = useState<Record<string, string>>({});
+
   const [decrypted, setDecrypted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -116,6 +178,7 @@ export default function EditEntryModal({
       setPhone(p.phone ?? "");
       setAddress(p.address ?? "");
       setIdNumber(p.idNumber ?? "");
+      if (p.customFields) setCustomValues(p.customFields);
       setDecrypted(true);
     });
     return () => {
@@ -157,16 +220,23 @@ export default function EditEntryModal({
                   cardPin: cardPin || undefined,
                   notes: notes || undefined,
                 }
-              : {
-                  type: entryType,
-                  name,
-                  fullName: fullName || undefined,
-                  email: email || undefined,
-                  phone: phone || undefined,
-                  address: address || undefined,
-                  idNumber: idNumber || undefined,
-                  notes: notes || undefined,
-                };
+              : entryType === "identity"
+                ? {
+                    type: entryType,
+                    name,
+                    fullName: fullName || undefined,
+                    email: email || undefined,
+                    phone: phone || undefined,
+                    address: address || undefined,
+                    idNumber: idNumber || undefined,
+                    notes: notes || undefined,
+                  }
+                : {
+                    type: entryType,
+                    name,
+                    customFields: customValues,
+                    notes: notes || undefined,
+                  };
 
       const { encryptedBlob, iv } = await encryptEntry(cryptoKey, payload);
       const res = await fetch(`/api/vault/${entry.id}`, {
@@ -199,7 +269,7 @@ export default function EditEntryModal({
     }
   }
 
-  const typeLabel = TYPE_LABELS[entryType];
+  const typeLabel = TYPE_LABELS[entryType as EntryType] ?? customType?.name ?? "Entry";
 
   return (
     <Modal title={`Edit ${typeLabel}`} titleId="edit-entry-title" onClose={onClose} scrollable>
@@ -401,6 +471,35 @@ export default function EditEntryModal({
                   multiline
                 />
               </>
+            )}
+
+            {/* Custom type fields */}
+            {customType && (
+              <>
+                {customType.fields.map((field) => (
+                  <CustomFieldInput
+                    key={field.id}
+                    field={field}
+                    value={customValues[field.id] ?? ""}
+                    onChange={(v) => setCustomValues((prev) => ({ ...prev, [field.id]: v }))}
+                    idPrefix="edit-custom"
+                  />
+                ))}
+                <Field
+                  label="Notes"
+                  id="edit-custom-notes"
+                  value={notes}
+                  onChange={setNotes}
+                  placeholder="Additional info…"
+                  multiline
+                />
+              </>
+            )}
+
+            {!isBuiltin && !customType && (
+              <p className="text-sm text-muted italic">
+                The entry type definition has been deleted. You can still save or delete this entry.
+              </p>
             )}
 
             <TagSelector
