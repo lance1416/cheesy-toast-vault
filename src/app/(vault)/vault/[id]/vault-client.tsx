@@ -20,7 +20,8 @@ import NewEntryModal from "../../_components/new-entry-modal";
 import EditEntryModal from "../../_components/edit-entry-modal";
 import ManageTagsModal from "../../_components/manage-tags-modal";
 import HistoryModal from "../../_components/history-modal";
-import TrashModal from "../../_components/trash-modal";
+import TrashView from "../../_components/trash-view";
+import UndoToast from "../../_components/undo-toast";
 import KeyboardShortcutHelp from "../../_components/keyboard-shortcut-help";
 import { useKeyboardShortcuts } from "@/lib/use-keyboard-shortcuts";
 
@@ -38,7 +39,6 @@ function VaultMenu({
   onImport,
   onRenamed,
   onDeleted,
-  onTrash,
 }: {
   vault: { id: string; name: string };
   entryCount: number;
@@ -46,7 +46,6 @@ function VaultMenu({
   onImport: (file: File) => void;
   onRenamed: (name: string) => void;
   onDeleted: () => void;
-  onTrash: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<"idle" | "rename" | "delete">("idle");
@@ -181,16 +180,6 @@ function VaultMenu({
                   }}
                 />
               </label>
-              <button
-                type="button"
-                className={`${ITEM_BASE} text-muted hover:text-default hover:bg-sunken/60`}
-                onClick={() => {
-                  onTrash();
-                  closeMenu();
-                }}
-              >
-                Trash
-              </button>
 
               {divider}
 
@@ -332,7 +321,6 @@ export default function VaultClient({
   const [showHelp, setShowHelp] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [bulkDeletePhase, setBulkDeletePhase] = useState<"idle" | "confirm">("idle");
   const [sort, setSort] = useState<
     "updated-desc" | "updated-asc" | "name-asc" | "name-desc" | "age-asc" | "age-desc"
   >("updated-desc");
@@ -340,7 +328,13 @@ export default function VaultClient({
   const [importStatus, setImportStatus] = useState<
     "idle" | "importing" | { imported: number } | { error: string }
   >("idle");
-  const [showTrash, setShowTrash] = useState(false);
+  const [activeTab, setActiveTab] = useState<"entries" | "trash">("entries");
+  const [trashCount, setTrashCount] = useState<number | null>(null);
+  const [undo, setUndo] = useState<{
+    ids: string[];
+    entries: DecryptedEntry[];
+    label: string;
+  } | null>(null);
 
   const searchRef = useRef<HTMLInputElement>(null);
   const anyModalOpen = showNew || !!editingEntry || !!historyEntryId || showManageTags || showHelp;
@@ -444,7 +438,6 @@ export default function VaultClient({
   function exitSelectionMode() {
     setSelectionMode(false);
     setSelectedIds(new Set());
-    setBulkDeletePhase("idle");
   }
 
   function toggleSelect(id: string) {
@@ -479,12 +472,48 @@ export default function VaultClient({
     exitSelectionMode();
   }
 
-  async function handleBulkDelete() {
-    const ids = [...selectedIds];
-    await Promise.all(ids.map((id) => fetch(`/api/vault/${id}`, { method: "DELETE" })));
-    setDecrypted((prev) => (prev ? prev.filter((e) => !selectedIds.has(e.id)) : prev));
-    exitSelectionMode();
+  async function handleMoveToTrash(ids: string[], entriesToTrash: DecryptedEntry[]) {
+    // Optimistic remove
+    setDecrypted((prev) => (prev ? prev.filter((e) => !ids.includes(e.id)) : prev));
+    setTrashCount((c) => (c === null ? ids.length : c + ids.length));
+
+    // Fire-and-forget API calls; errors are silently ignored (entries reappear on next refresh)
+    void Promise.all(ids.map((id) => fetch(`/api/vault/${id}`, { method: "DELETE" })));
+
+    const label = ids.length === 1 ? "Moved to Trash" : `${ids.length} entries moved to Trash`;
+    setUndo({ ids, entries: entriesToTrash, label });
+  }
+
+  async function handleUndo() {
+    if (!undo) return;
+    const { ids, entries: saved } = undo;
+    setUndo(null);
+
+    void Promise.all(
+      ids.map((id) =>
+        fetch(`/api/vault/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ restore: true }),
+        }),
+      ),
+    );
+
+    setDecrypted((prev) => {
+      if (!prev) return saved;
+      const existing = new Set(prev.map((e) => e.id));
+      return [...prev, ...saved.filter((e) => !existing.has(e.id))];
+    });
+    setTrashCount((c) => (c === null ? null : Math.max(0, c - ids.length)));
     router.refresh();
+  }
+
+  async function handleBulkMoveToTrash() {
+    if (!decrypted) return;
+    const ids = [...selectedIds];
+    const entriesToTrash = decrypted.filter((e) => ids.includes(e.id));
+    exitSelectionMode();
+    await handleMoveToTrash(ids, entriesToTrash);
   }
 
   function toggleTagFilter(id: string) {
@@ -661,7 +690,6 @@ export default function VaultClient({
               onImport={handleImport}
               onRenamed={setVaultName}
               onDeleted={() => router.push("/")}
-              onTrash={() => setShowTrash(true)}
             />
           </>
         }
@@ -747,147 +775,220 @@ export default function VaultClient({
             );
           })()}
 
-        {decrypted.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex gap-2 items-center">
-              <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle pointer-events-none">
-                  <SearchIcon />
-                </span>
-                <label htmlFor="vault-search" className="sr-only">
-                  Search entries
-                </label>
-                <input
-                  id="vault-search"
-                  ref={searchRef}
-                  type="search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search entries…"
-                  className="w-full rounded-lg border border-line/60 bg-surface pl-9 pr-4 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
-                />
-              </div>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value as typeof sort)}
-                aria-label="Sort entries"
-                className="rounded-lg border border-line/60 bg-surface px-2.5 py-2.5 text-sm text-muted outline-none focus:border-amber-400 transition shrink-0"
+        {/* ── Tab bar ─────────────────────────────────────────────────────── */}
+        <div
+          className="flex items-center border-b border-line/40"
+          role="tablist"
+          aria-label="Vault views"
+        >
+          <button
+            role="tab"
+            aria-selected={activeTab === "entries"}
+            aria-controls="tab-panel-entries"
+            type="button"
+            onClick={() => setActiveTab("entries")}
+            className={`relative px-1 pb-2.5 pt-0.5 mr-6 text-sm font-medium transition-colors ${
+              activeTab === "entries"
+                ? "text-default after:absolute after:bottom-0 after:inset-x-0 after:h-0.5 after:bg-amber-500 after:rounded-full"
+                : "text-muted hover:text-default"
+            }`}
+          >
+            All entries
+            {decrypted.length > 0 && (
+              <span
+                className={`ml-1.5 text-xs tabular-nums ${activeTab === "entries" ? "text-muted" : "text-subtle"}`}
               >
-                <option value="updated-desc">Newest</option>
-                <option value="updated-asc">Oldest</option>
-                <option value="name-asc">A → Z</option>
-                <option value="name-desc">Z → A</option>
-                <option value="age-asc">Oldest password</option>
-                <option value="age-desc">Newest password</option>
-              </select>
-            </div>
-
-            {(allTags.length > 0 || staleCount > 0) && (
-              <div className="flex flex-wrap gap-1.5 items-center">
-                {allTags.map((tag) => {
-                  const active = selectedTagIds.includes(tag.id);
-                  return (
-                    <button
-                      key={tag.id}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => toggleTagFilter(tag.id)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${active ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-700" : "bg-surface text-muted border-line hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400 dark:hover:bg-stone-700"}`}
-                    >
-                      {tag.name}
-                    </button>
-                  );
-                })}
-
-                {staleCount > 0 && (
-                  <button
-                    type="button"
-                    aria-pressed={filterStale}
-                    onClick={() => setFilterStale((v) => !v)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${filterStale ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-700" : "bg-surface text-muted border-line hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400"}`}
-                  >
-                    Stale ({staleCount})
-                  </button>
-                )}
-
-                {(selectedTagIds.length > 0 || filterStale) && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedTagIds([]);
-                      setFilterStale(false);
-                    }}
-                    className="rounded-full px-3 py-1 text-xs font-medium text-muted hover:text-default transition-colors"
-                  >
-                    Clear
-                  </button>
-                )}
-                {allTags.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowManageTags(true)}
-                    className="rounded-full px-3 py-1 text-xs font-medium text-muted hover:text-default transition-colors"
-                  >
-                    Edit tags
-                  </button>
-                )}
-              </div>
+                {decrypted.length}
+              </span>
             )}
-          </div>
-        )}
+          </button>
+          <button
+            role="tab"
+            aria-selected={activeTab === "trash"}
+            aria-controls="tab-panel-trash"
+            type="button"
+            onClick={() => setActiveTab("trash")}
+            className={`relative px-1 pb-2.5 pt-0.5 text-sm font-medium transition-colors ${
+              activeTab === "trash"
+                ? "text-default after:absolute after:bottom-0 after:inset-x-0 after:h-0.5 after:bg-amber-500 after:rounded-full"
+                : "text-muted hover:text-default"
+            }`}
+          >
+            Trash
+            {trashCount !== null && trashCount > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-stone-200 dark:bg-stone-700 text-[10px] font-semibold text-default tabular-nums px-1">
+                {trashCount}
+              </span>
+            )}
+          </button>
+        </div>
 
-        {decrypted.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <span className="text-6xl mb-5 select-none" aria-hidden="true">
-              🗝️
-            </span>
-            <h2
-              className="text-xl font-semibold text-default mb-2"
-              style={{ fontFamily: "var(--font-playfair, serif)" }}
-            >
-              This vault is empty
-            </h2>
-            <p className="text-sm text-muted mb-6">Add your first entry to get started.</p>
-            <button
-              type="button"
-              onClick={() => setShowNew(true)}
-              className="rounded-lg bg-stone-800 dark:bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 dark:hover:bg-amber-500 transition-colors"
-            >
-              + Add your first entry
-            </button>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p className="text-muted text-sm mb-3">No entries match your search.</p>
-            <button
-              type="button"
-              onClick={() => {
-                setQuery("");
-                setSelectedTagIds([]);
-                setFilterStale(false);
+        {/* ── Entries tab ─────────────────────────────────────────────────── */}
+        <div
+          id="tab-panel-entries"
+          role="tabpanel"
+          hidden={activeTab !== "entries"}
+          className="space-y-4"
+        >
+          {decrypted.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex gap-2 items-center">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle pointer-events-none">
+                    <SearchIcon />
+                  </span>
+                  <label htmlFor="vault-search" className="sr-only">
+                    Search entries
+                  </label>
+                  <input
+                    id="vault-search"
+                    ref={searchRef}
+                    type="search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search entries…"
+                    className="w-full rounded-lg border border-line/60 bg-surface pl-9 pr-4 py-2.5 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+                  />
+                </div>
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as typeof sort)}
+                  aria-label="Sort entries"
+                  className="rounded-lg border border-line/60 bg-surface px-2.5 py-2.5 text-sm text-muted outline-none focus:border-amber-400 transition shrink-0"
+                >
+                  <option value="updated-desc">Newest</option>
+                  <option value="updated-asc">Oldest</option>
+                  <option value="name-asc">A → Z</option>
+                  <option value="name-desc">Z → A</option>
+                  <option value="age-asc">Oldest password</option>
+                  <option value="age-desc">Newest password</option>
+                </select>
+              </div>
+
+              {(allTags.length > 0 || staleCount > 0) && (
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  {allTags.map((tag) => {
+                    const active = selectedTagIds.includes(tag.id);
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => toggleTagFilter(tag.id)}
+                        className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${active ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-700" : "bg-surface text-muted border-line hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400 dark:hover:bg-stone-700"}`}
+                      >
+                        {tag.name}
+                      </button>
+                    );
+                  })}
+
+                  {staleCount > 0 && (
+                    <button
+                      type="button"
+                      aria-pressed={filterStale}
+                      onClick={() => setFilterStale((v) => !v)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${filterStale ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-700" : "bg-surface text-muted border-line hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400"}`}
+                    >
+                      Stale ({staleCount})
+                    </button>
+                  )}
+
+                  {(selectedTagIds.length > 0 || filterStale) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTagIds([]);
+                        setFilterStale(false);
+                      }}
+                      className="rounded-full px-3 py-1 text-xs font-medium text-muted hover:text-default transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  {allTags.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowManageTags(true)}
+                      className="rounded-full px-3 py-1 text-xs font-medium text-muted hover:text-default transition-colors"
+                    >
+                      Edit tags
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {decrypted.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <span className="text-6xl mb-5 select-none" aria-hidden="true">
+                🗝️
+              </span>
+              <h2
+                className="text-xl font-semibold text-default mb-2"
+                style={{ fontFamily: "var(--font-playfair, serif)" }}
+              >
+                This vault is empty
+              </h2>
+              <p className="text-sm text-muted mb-6">Add your first entry to get started.</p>
+              <button
+                type="button"
+                onClick={() => setShowNew(true)}
+                className="rounded-lg bg-stone-800 dark:bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 dark:hover:bg-amber-500 transition-colors"
+              >
+                + Add your first entry
+              </button>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <p className="text-muted text-sm mb-3">No entries match your search.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setSelectedTagIds([]);
+                  setFilterStale(false);
+                }}
+                className="text-xs text-amber-700 dark:text-amber-400 hover:underline"
+              >
+                Clear filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-start">
+              {filtered.map((entry) => (
+                <EntryCard
+                  key={entry.id}
+                  entry={entry}
+                  onEdit={() => setEditingEntry(entries.find((e) => e.id === entry.id) ?? null)}
+                  onHistory={() => setHistoryEntryId(entry.id)}
+                  onTogglePin={(pinned) => handleTogglePin(entry.id, pinned)}
+                  selectionMode={selectionMode}
+                  selected={selectedIds.has(entry.id)}
+                  onToggleSelect={() => toggleSelect(entry.id)}
+                  customTypes={customTypes}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Trash tab ───────────────────────────────────────────────────── */}
+        <div id="tab-panel-trash" role="tabpanel" hidden={activeTab !== "trash"}>
+          {activeTab === "trash" && cryptoKey && (
+            <TrashView
+              vaultId={vault.id}
+              cryptoKey={cryptoKey}
+              onRestored={() => {
+                setTrashCount((c) => (c === null ? null : Math.max(0, c - 1)));
+                setActiveTab("entries");
+                router.refresh();
               }}
-              className="text-xs text-amber-700 dark:text-amber-400 hover:underline"
-            >
-              Clear filters
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-start">
-            {filtered.map((entry) => (
-              <EntryCard
-                key={entry.id}
-                entry={entry}
-                onEdit={() => setEditingEntry(entries.find((e) => e.id === entry.id) ?? null)}
-                onHistory={() => setHistoryEntryId(entry.id)}
-                onTogglePin={(pinned) => handleTogglePin(entry.id, pinned)}
-                selectionMode={selectionMode}
-                selected={selectedIds.has(entry.id)}
-                onToggleSelect={() => toggleSelect(entry.id)}
-                customTypes={customTypes}
-              />
-            ))}
-          </div>
-        )}
+              onCountKnown={setTrashCount}
+              customTypes={customTypes}
+            />
+          )}
+        </div>
       </main>
 
       {selectionMode && (
@@ -908,61 +1009,39 @@ export default function VaultClient({
             </button>
           </div>
 
-          {bulkDeletePhase === "confirm" ? (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-red-600 dark:text-red-400">
-                Delete {selectedIds.size} {selectedIds.size === 1 ? "entry" : "entries"}?
-              </span>
-              <button
-                type="button"
-                onClick={() => void handleBulkDelete()}
-                className="rounded-lg bg-red-600 dark:bg-red-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 dark:hover:bg-red-600 transition-colors"
-              >
-                Confirm
-              </button>
-              <button
-                type="button"
-                onClick={() => setBulkDeletePhase("idle")}
-                className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted hover:bg-sunken transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={selectedIds.size === 0}
-                onClick={() => void handleBulkPin(true)}
-                className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted hover:text-amber-700 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                Pin
-              </button>
-              <button
-                type="button"
-                disabled={selectedIds.size === 0}
-                onClick={() => void handleBulkPin(false)}
-                className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted hover:text-default hover:bg-sunken disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                Unpin
-              </button>
-              <button
-                type="button"
-                disabled={selectedIds.size === 0}
-                onClick={() => setBulkDeletePhase("confirm")}
-                className="rounded-lg border border-red-300 dark:border-red-800 px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                Delete
-              </button>
-              <button
-                type="button"
-                onClick={exitSelectionMode}
-                className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted hover:bg-sunken transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={selectedIds.size === 0}
+              onClick={() => void handleBulkPin(true)}
+              className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted hover:text-amber-700 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Pin
+            </button>
+            <button
+              type="button"
+              disabled={selectedIds.size === 0}
+              onClick={() => void handleBulkPin(false)}
+              className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted hover:text-default hover:bg-sunken disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Unpin
+            </button>
+            <button
+              type="button"
+              disabled={selectedIds.size === 0}
+              onClick={() => void handleBulkMoveToTrash()}
+              className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted hover:text-default hover:bg-sunken disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Move to Trash
+            </button>
+            <button
+              type="button"
+              onClick={exitSelectionMode}
+              className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted hover:bg-sunken transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 
@@ -992,6 +1071,13 @@ export default function VaultClient({
             setEditingEntry(null);
             router.refresh();
           }}
+          onMoveToTrash={() => {
+            const id = editingEntry.id;
+            const decryptedEntry = decrypted?.find((e) => e.id === id);
+            setEditingEntry(null);
+            if (decryptedEntry) void handleMoveToTrash([id], [decryptedEntry]);
+            else void handleMoveToTrash([id], []);
+          }}
           customTypes={customTypes}
         />
       )}
@@ -1016,12 +1102,12 @@ export default function VaultClient({
           }}
         />
       )}
-      {showTrash && cryptoKey && (
-        <TrashModal
-          vaultId={vault.id}
-          cryptoKey={cryptoKey}
-          onClose={() => setShowTrash(false)}
-          onRestored={() => router.refresh()}
+      {undo && (
+        <UndoToast
+          key={undo.ids.join(",")}
+          label={undo.label}
+          onUndo={() => void handleUndo()}
+          onExpire={() => setUndo(null)}
         />
       )}
       {showHelp && <KeyboardShortcutHelp onClose={() => setShowHelp(false)} />}

@@ -100,6 +100,7 @@ export default function EditEntryModal({
   onTagCreated,
   onClose,
   onSuccess,
+  onMoveToTrash,
   customTypes = [],
 }: {
   entry: EncryptedEntryProp;
@@ -108,6 +109,7 @@ export default function EditEntryModal({
   onTagCreated: (tag: Tag) => void;
   onClose: () => void;
   onSuccess: () => void;
+  onMoveToTrash?: () => void;
   customTypes?: CustomEntryTypeDef[];
 }) {
   const entryType: string = entry.entryType || "login";
@@ -147,8 +149,6 @@ export default function EditEntryModal({
 
   const [decrypted, setDecrypted] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -253,19 +253,6 @@ export default function EditEntryModal({
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleDelete() {
-    setDeleting(true);
-    try {
-      const res = await fetch(`/api/vault/${entry.id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete");
-      onSuccess();
-    } catch {
-      setError("Failed to delete entry.");
-      setDeleting(false);
-      setConfirmDelete(false);
     }
   }
 
@@ -541,40 +528,18 @@ export default function EditEntryModal({
             </div>
           </form>
 
-          <div className="mt-5 pt-5 border-t border-divider">
-            {!confirmDelete ? (
+          {onMoveToTrash && (
+            <div className="mt-5 pt-5 border-t border-divider">
               <button
                 type="button"
-                onClick={() => setConfirmDelete(true)}
-                className="w-full rounded-lg border border-red-200 dark:border-red-900/50 py-2.5 text-sm font-semibold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                onClick={onMoveToTrash}
+                disabled={saving}
+                className="w-full rounded-lg border border-line py-2.5 text-sm font-medium text-muted hover:text-red-500 dark:hover:text-red-400 hover:border-red-300 dark:hover:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
               >
-                Delete entry
+                Move to Trash
               </button>
-            ) : (
-              <div className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 p-4 space-y-3">
-                <p className="text-sm text-red-700 dark:text-red-300">
-                  Delete <span className="font-bold">{name}</span>? This cannot be undone.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDelete(false)}
-                    className="flex-1 rounded-lg border border-line bg-surface py-2 text-sm font-semibold text-muted hover:bg-sunken transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {deleting ? "Deleting…" : "Yes, delete"}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </>
       )}
     </Modal>
