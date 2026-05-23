@@ -4,7 +4,8 @@
 [![Docker](https://img.shields.io/docker/v/lance1416/cheesy-toast-vault?sort=semver&logo=docker&logoColor=white&label=Docker)](https://hub.docker.com/r/lance1416/cheesy-toast-vault)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A self-hosted password manager with **end-to-end client-side encryption**. Your vault password and plaintext secrets never leave your browser — the server stores only ciphertext.
+A self-hosted password manager with **end-to-end client-side encryption**. Your vault password and plaintext secrets
+never leave your browser — the server stores only ciphertext.
 
 ---
 
@@ -17,7 +18,8 @@ Two independent passwords protect your data:
 | **Login password** | Authenticates you with the server   | Server (bcrypt)                     |
 | **Vault password** | Encrypts and decrypts vault entries | Browser only (PBKDF2 → AES-256-GCM) |
 
-The vault password is never transmitted. Losing it means losing access to your data — by design. See [`docs/DEPLOY.md`](docs/DEPLOY.md) for a full security overview.
+The vault password is never transmitted. Losing it means losing access to your data — by design. See [
+`docs/DEPLOY.md`](docs/DEPLOY.md) for a full security overview.
 
 ---
 
@@ -32,18 +34,31 @@ The vault password is never transmitted. Losing it means losing access to your d
 - Soft delete / trash — 30-day recovery window with undo toast; no accidental data loss
 - Tags, pinned entries, and sort by last-updated or password age
 
-**Security & health**
+**Security & privacy**
 
 - [HaveIBeenPwned](https://haveibeenpwned.com) breach check — k-anonymity, password never transmitted
 - Password health dashboard — weak, stale, and duplicate counts across all unlocked vaults
 - Clipboard auto-clear — copied secrets wipe themselves after 30 seconds
 - Auto-lock after configurable idle timeout (1 / 5 / 15 / 30 min, or never)
+- **Decoy vault** — configure a second password that reveals a separate set of dummy entries; the server stores both
+  sets encrypted and cannot distinguish real from decoy
+- **Vault access audit log** — every real vault unlock is recorded (IP + timestamp) and displayed in settings; decoy
+  unlocks are intentionally excluded to avoid revealing the decoy's existence
+
+**Sharing**
+
+- **Time-limited share links** — generate a read-only URL for any entry; the entry is re-encrypted client-side with a
+  fresh key embedded in the URL; the server only stores the SHA-256 hash of the key and the re-encrypted blob and can
+  never decrypt it
+- Links expire automatically (1 h / 24 h / 7 d / 30 d) and optionally cap view counts
+- Revoke any link instantly from the share modal
 
 **Account & sessions**
 
 - Two-factor authentication (TOTP) with backup codes
 - Active session list — browser, OS, IP, and sign-in time per device
 - Per-session or sign-out-everywhere from settings
+- Login history — last 20 sign-in attempts with IP and method
 - Email verification, password reset, email change, account deletion
 
 **Search & productivity**
@@ -90,7 +105,8 @@ Open `docker/docker-compose.prod.yml` and replace every placeholder value:
 docker compose -f docker/docker-compose.prod.yml up -d
 ```
 
-Migrations run automatically on startup. For HTTPS setup, reverse proxy configuration, and backup procedures see [`docs/DEPLOY.md`](docs/DEPLOY.md).
+Migrations run automatically on startup. For HTTPS setup, reverse proxy configuration, and backup procedures see [
+`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 **Updating**
 
