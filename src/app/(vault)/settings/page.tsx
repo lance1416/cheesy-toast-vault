@@ -1,12 +1,19 @@
-import { getTotpStatus, getLoginHistory, getUserSessions, getCustomEntryTypes } from "@/server/dal";
+import {
+  getTotpStatus,
+  getLoginHistory,
+  getUserSessions,
+  getCustomEntryTypes,
+  getVaultAccessLog,
+} from "@/server/dal";
 import SettingsClient from "./settings-client";
 
 export default async function SettingsPage() {
-  const [{ totpEnabled }, loginHistory, sessions, customTypes] = await Promise.all([
+  const [{ totpEnabled }, loginHistory, sessions, customTypes, vaultAccessLog] = await Promise.all([
     getTotpStatus(),
     getLoginHistory(),
     getUserSessions(),
     getCustomEntryTypes(),
+    getVaultAccessLog(),
   ]);
   return (
     <SettingsClient
@@ -14,6 +21,7 @@ export default async function SettingsPage() {
       loginHistory={loginHistory}
       sessions={sessions}
       customTypes={customTypes}
+      vaultAccessLog={vaultAccessLog}
     />
   );
 }

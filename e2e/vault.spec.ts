@@ -530,6 +530,54 @@ test.describe("Share links — public page", () => {
   });
 });
 
+// ── Vault access log ──────────────────────────────────────────────────────────
+
+test.describe("Vault access log", () => {
+  test("access log section is visible in settings", async ({ authedPage: page }) => {
+    await page.goto("/settings");
+    await expect(page.getByRole("heading", { name: /vault access log/i })).toBeVisible({
+      timeout: 5_000,
+    });
+  });
+
+  test("empty state is shown when no vaults have been unlocked", async ({ authedPage: page }) => {
+    await page.goto("/settings");
+    await expect(page.getByText(/no vault unlocks recorded yet/i)).toBeVisible({
+      timeout: 5_000,
+    });
+  });
+
+  test("unlocking a vault creates a visible entry in the access log", async ({
+    authedPage: page,
+    lockedVaultData,
+  }) => {
+    // Register the listener before navigating so no response is missed
+    const accessLogResponse = page.waitForResponse(
+      (res) =>
+        res.url().includes(`/api/vault/${lockedVaultData.id}/access`) &&
+        res.request().method() === "POST",
+      { timeout: 10_000 },
+    );
+
+    await page.goto(`/vault/${lockedVaultData.id}`);
+    await expect(page.getByPlaceholder(/vault password/i)).toBeVisible({ timeout: 5_000 });
+    await page.getByPlaceholder(/vault password/i).fill(lockedVaultData.correctPassword);
+    await page.getByRole("button", { name: /^unlock vault$/i }).click();
+    await expect(page.getByRole("button", { name: /\+ add entry/i })).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Wait for the access log POST to receive its response (DB write done)
+    const res = await accessLogResponse;
+    expect(res.status()).toBe(200);
+
+    await page.goto("/settings");
+    // Scope to the vault access log section to avoid matching the sidebar vault nav link
+    const accessLogSection = page.getByTestId("vault-access-log-section");
+    await expect(accessLogSection.getByText(lockedVaultData.name)).toBeVisible({ timeout: 5_000 });
+  });
+});
+
 // ── Share links — UI ──────────────────────────────────────────────────────────
 
 test.describe("Share links — UI", () => {

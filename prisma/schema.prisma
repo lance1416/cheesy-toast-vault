@@ -28,21 +28,23 @@ model User {
   userSessions      UserSession[]
   customEntryTypes  CustomEntryType[]
   shareLinks        ShareLink[]
+  vaultAccesses     VaultAccess[]
 }
 
 model Vault {
-  id        String       @id @default(cuid())
-  userId    String
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// display name chosen by the user (e.g. "Personal", "Work")
-  name      String
+  name          String
   /// base64-encoded PBKDF2 salt; combined with this vault's password in-browser to derive the AES-256-GCM key
-  salt      String
+  salt          String
   /// base64-encoded PBKDF2 salt for the decoy password; null when no decoy is configured
-  decoySalt String?
-  entries   VaultEntry[]
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  decoySalt     String?
+  entries       VaultEntry[]
+  vaultAccesses VaultAccess[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@unique([userId, name])
 }
@@ -129,6 +131,19 @@ model LoginAudit {
   success   Boolean
   /// "password" | "totp" | "backup_code"
   method    String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+/// Recorded each time the owner successfully unlocks a vault (client signals via POST /api/vault/[id]/access)
+model VaultAccess {
+  id        String   @id @default(cuid())
+  vaultId   String
+  vault     Vault    @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ip        String
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt(sort: Desc)])

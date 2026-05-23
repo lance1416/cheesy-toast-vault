@@ -115,6 +115,21 @@ export const getLoginHistory = cache(async () => {
   });
 });
 
+export const getVaultAccessLog = cache(async () => {
+  const { userId } = await verifySession();
+  return db.vaultAccess.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    select: {
+      id: true,
+      ip: true,
+      createdAt: true,
+      vault: { select: { name: true } },
+    },
+  });
+});
+
 export const getVaultEntries = cache(async (vaultId: string) => {
   const { userId } = await verifySession();
   // Verify vault ownership

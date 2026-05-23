@@ -643,6 +643,9 @@ export default function VaultClient({
         try {
           await decryptEntry(key, realEntries[0].encryptedBlob, realEntries[0].iv);
           setKey(vault.id, key, "real");
+          void fetch(`/api/vault/${vault.id}/access`, { method: "POST", keepalive: true }).catch(
+            () => {},
+          );
           return;
         } catch {
           // Phase 2: try decoy password if configured
@@ -663,6 +666,9 @@ export default function VaultClient({
 
       // No real entries yet — can't verify, assume real mode
       setKey(vault.id, key, "real");
+      void fetch(`/api/vault/${vault.id}/access`, { method: "POST", keepalive: true }).catch(
+        () => {},
+      );
     } catch (err) {
       const isDomError = err instanceof DOMException && err.name === "OperationError";
       setUnlockError(

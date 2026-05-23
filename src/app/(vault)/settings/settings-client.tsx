@@ -34,6 +34,13 @@ type UserSessionEntry = {
   createdAt: Date | string;
 };
 
+type VaultAccessEntry = {
+  id: string;
+  ip: string;
+  createdAt: Date | string;
+  vault: { name: string };
+};
+
 function parseBrowser(ua: string): string {
   if (/Edg\//.test(ua)) return "Edge";
   if (/OPR\/|Opera/.test(ua)) return "Opera";
@@ -64,11 +71,13 @@ export default function SettingsClient({
   loginHistory,
   sessions,
   customTypes: initialCustomTypes = [],
+  vaultAccessLog = [],
 }: {
   totpEnabled: boolean;
   loginHistory: LoginHistoryEntry[];
   sessions: UserSessionEntry[];
   customTypes?: CustomEntryTypeDef[];
+  vaultAccessLog?: VaultAccessEntry[];
 }) {
   const { lockTimeout, setLockTimeout } = useVault();
   const { data: session } = useSession();
@@ -917,6 +926,67 @@ export default function SettingsClient({
                         </span>
                         <span className="text-xs text-muted">
                           {METHOD_LABELS[event.method] ?? event.method}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-subtle shrink-0 text-xs tabular-nums">
+                        <span className="font-mono hidden sm:inline">{event.ip}</span>
+                        <time dateTime={date.toISOString()} suppressHydrationWarning>
+                          {date.toLocaleDateString("en", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </time>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          {/* Vault access log */}
+          <div data-testid="vault-access-log-section">
+            <div className="flex items-center gap-3.5 p-4">
+              <SettingIcon>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </SettingIcon>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-semibold text-default">Vault access log</h2>
+                <p className="text-xs text-muted">Your 20 most recent vault unlocks.</p>
+              </div>
+            </div>
+            {vaultAccessLog.length === 0 ? (
+              <div className="px-4 py-3 border-t border-line/40">
+                <p className="text-sm text-subtle">No vault unlocks recorded yet.</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-line/40 border-t border-line/40" role="list">
+                {vaultAccessLog.map((event) => {
+                  const date = new Date(event.createdAt);
+                  return (
+                    <li
+                      key={event.id}
+                      className="px-4 flex items-center justify-between gap-4 py-3"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span
+                          className="shrink-0 w-2 h-2 rounded-full bg-amber-500"
+                          aria-hidden="true"
+                        />
+                        <span className="text-sm text-default font-medium truncate">
+                          {event.vault.name}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 text-subtle shrink-0 text-xs tabular-nums">
