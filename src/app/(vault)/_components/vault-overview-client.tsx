@@ -146,6 +146,32 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
       </div>
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {/* Desktop page header — sidebar handles nav, but page still needs context */}
+        <div className="hidden md:flex items-center justify-between gap-4 mb-7">
+          <div>
+            <h1
+              className="text-lg font-semibold text-default"
+              style={{ fontFamily: "var(--font-playfair, serif)" }}
+            >
+              My Vaults
+            </h1>
+            <p className="text-xs text-subtle mt-0.5">
+              {vaults.length === 0
+                ? "No vaults yet"
+                : `${vaults.length} ${vaults.length === 1 ? "vault" : "vaults"}`}
+            </p>
+          </div>
+          {vaults.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowCreate(true)}
+              className="rounded-lg bg-stone-800 dark:bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 dark:hover:bg-amber-500 transition-colors"
+            >
+              + New vault
+            </button>
+          )}
+        </div>
+
         {/* Search bar — shown when there are vaults to search */}
         {vaults.length > 0 && (
           <div className="relative mb-6">
@@ -217,16 +243,32 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
         ) : vaults.length === 0 ? (
           // ── Empty state ───────────────────────────────────────────────────────
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <span className="text-6xl mb-5 select-none" aria-hidden="true">
-              🔐
-            </span>
+            <div
+              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-stone-100 dark:bg-stone-800 border border-line/60 text-stone-400 dark:text-stone-500 mb-6 shadow-sm"
+              aria-hidden="true"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0110 0v4" />
+              </svg>
+            </div>
             <h2
               className="text-xl font-semibold text-default mb-2"
               style={{ fontFamily: "var(--font-playfair, serif)" }}
             >
               No vaults yet
             </h2>
-            <p className="text-sm text-muted mb-6">Create your first vault to get started.</p>
+            <p className="text-sm text-muted mb-7">Create your first vault to get started.</p>
             <button
               type="button"
               onClick={() => setShowCreate(true)}
