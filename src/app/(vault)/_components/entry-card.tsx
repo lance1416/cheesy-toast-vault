@@ -143,17 +143,17 @@ function TypeIcon({
   // login / undefined
   if (entry.url) {
     return (
-      <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 flex items-center justify-center shrink-0">
+      <div className="w-8 h-8 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center shrink-0">
         <Favicon
           url={entry.url}
           name={entry.name}
-          className="w-4 h-4 text-blue-600 dark:text-blue-400"
+          className="w-4 h-4 text-stone-500 dark:text-stone-400"
         />
       </div>
     );
   }
   return (
-    <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+    <div className="w-8 h-8 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-500 dark:text-stone-400 shrink-0">
       <KeyIcon size={14} />
     </div>
   );

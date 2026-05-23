@@ -224,19 +224,17 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
                   {searchResults.length} {searchResults.length === 1 ? "result" : "results"} across{" "}
                   {unlockedCount} {unlockedCount === 1 ? "vault" : "vaults"}
                 </p>
-                <div className="bg-surface rounded-xl border border-line/60 overflow-hidden">
-                  <ul className="divide-y divide-divider">
-                    {searchResults.map((entry) => (
-                      <EntryCard
-                        key={entry.id}
-                        entry={entry}
-                        vaultName={entry.vaultName}
-                        onEdit={() => router.push(`/vault/${entry.vaultId}`)}
-                        customTypes={customTypes}
-                      />
-                    ))}
-                  </ul>
-                </div>
+                <ul className="divide-y divide-divider">
+                  {searchResults.map((entry) => (
+                    <EntryCard
+                      key={entry.id}
+                      entry={entry}
+                      vaultName={entry.vaultName}
+                      onEdit={() => router.push(`/vault/${entry.vaultId}`)}
+                      customTypes={customTypes}
+                    />
+                  ))}
+                </ul>
               </>
             )}
           </div>

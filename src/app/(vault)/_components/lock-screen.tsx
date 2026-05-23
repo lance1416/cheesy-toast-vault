@@ -68,57 +68,54 @@ export default function LockScreen({
             </p>
           </div>
 
-          {/* Card */}
-          <div className="bg-surface rounded-2xl border border-line/60 shadow-sm px-7 py-7">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                onUnlock(password);
-              }}
-              className="space-y-5"
-            >
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="lock-password"
-                  className="block text-xs font-medium text-subtle tracking-wide uppercase"
-                >
-                  Vault Password
-                </label>
-                <div className="relative">
-                  <input
-                    id="lock-password"
-                    type={show ? "text" : "password"}
-                    required
-                    autoFocus
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your vault password"
-                    className="w-full rounded-lg border border-line bg-sunken/50 px-3.5 py-2.5 pr-10 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-surface"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShow((v) => !v)}
-                    aria-pressed={show}
-                    aria-label={show ? "Hide password" : "Show password"}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-subtle hover:text-default transition-colors"
-                  >
-                    <EyeIcon open={show} />
-                  </button>
-                </div>
-              </div>
-
-              {error && <AlertBanner message={error} />}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-lg bg-stone-800 dark:bg-amber-600 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              onUnlock(password);
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-1.5">
+              <label
+                htmlFor="lock-password"
+                className="block text-xs font-medium text-subtle tracking-wide uppercase"
               >
-                {loading ? "Unlocking…" : "Unlock vault"}
-              </button>
-            </form>
-          </div>
+                Vault Password
+              </label>
+              <div className="relative">
+                <input
+                  id="lock-password"
+                  type={show ? "text" : "password"}
+                  required
+                  autoFocus
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your vault password"
+                  className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 pr-10 text-sm text-default placeholder:text-subtle outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShow((v) => !v)}
+                  aria-pressed={show}
+                  aria-label={show ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-subtle hover:text-default transition-colors"
+                >
+                  <EyeIcon open={show} />
+                </button>
+              </div>
+            </div>
+
+            {error && <AlertBanner message={error} />}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-stone-800 dark:bg-amber-600 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? "Unlocking…" : "Unlock vault"}
+            </button>
+          </form>
 
           <p className="mt-5 text-center text-xs text-subtle">
             Decrypted locally — your password never leaves this device.

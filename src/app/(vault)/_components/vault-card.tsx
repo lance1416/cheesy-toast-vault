@@ -136,7 +136,7 @@ export default function VaultCard({
 
   return (
     <div
-      className={`bg-surface rounded-xl border border-line/60 overflow-hidden transition-colors hover:border-amber-200 dark:hover:border-amber-800/60 group ${deleting ? "opacity-50 pointer-events-none" : ""}`}
+      className={`bg-surface rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-px transition-all group ${deleting ? "opacity-50 pointer-events-none" : ""}`}
     >
       {/* Main body */}
       <div
@@ -147,7 +147,7 @@ export default function VaultCard({
       >
         <div className="flex items-start gap-3">
           {/* Vault icon */}
-          <div className="w-9 h-9 rounded-lg bg-stone-50 dark:bg-stone-800 border border-line/60 flex items-center justify-center shrink-0 text-muted group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors mt-0.5">
+          <div className="w-9 h-9 rounded-lg bg-stone-100 dark:bg-stone-800/80 flex items-center justify-center shrink-0 text-muted group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors mt-0.5">
             <VaultLockIcon />
           </div>
 
@@ -175,7 +175,7 @@ export default function VaultCard({
               />
             ) : (
               <h2
-                className="text-sm font-semibold text-default group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors truncate leading-tight"
+                className="text-sm font-semibold text-default truncate leading-tight"
                 style={{ fontFamily: "var(--font-playfair, serif)" }}
               >
                 {vault.name}
