@@ -27,6 +27,7 @@ model User {
   loginAudits       LoginAudit[]
   userSessions      UserSession[]
   customEntryTypes  CustomEntryType[]
+  shareLinks        ShareLink[]
 }
 
 model Vault {
@@ -131,4 +132,29 @@ model LoginAudit {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt(sort: Desc)])
+}
+
+/// A time-limited, publicly-accessible link for sharing a single vault entry.
+/// The entry is re-encrypted client-side with a key derived from the raw token;
+/// the server only stores the SHA-256 hash of the token and the re-encrypted blob.
+model ShareLink {
+  id            String   @id @default(cuid())
+  /// SHA-256 hex hash of the raw URL token — never the raw token itself
+  tokenHash     String   @unique
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Entry re-encrypted with a key imported from the raw token bytes
+  encryptedBlob String
+  iv            String
+  /// Mirrors the entry type for display purposes (no decryption needed)
+  entryType     String   @default("login")
+  /// Display name shown on the share page — set by the owner at share time
+  label         String
+  expiresAt     DateTime
+  viewCount     Int      @default(0)
+  /// null = unlimited views
+  maxViews      Int?
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
 }

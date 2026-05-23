@@ -24,6 +24,7 @@ import TrashView from "../../_components/trash-view";
 import UndoToast from "../../_components/undo-toast";
 import KeyboardShortcutHelp from "../../_components/keyboard-shortcut-help";
 import VaultSettingsModal from "../../_components/vault-settings-modal";
+import ShareLinkModal from "../../_components/share-link-modal";
 import { useKeyboardShortcuts } from "@/lib/use-keyboard-shortcuts";
 
 const PAGE_NOW = Date.now();
@@ -322,6 +323,7 @@ export default function VaultClient({
   const [showManageTags, setShowManageTags] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showVaultSettings, setShowVaultSettings] = useState(false);
+  const [sharingEntry, setSharingEntry] = useState<EncryptedEntryProp | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sort, setSort] = useState<
@@ -346,7 +348,8 @@ export default function VaultClient({
     !!historyEntryId ||
     showManageTags ||
     showHelp ||
-    showVaultSettings;
+    showVaultSettings ||
+    !!sharingEntry;
 
   useKeyboardShortcuts(
     {
@@ -1004,6 +1007,7 @@ export default function VaultClient({
                   entry={entry}
                   onEdit={() => setEditingEntry(entries.find((e) => e.id === entry.id) ?? null)}
                   onHistory={() => setHistoryEntryId(entry.id)}
+                  onShare={() => setSharingEntry(entries.find((e) => e.id === entry.id) ?? null)}
                   onTogglePin={(pinned) => handleTogglePin(entry.id, pinned)}
                   selectionMode={selectionMode}
                   selected={selectedIds.has(entry.id)}
@@ -1131,6 +1135,14 @@ export default function VaultClient({
           hasDecoy={!!vault.decoySalt}
           onClose={() => setShowVaultSettings(false)}
           onDecoyChanged={() => router.refresh()}
+        />
+      )}
+
+      {sharingEntry && cryptoKey && (
+        <ShareLinkModal
+          entry={sharingEntry}
+          cryptoKey={cryptoKey}
+          onClose={() => setSharingEntry(null)}
         />
       )}
 

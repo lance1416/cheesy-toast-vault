@@ -36,6 +36,8 @@ export default withAuth(
           "/verify-email",
         ];
         if (publicPaths.includes(pathname)) return true;
+        // Share pages and their API endpoint are public
+        if (pathname.startsWith("/share/") || pathname.startsWith("/api/share/")) return true;
         return !!token;
       },
     },

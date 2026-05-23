@@ -296,6 +296,7 @@ export default function EntryCard({
   entry,
   onEdit,
   onHistory,
+  onShare,
   onTogglePin,
   selectionMode = false,
   selected = false,
@@ -306,6 +307,7 @@ export default function EntryCard({
   entry: DecryptedEntry;
   onEdit: () => void;
   onHistory?: () => void;
+  onShare?: () => void;
   onTogglePin?: (pinned: boolean) => void;
   selectionMode?: boolean;
   selected?: boolean;
@@ -723,6 +725,18 @@ export default function EntryCard({
               ))}
             </div>
             <div className="flex items-center gap-3 shrink-0 ml-2">
+              {onShare && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onShare();
+                  }}
+                  className="text-xs text-subtle hover:text-default transition-colors"
+                >
+                  Share
+                </button>
+              )}
               {onHistory && (
                 <button
                   type="button"
