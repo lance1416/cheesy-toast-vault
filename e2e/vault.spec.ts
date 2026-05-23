@@ -483,3 +483,79 @@ test.describe("Decoy vault", () => {
     await expect(page.getByPlaceholder(/vault password/i)).toBeVisible();
   });
 });
+
+// ── Share links — public page ─────────────────────────────────────────────────
+// These tests hit /share/[token] which is public (no auth required).
+// authedPage is used for convenience; the auth cookie has no effect here.
+
+test.describe("Share links — public page", () => {
+  test("valid token renders the entry label", async ({ authedPage: page, shareLinkData }) => {
+    await page.goto(`/share/${shareLinkData.rawToken}`);
+    await expect(page.getByRole("heading", { name: shareLinkData.label })).toBeVisible({
+      timeout: 5_000,
+    });
+  });
+
+  test("valid token decrypts and shows field values in the browser", async ({
+    authedPage: page,
+    shareLinkData,
+  }) => {
+    await page.goto(`/share/${shareLinkData.rawToken}`);
+    // "shareuser" appears only after client-side AES-GCM decryption succeeds
+    await expect(page.getByText("shareuser")).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("unknown token shows link-not-found card", async ({ authedPage: page }) => {
+    await page.goto("/share/" + "f".repeat(64));
+    await expect(page.getByRole("heading", { name: /link not found/i })).toBeVisible({
+      timeout: 5_000,
+    });
+  });
+
+  test("expired token shows link-expired card", async ({ authedPage: page, shareLinkData }) => {
+    await page.goto(`/share/${shareLinkData.expiredRawToken}`);
+    await expect(page.getByRole("heading", { name: /link expired/i })).toBeVisible({
+      timeout: 5_000,
+    });
+  });
+
+  test("view-limit-reached token shows appropriate card", async ({
+    authedPage: page,
+    shareLinkData,
+  }) => {
+    await page.goto(`/share/${shareLinkData.viewLimitRawToken}`);
+    await expect(page.getByRole("heading", { name: /view limit reached/i })).toBeVisible({
+      timeout: 5_000,
+    });
+  });
+});
+
+// ── Share links — UI ──────────────────────────────────────────────────────────
+
+test.describe("Share links — UI", () => {
+  test("Share button is visible when an entry is expanded", async ({
+    authedPage: page,
+    vaultData,
+  }) => {
+    await unlockVault(page, vaultData);
+    await addEntry(page, "My Shareable Entry");
+    await page.getByText("My Shareable Entry").click();
+    await expect(page.getByRole("button", { name: /^share$/i })).toBeVisible({
+      timeout: 3_000,
+    });
+  });
+
+  test("clicking Share opens the share link modal with Generate link button", async ({
+    authedPage: page,
+    vaultData,
+  }) => {
+    await unlockVault(page, vaultData);
+    await addEntry(page, "Share Modal Entry");
+    await page.getByText("Share Modal Entry").click();
+    await page.getByRole("button", { name: /^share$/i }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByRole("button", { name: /generate link/i })).toBeVisible({
+      timeout: 3_000,
+    });
+  });
+});

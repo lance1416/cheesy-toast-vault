@@ -90,6 +90,16 @@ type DecoyVaultData = VaultData & {
   decoyEntryName: string;
 };
 
+type ShareLinkData = {
+  /** 64-char hex token for a valid, unexpired link. */
+  rawToken: string;
+  label: string;
+  /** Token for a link whose expiresAt is in the past. */
+  expiredRawToken: string;
+  /** Token for a link where viewCount === maxViews. */
+  viewLimitRawToken: string;
+};
+
 type Fixtures = {
   /** Per-test Postgres client. Auto-connects and disconnects. */
   db: Client;
@@ -101,6 +111,8 @@ type Fixtures = {
   lockedVaultData: LockedVaultData;
   /** Vault configured with both a real and a decoy password (DECOY_VAULT_*). */
   decoyVaultData: DecoyVaultData;
+  /** Three pre-seeded ShareLink rows: valid, expired, view-limit-reached. */
+  shareLinkData: ShareLinkData;
   /** Browser page with a valid session for userData (JWT injection, no UI login). */
   authedPage: Page;
   /** Per-test user with TOTP enabled and two known backup codes. Deleted after test. */
@@ -228,6 +240,64 @@ export const test = base.extend<Fixtures>({
       realEntryName: "Real Entry",
       decoyEntryName: "Decoy Entry",
     });
+    // Cleaned up by userData DELETE … CASCADE
+  },
+
+  shareLinkData: async ({ db, userData }, provide) => {
+    const label = "Shared Entry";
+    const payload = { name: label, username: "shareuser", password: "sharedpass" };
+    const futureExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    async function makeToken(
+      data: object,
+      expiresAt: Date,
+      viewCount: number,
+      maxViews: number | null,
+    ): Promise<string> {
+      const tokenBytes = crypto.getRandomValues(new Uint8Array(32) as Uint8Array<ArrayBuffer>);
+      const rawToken = Array.from(tokenBytes)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+      const tokenHash = createHash("sha256").update(rawToken).digest("hex");
+
+      const key = await crypto.subtle.importKey(
+        "raw",
+        tokenBytes as Uint8Array<ArrayBuffer>,
+        "AES-GCM",
+        false,
+        ["encrypt"],
+      );
+      const iv = crypto.getRandomValues(new Uint8Array(12) as Uint8Array<ArrayBuffer>);
+      const ciphertext = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        key,
+        new TextEncoder().encode(JSON.stringify(data)),
+      );
+      const encryptedBlob = Buffer.from(ciphertext).toString("base64");
+      const ivB64 = Buffer.from(iv).toString("base64");
+
+      await db.query(
+        `INSERT INTO "ShareLink" (id, "tokenHash", "userId", "encryptedBlob", iv, "entryType", label, "expiresAt", "viewCount", "maxViews", "createdAt")
+         VALUES (gen_random_uuid()::text, $1, $2, $3, $4, 'login', $5, $6, $7, $8, now())`,
+        [
+          tokenHash,
+          userData.id,
+          encryptedBlob,
+          ivB64,
+          label,
+          expiresAt.toISOString(),
+          viewCount,
+          maxViews,
+        ],
+      );
+      return rawToken;
+    }
+
+    const rawToken = await makeToken(payload, futureExpiry, 0, null);
+    const expiredRawToken = await makeToken(payload, new Date(Date.now() - 1000), 0, null);
+    const viewLimitRawToken = await makeToken(payload, futureExpiry, 3, 3);
+
+    await provide({ rawToken, label, expiredRawToken, viewLimitRawToken });
     // Cleaned up by userData DELETE … CASCADE
   },
 
