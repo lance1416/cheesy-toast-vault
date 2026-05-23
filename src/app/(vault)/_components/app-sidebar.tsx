@@ -159,33 +159,42 @@ export default function AppSidebar({
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-line/60 p-2 shrink-0 space-y-0.5">
-          <Link
-            href="/settings"
-            className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${
-              pathname === "/settings"
-                ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 font-medium"
-                : "text-muted hover:text-default hover:bg-sunken"
-            }`}
-          >
-            <SettingsIcon active={pathname === "/settings"} />
-            Settings
-          </Link>
-
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5">
-            <span className="text-xs text-subtle truncate flex-1 min-w-0" title={user.email}>
-              {user.email}
-            </span>
-            <ThemeToggle />
-            <button
-              type="button"
-              onClick={() => signOut({ callbackUrl: "/" })}
-              aria-label="Sign out"
-              title="Sign out"
-              className="text-subtle hover:text-red-500 dark:hover:text-red-400 transition-colors p-0.5 shrink-0"
+        <div className="border-t border-line/60 shrink-0">
+          <div className="p-2">
+            <Link
+              href="/settings"
+              className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${
+                pathname === "/settings"
+                  ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 font-medium"
+                  : "text-muted hover:text-default hover:bg-sunken"
+              }`}
             >
-              <SignOutIcon />
-            </button>
+              <SettingsIcon active={pathname === "/settings"} />
+              Settings
+            </Link>
+          </div>
+
+          <div className="border-t border-line/60 px-3 py-2.5 space-y-2.5">
+            {/* Account row */}
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-[10px] font-bold flex items-center justify-center shrink-0 uppercase select-none">
+                {user.email[0]}
+              </div>
+              <span className="text-xs text-subtle break-all leading-tight">{user.email}</span>
+            </div>
+
+            {/* Theme + sign-out — spread apart to prevent misclick */}
+            <div className="flex items-center justify-between">
+              <ThemeToggle />
+              <button
+                type="button"
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="flex items-center gap-1.5 text-xs text-subtle hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 px-2 py-1 rounded-lg transition-colors"
+              >
+                <SignOutIcon />
+                Sign out
+              </button>
+            </div>
           </div>
         </div>
       </aside>
