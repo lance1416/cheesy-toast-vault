@@ -89,6 +89,7 @@ const GENERATOR_ICON = (
 export default function NewEntryModal({
   vaultId,
   cryptoKey,
+  isDecoy = false,
   tags: initialTags,
   onTagCreated,
   onClose,
@@ -97,6 +98,7 @@ export default function NewEntryModal({
 }: {
   vaultId: string;
   cryptoKey: CryptoKey;
+  isDecoy?: boolean;
   tags: Tag[];
   onTagCreated: (tag: Tag) => void;
   onClose: () => void;
@@ -192,7 +194,14 @@ export default function NewEntryModal({
       const res = await fetch("/api/vault", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vaultId, encryptedBlob, iv, entryType, tagIds: selectedTagIds }),
+        body: JSON.stringify({
+          vaultId,
+          encryptedBlob,
+          iv,
+          entryType,
+          isDecoy,
+          tagIds: selectedTagIds,
+        }),
       });
       if (!res.ok) {
         const data = (await res.json()) as { error?: string };

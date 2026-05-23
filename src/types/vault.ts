@@ -53,6 +53,7 @@ export type EncryptedEntryProp = {
   iv: string;
   pinned: boolean;
   entryType: string;
+  isDecoy: boolean;
   tags: { id: string; name: string }[];
   updatedAt: string;
 };

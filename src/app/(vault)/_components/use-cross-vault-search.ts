@@ -13,6 +13,8 @@ type CrossVaultEntry = DecryptedEntry & { vaultId: string; vaultName: string };
 
 type FetchState = "idle" | "loading" | "ready" | { error: string };
 
+type VaultKeySlot = { key: CryptoKey; mode: "real" | "decoy" };
+
 export type CrossVaultSearchResult = {
   searchQuery: string;
   setSearchQuery: (q: string) => void;
@@ -20,7 +22,7 @@ export type CrossVaultSearchResult = {
   searchResults: CrossVaultEntry[];
   unlockedCount: number;
   rawVaults: RawVault[];
-  keys: Record<string, CryptoKey>;
+  keys: Record<string, VaultKeySlot>;
 };
 
 export function useCrossVaultSearch(): CrossVaultSearchResult {
@@ -56,7 +58,11 @@ export function useCrossVaultSearch(): CrossVaultSearchResult {
       unlockedVaults.flatMap((v) =>
         v.entries.map(async (e) => {
           try {
-            const payload = await decryptEntry<EntryPayload>(keys[v.id]!, e.encryptedBlob, e.iv);
+            const payload = await decryptEntry<EntryPayload>(
+              keys[v.id]!.key,
+              e.encryptedBlob,
+              e.iv,
+            );
             return {
               ...payload,
               id: e.id,

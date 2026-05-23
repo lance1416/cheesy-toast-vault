@@ -37,6 +37,8 @@ model Vault {
   name      String
   /// base64-encoded PBKDF2 salt; combined with this vault's password in-browser to derive the AES-256-GCM key
   salt      String
+  /// base64-encoded PBKDF2 salt for the decoy password; null when no decoy is configured
+  decoySalt String?
   entries   VaultEntry[]
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
@@ -55,6 +57,8 @@ model VaultEntry {
   pinned        Boolean        @default(false)
   /// "login" | "note" | "card" | "identity" — mirrors the type field inside the encrypted blob
   entryType     String         @default("login")
+  /// true when this entry belongs to the decoy view (visible only when vault unlocked with decoy password)
+  isDecoy       Boolean        @default(false)
   /// set when the entry is soft-deleted; null means active
   deletedAt     DateTime?
   tags          Tag[]
@@ -62,7 +66,7 @@ model VaultEntry {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
-  @@index([vaultId, deletedAt])
+  @@index([vaultId, isDecoy, deletedAt])
 }
 
 /// Snapshots of a VaultEntry taken before each update; at most 10 kept per entry

@@ -56,7 +56,7 @@ export const getVault = cache(async (id: string) => {
   const { userId } = await verifySession();
   const vault = await db.vault.findFirst({
     where: { id, userId },
-    select: { id: true, name: true, salt: true },
+    select: { id: true, name: true, salt: true, decoySalt: true },
   });
   if (!vault) notFound();
   return vault;
@@ -128,6 +128,7 @@ export const getVaultEntries = cache(async (vaultId: string) => {
       iv: true,
       pinned: true,
       entryType: true,
+      isDecoy: true,
       updatedAt: true,
       tags: { select: { id: true, name: true } },
     },

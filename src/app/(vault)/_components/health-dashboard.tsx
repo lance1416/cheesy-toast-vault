@@ -30,12 +30,14 @@ function StatChip({ label, count, loading }: { label: string; count: number; loa
   );
 }
 
+type VaultKeySlot = { key: CryptoKey; mode: "real" | "decoy" };
+
 export default function HealthDashboard({
   rawVaults,
   keys,
 }: {
   rawVaults: RawVault[];
-  keys: Record<string, CryptoKey>;
+  keys: Record<string, VaultKeySlot>;
 }) {
   const [health, setHealth] = useState<Health>({ status: "computing" });
 
@@ -51,7 +53,7 @@ export default function HealthDashboard({
           .filter((e) => !e.entryType || e.entryType === "login")
           .map(async (e) => {
             try {
-              return await decryptEntry<EntryPayload>(keys[v.id]!, e.encryptedBlob, e.iv);
+              return await decryptEntry<EntryPayload>(keys[v.id]!.key, e.encryptedBlob, e.iv);
             } catch {
               return null;
             }

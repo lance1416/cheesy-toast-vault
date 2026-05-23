@@ -13,13 +13,14 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
 
   return (
     <VaultClient
-      vault={{ id: vault.id, name: vault.name, salt: vault.salt }}
+      vault={{ id: vault.id, name: vault.name, salt: vault.salt, decoySalt: vault.decoySalt }}
       entries={entries.map((e) => ({
         id: e.id,
         encryptedBlob: e.encryptedBlob,
         iv: e.iv,
         pinned: e.pinned,
         entryType: e.entryType,
+        isDecoy: e.isDecoy,
         tags: e.tags,
         updatedAt: e.updatedAt.toISOString(),
       }))}

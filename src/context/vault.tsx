@@ -2,9 +2,13 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
+type VaultMode = "real" | "decoy";
+type VaultKeySlot = { key: CryptoKey; mode: VaultMode };
+
 type VaultContextValue = {
-  keys: Record<string, CryptoKey>;
-  setKey: (vaultId: string, key: CryptoKey) => void;
+  keys: Record<string, VaultKeySlot>;
+  setKey: (vaultId: string, key: CryptoKey, mode: VaultMode) => void;
+  getMode: (vaultId: string) => VaultMode | null;
   clearKey: (vaultId: string) => void;
   clearAllKeys: () => void;
   lockTimeout: number;
@@ -25,14 +29,19 @@ function readLockTimeout(): number {
 }
 
 export function VaultProvider({ children }: { children: React.ReactNode }) {
-  const [keys, setKeys] = useState<Record<string, CryptoKey>>({});
+  const [keys, setKeys] = useState<Record<string, VaultKeySlot>>({});
   const [lockTimeout, setLockTimeoutState] = useState<number>(readLockTimeout);
   const lockTimeoutRef = useRef(lockTimeout);
   const lastActivity = useRef(0);
 
-  const setKey = useCallback((vaultId: string, key: CryptoKey) => {
-    setKeys((prev) => ({ ...prev, [vaultId]: key }));
+  const setKey = useCallback((vaultId: string, key: CryptoKey, mode: VaultMode) => {
+    setKeys((prev) => ({ ...prev, [vaultId]: { key, mode } }));
   }, []);
+
+  const getMode = useCallback(
+    (vaultId: string): VaultMode | null => keys[vaultId]?.mode ?? null,
+    [keys],
+  );
 
   const clearKey = useCallback((vaultId: string) => {
     setKeys((prev) => {
@@ -92,7 +101,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <VaultContext.Provider
-      value={{ keys, setKey, clearKey, clearAllKeys, lockTimeout, setLockTimeout }}
+      value={{ keys, setKey, getMode, clearKey, clearAllKeys, lockTimeout, setLockTimeout }}
     >
       {children}
     </VaultContext.Provider>

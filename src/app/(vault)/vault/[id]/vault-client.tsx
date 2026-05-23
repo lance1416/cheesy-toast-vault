@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useVault } from "@/context/vault";
 import { deriveCryptoKey, decryptEntry, base64ToBuffer } from "@/lib/crypto";
 import { isStalePassword, compareByPasswordAge } from "@/lib/stale-password";
-import { SearchIcon, LockIcon, DotsHorizontalIcon } from "@/components/icons";
+import { SearchIcon, LockIcon, DotsHorizontalIcon, SettingsIcon } from "@/components/icons";
 import type {
   EntryPayload,
   EncryptedEntryProp,
@@ -23,6 +23,7 @@ import HistoryModal from "../../_components/history-modal";
 import TrashView from "../../_components/trash-view";
 import UndoToast from "../../_components/undo-toast";
 import KeyboardShortcutHelp from "../../_components/keyboard-shortcut-help";
+import VaultSettingsModal from "../../_components/vault-settings-modal";
 import { useKeyboardShortcuts } from "@/lib/use-keyboard-shortcuts";
 
 const PAGE_NOW = Date.now();
@@ -298,14 +299,15 @@ export default function VaultClient({
   tags: initialTags,
   customTypes = [],
 }: {
-  vault: { id: string; name: string; salt: string };
+  vault: { id: string; name: string; salt: string; decoySalt: string | null };
   entries: EncryptedEntryProp[];
   tags: Tag[];
   customTypes?: CustomEntryTypeDef[];
 }) {
   const router = useRouter();
-  const { keys, setKey, clearKey } = useVault();
-  const cryptoKey = keys[vault.id] ?? null;
+  const { keys, setKey, getMode, clearKey } = useVault();
+  const cryptoKey = keys[vault.id]?.key ?? null;
+  const vaultMode = getMode(vault.id);
 
   const [vaultName, setVaultName] = useState(vault.name);
   const [decrypted, setDecrypted] = useState<DecryptedEntry[] | null>(null);
@@ -319,6 +321,7 @@ export default function VaultClient({
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [showManageTags, setShowManageTags] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showVaultSettings, setShowVaultSettings] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sort, setSort] = useState<
@@ -337,7 +340,13 @@ export default function VaultClient({
   } | null>(null);
 
   const searchRef = useRef<HTMLInputElement>(null);
-  const anyModalOpen = showNew || !!editingEntry || !!historyEntryId || showManageTags || showHelp;
+  const anyModalOpen =
+    showNew ||
+    !!editingEntry ||
+    !!historyEntryId ||
+    showManageTags ||
+    showHelp ||
+    showVaultSettings;
 
   useKeyboardShortcuts(
     {
@@ -351,10 +360,11 @@ export default function VaultClient({
   );
 
   useEffect(() => {
-    if (!cryptoKey) return;
+    if (!cryptoKey || !vaultMode) return;
     let cancelled = false;
+    const visibleEntries = entries.filter((e) => (vaultMode === "decoy" ? e.isDecoy : !e.isDecoy));
     Promise.all(
-      entries.map(async (e) => {
+      visibleEntries.map(async (e) => {
         const payload = await decryptEntry<EntryPayload>(cryptoKey, e.encryptedBlob, e.iv);
         return {
           ...payload,
@@ -375,7 +385,7 @@ export default function VaultClient({
     return () => {
       cancelled = true;
     };
-  }, [cryptoKey, entries]);
+  }, [cryptoKey, vaultMode, entries]);
 
   const staleCount = useMemo(
     () =>
@@ -621,11 +631,35 @@ export default function VaultClient({
     setUnlockError("");
     setUnlocking(true);
     try {
+      const realEntries = entries.filter((e) => !e.isDecoy);
+      const decoyEntries = entries.filter((e) => e.isDecoy);
+
+      // Phase 1: try real password
       const key = await deriveCryptoKey(password, base64ToBuffer(vault.salt));
-      if (entries.length > 0) {
-        await decryptEntry(key, entries[0].encryptedBlob, entries[0].iv);
+      if (realEntries.length > 0) {
+        try {
+          await decryptEntry(key, realEntries[0].encryptedBlob, realEntries[0].iv);
+          setKey(vault.id, key, "real");
+          return;
+        } catch {
+          // Phase 2: try decoy password if configured
+          if (vault.decoySalt && decoyEntries.length > 0) {
+            const decoyKey = await deriveCryptoKey(password, base64ToBuffer(vault.decoySalt));
+            try {
+              await decryptEntry(decoyKey, decoyEntries[0].encryptedBlob, decoyEntries[0].iv);
+              setKey(vault.id, decoyKey, "decoy");
+              return;
+            } catch {
+              // both phases failed — fall through to error
+            }
+          }
+          setUnlockError("Incorrect vault password.");
+          return;
+        }
       }
-      setKey(vault.id, key);
+
+      // No real entries yet — can't verify, assume real mode
+      setKey(vault.id, key, "real");
     } catch (err) {
       const isDomError = err instanceof DOMException && err.name === "OperationError";
       setUnlockError(
@@ -674,6 +708,14 @@ export default function VaultClient({
                 {selectionMode ? "Cancel" : "Select"}
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => setShowVaultSettings(true)}
+              aria-label="Vault settings"
+              className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-line text-muted hover:text-default hover:bg-line transition-colors"
+            >
+              <SettingsIcon />
+            </button>
             <button
               type="button"
               onClick={() => clearKey(vault.id)}
@@ -1049,6 +1091,7 @@ export default function VaultClient({
         <NewEntryModal
           vaultId={vault.id}
           cryptoKey={cryptoKey}
+          isDecoy={vaultMode === "decoy"}
           tags={allTags}
           onTagCreated={handleTagCreated}
           onClose={() => setShowNew(false)}
@@ -1079,6 +1122,15 @@ export default function VaultClient({
             else void handleMoveToTrash([id], []);
           }}
           customTypes={customTypes}
+        />
+      )}
+
+      {showVaultSettings && (
+        <VaultSettingsModal
+          vaultId={vault.id}
+          hasDecoy={!!vault.decoySalt}
+          onClose={() => setShowVaultSettings(false)}
+          onDecoyChanged={() => router.refresh()}
         />
       )}
 

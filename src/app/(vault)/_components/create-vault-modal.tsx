@@ -49,7 +49,7 @@ export default function CreateVaultModal({
       if (!res.ok) throw new Error();
       const { id } = (await res.json()) as { id: string };
       const key = await deriveCryptoKey(password, salt);
-      setKey(id, key);
+      setKey(id, key, "real");
       onCreated(id);
     } catch {
       setError("Something went wrong. Please try again.");
