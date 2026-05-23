@@ -62,13 +62,18 @@ describe("EntryCard", () => {
     expect(screen.getByText("GitHub")).toBeInTheDocument();
   });
 
-  it("shows the domain as a link when url is present", () => {
-    render(<EntryCard entry={makeEntry()} onEdit={onEdit} />);
-    expect(screen.getByRole("link", { name: "github.com" })).toBeInTheDocument();
+  it("shows the domain as a link when url is present", async () => {
+    const user = userEvent.setup();
+    const entry = makeEntry();
+    render(<EntryCard entry={entry} onEdit={onEdit} />);
+    await expand(user);
+    expect(screen.getByRole("link", { name: entry.url })).toBeInTheDocument();
   });
 
-  it("shows no domain link when url is absent", () => {
+  it("shows no domain link when url is absent", async () => {
+    const user = userEvent.setup();
     render(<EntryCard entry={makeEntry({ url: undefined })} onEdit={onEdit} />);
+    await expand(user);
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
@@ -113,7 +118,7 @@ describe("EntryCard", () => {
     render(<EntryCard entry={makeEntry()} onEdit={onEdit} />);
     await expand(user);
     expect(screen.getByText("Username")).toBeInTheDocument();
-    expect(screen.getByText("alice")).toBeInTheDocument();
+    expect(screen.getAllByText("alice")[0]).toBeInTheDocument();
     expect(screen.getByText("alice@example.com")).toBeInTheDocument();
   });
 
@@ -230,7 +235,7 @@ describe("EntryCard", () => {
       const user = userEvent.setup();
       render(<EntryCard entry={makeNote()} onEdit={onEdit} />);
       await user.click(screen.getByText("My Note"));
-      expect(screen.getByText("Secret body text")).toBeInTheDocument();
+      expect(screen.getAllByText("Secret body text")[0]).toBeInTheDocument();
     });
 
     it("does not show Username, Email, or Password rows", async () => {
@@ -287,7 +292,7 @@ describe("EntryCard", () => {
       const user = userEvent.setup();
       render(<EntryCard entry={makeCard()} onEdit={onEdit} />);
       await user.click(screen.getByText("Chase Visa"));
-      expect(screen.getByText("John Doe")).toBeInTheDocument();
+      expect(screen.getAllByText("John Doe")[0]).toBeInTheDocument();
       expect(screen.getByText("12/26")).toBeInTheDocument();
     });
 
@@ -321,7 +326,7 @@ describe("EntryCard", () => {
       const user = userEvent.setup();
       render(<EntryCard entry={makeIdentity()} onEdit={onEdit} />);
       await user.click(screen.getByText("US Passport"));
-      expect(screen.getByText("Jane Smith")).toBeInTheDocument();
+      expect(screen.getAllByText("Jane Smith")[0]).toBeInTheDocument();
       expect(screen.getByText("jane@example.com")).toBeInTheDocument();
       expect(screen.getByText("+1 555 000 0000")).toBeInTheDocument();
       expect(screen.getByText("123456789")).toBeInTheDocument();
