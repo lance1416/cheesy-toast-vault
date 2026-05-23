@@ -59,7 +59,7 @@ test.describe("Auth redirects", () => {
   test("unauthenticated users see the public landing page at /", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveURL("/");
-    await expect(page.getByRole("link", { name: /sign in/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /sign in/i }).first()).toBeVisible();
   });
 
   test("unauthenticated users are redirected to /login for protected routes", async ({ page }) => {

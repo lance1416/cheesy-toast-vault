@@ -8,7 +8,7 @@ async function unlockVault(page: Page, vault: VaultData): Promise<void> {
   await page.goto(`/vault/${vault.id}`);
   await expect(page.getByPlaceholder(/vault password/i)).toBeVisible({ timeout: 5_000 });
   await page.getByPlaceholder(/vault password/i).fill("any-password");
-  await page.getByRole("button", { name: /^unlock$/i }).click();
+  await page.getByRole("button", { name: /^unlock vault$/i }).click();
   await expect(page.getByRole("button", { name: /\+ add entry/i })).toBeVisible({
     timeout: 10_000,
   });
@@ -29,12 +29,14 @@ async function addEntry(page: Page, name: string): Promise<void> {
 test.describe("Vault list page", () => {
   test("renders the vault in the list", async ({ authedPage: page, vaultData }) => {
     await page.goto("/vaults");
-    await expect(page.getByText(vaultData.name)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole("heading", { name: vaultData.name })).toBeVisible({
+      timeout: 5_000,
+    });
   });
 
   test("shows the user avatar / menu", async ({ authedPage: page }) => {
     await page.goto("/vaults");
-    await expect(page.getByRole("button", { name: "User menu" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
   });
 
   test("clicking a vault navigates to the vault detail page", async ({
@@ -42,7 +44,7 @@ test.describe("Vault list page", () => {
     vaultData,
   }) => {
     await page.goto("/vaults");
-    await page.getByText(vaultData.name).click();
+    await page.getByRole("heading", { name: vaultData.name }).click();
     await expect(page).toHaveURL(/\/vault\/.+/, { timeout: 5_000 });
   });
 });
@@ -57,11 +59,11 @@ test.describe("Vault lock screen", () => {
 
   test("shows the vault name in the header", async ({ authedPage: page, vaultData }) => {
     await page.goto(`/vault/${vaultData.id}`);
-    // <header> has role "banner". The header contains two h1s (mobile + desktop layout);
-    // getByRole("heading") excludes the mobile one (display:none in the desktop viewport).
-    await expect(
-      page.getByRole("banner").getByRole("heading", { name: vaultData.name }),
-    ).toBeVisible({ timeout: 5_000 });
+    // The vault name heading is in the main content area on desktop (the mobile
+    // VaultHeader is hidden via md:hidden). Target the visible heading directly.
+    await expect(page.getByRole("heading", { name: vaultData.name })).toBeVisible({
+      timeout: 5_000,
+    });
   });
 
   test("wrong password shows an error and keeps the vault locked", async ({
@@ -71,7 +73,7 @@ test.describe("Vault lock screen", () => {
     await page.goto(`/vault/${lockedVaultData.id}`);
     await expect(page.getByPlaceholder(/vault password/i)).toBeVisible({ timeout: 5_000 });
     await page.getByPlaceholder(/vault password/i).fill("WrongVaultPass1!");
-    await page.getByRole("button", { name: /^unlock$/i }).click();
+    await page.getByRole("button", { name: /^unlock vault$/i }).click();
     await expect(
       page.getByRole("alert").filter({ hasText: /incorrect vault password/i }),
     ).toBeVisible({ timeout: 5_000 });
@@ -140,8 +142,7 @@ test.describe("Vault entry CRUD", () => {
       .click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
-    await page.getByRole("button", { name: /delete entry/i }).click();
-    await page.getByRole("button", { name: /yes, delete/i }).click();
+    await page.getByRole("button", { name: /move to trash/i }).click();
     await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
     await expect(page.getByText("To Be Deleted")).not.toBeVisible({ timeout: 3_000 });
   });
@@ -184,7 +185,7 @@ test.describe("Entry types", () => {
 
     // Expand the card and verify body text is visible
     await page.getByText("Shopping list").click();
-    await expect(page.getByText("Milk, eggs, cheese")).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByText("Milk, eggs, cheese").first()).toBeVisible({ timeout: 3_000 });
   });
 
   test("Note: no breach-check button is shown", async ({ authedPage: page, vaultData }) => {
@@ -242,7 +243,7 @@ test.describe("Entry types", () => {
     await expect(page.getByText("UK Passport")).toBeVisible({ timeout: 5_000 });
 
     await page.getByText("UK Passport").click();
-    await expect(page.getByText("Jane Smith")).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByText("Jane Smith").first()).toBeVisible({ timeout: 3_000 });
     await expect(page.getByText("+44 7700 900000")).toBeVisible();
     await expect(page.getByText("123456789")).toBeVisible();
   });
@@ -279,7 +280,7 @@ test.describe("Entry types", () => {
 test.describe("Settings page", () => {
   test("renders the change login password section", async ({ authedPage: page }) => {
     await page.goto("/settings");
-    await expect(page.getByText(/change login password/i)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/login password/i)).toBeVisible({ timeout: 5_000 });
   });
 });
 
@@ -290,7 +291,7 @@ test.describe("Settings page", () => {
 test.describe("Settings — email change", () => {
   test("wrong password shows an error", async ({ authedPage: page }) => {
     await page.goto("/settings");
-    await page.getByRole("button", { name: /^change email$/i }).click();
+    await page.getByRole("button", { name: /^change$/i }).click();
     await page.locator("#new-email").fill("changed@test.example");
     await page.locator("#email-current-password").fill("WrongLoginPass1!");
     await page.getByRole("button", { name: /^update email$/i }).click();
@@ -302,7 +303,7 @@ test.describe("Settings — email change", () => {
 
   test("correct password shows success banner and signs out", async ({ authedPage: page }) => {
     await page.goto("/settings");
-    await page.getByRole("button", { name: /^change email$/i }).click();
+    await page.getByRole("button", { name: /^change$/i }).click();
     await page.locator("#new-email").fill("changed@test.example");
     await page.locator("#email-current-password").fill(FIXTURE_PASSWORD);
     await page.getByRole("button", { name: /^update email$/i }).click();
@@ -319,7 +320,6 @@ test.describe("Settings — email change", () => {
 test.describe("Sign out", () => {
   test("signing out redirects to the landing page", async ({ authedPage: page }) => {
     await page.goto("/vaults");
-    await page.getByRole("button", { name: "User menu" }).click();
     await page.getByRole("button", { name: /sign out/i }).click();
     await expect(page).toHaveURL("/", { timeout: 5_000 });
   });

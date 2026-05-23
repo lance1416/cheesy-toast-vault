@@ -69,7 +69,6 @@ test.describe("Login with backup codes", () => {
     await page.waitForURL("/vaults", { timeout: 10_000 });
 
     // ── Step 2: sign out ──────────────────────────────────────────────────────
-    await page.getByRole("button", { name: "User menu" }).click();
     await page.getByRole("button", { name: /sign out/i }).click();
     await page.waitForURL("/", { timeout: 5_000 });
 
