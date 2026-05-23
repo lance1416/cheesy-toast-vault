@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Playfair_Display, DM_Sans } from "next/font/google";
 import { VaultProvider } from "@/context/vault";
 import { ColorSchemeProvider } from "@/context/color-scheme";
@@ -14,9 +14,31 @@ const playfair = Playfair_Display({
 });
 const dmSans = DM_Sans({ variable: "--font-dm-sans", subsets: ["latin"], display: "swap" });
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#d97706" },
+    { media: "(prefers-color-scheme: dark)", color: "#1c1917" },
+  ],
+};
+
 export const metadata: Metadata = {
-  title: "Cheesy Toast Vault",
+  title: {
+    default: "Cheesy Toast Vault",
+    template: "%s | Cheesy Toast Vault",
+  },
   description: "Your personal encrypted password book",
+  metadataBase: new URL(process.env.NEXTAUTH_URL ?? "http://localhost:3000"),
+  openGraph: {
+    type: "website",
+    siteName: "Cheesy Toast Vault",
+    title: "Cheesy Toast Vault",
+    description: "Your personal encrypted password book",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cheesy Toast Vault",
+    description: "Your personal encrypted password book",
+  },
 };
 
 export default function RootLayout({
