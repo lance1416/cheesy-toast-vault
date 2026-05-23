@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { EyeIcon, ChevronIcon, CopyIcon, ShieldIcon, CloseIcon, PinIcon } from "@/components/icons";
+import {
+  EyeIcon,
+  ChevronIcon,
+  CopyIcon,
+  ShieldIcon,
+  CloseIcon,
+  PinIcon,
+  NoteIcon,
+  CreditCardIcon,
+  IdentityIcon,
+} from "@/components/icons";
 import { checkBreach } from "@/lib/crypto";
 import { isStalePassword, passwordAgeDays as getPasswordAgeDays } from "@/lib/stale-password";
 import type { DecryptedEntry } from "@/types/vault";
@@ -224,7 +234,7 @@ export default function EntryCard({
   async function handleBreachCheck() {
     setBreachStatus("checking");
     try {
-      const count = await checkBreach(entry.password);
+      const count = await checkBreach(entry.password ?? "");
       setBreachStatus(count === 0 ? "safe" : count);
     } catch {
       setBreachStatus("error");
@@ -278,6 +288,18 @@ export default function EntryCard({
                 />
               </svg>
             )}
+          </div>
+        ) : entry.entryType === "note" ? (
+          <div className="w-6 h-6 rounded-md bg-stone-100 dark:bg-stone-700 flex items-center justify-center text-muted shrink-0">
+            <NoteIcon size={13} />
+          </div>
+        ) : entry.entryType === "card" ? (
+          <div className="w-6 h-6 rounded-md bg-stone-100 dark:bg-stone-700 flex items-center justify-center text-muted shrink-0">
+            <CreditCardIcon size={13} />
+          </div>
+        ) : entry.entryType === "identity" ? (
+          <div className="w-6 h-6 rounded-md bg-stone-100 dark:bg-stone-700 flex items-center justify-center text-muted shrink-0">
+            <IdentityIcon size={13} />
           </div>
         ) : entry.url ? (
           <Favicon url={entry.url} name={entry.name} />
@@ -369,86 +391,206 @@ export default function EntryCard({
           id={`entry-body-${entry.id}`}
           className="px-4 pt-3 pb-4 border-t border-divider space-y-2"
         >
-          {[
-            {
-              label: "Username",
-              value: entry.username,
-              actions: <CopyButton value={entry.username} />,
-            },
-            { label: "Email", value: entry.email, actions: <CopyButton value={entry.email} /> },
-          ].map(({ label, value, actions }) => (
-            <div key={label} className="flex items-center gap-2">
-              <span className="w-20 shrink-0 text-xs font-medium text-muted">{label}</span>
-              <span className="flex-1 truncate text-sm text-default">{value}</span>
-              <div className="shrink-0">{actions}</div>
-            </div>
-          ))}
-
-          {/* Password row — separate to support inline breach check */}
-          <div className="flex items-center gap-2">
-            <span className="w-20 shrink-0 text-xs font-medium text-muted">Password</span>
-            <span className="flex-1 truncate text-sm text-default font-mono">
-              {showPassword ? entry.password : "••••••••"}
-            </span>
-            <div className="shrink-0 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-pressed={showPassword}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="text-subtle hover:text-default transition-colors"
-              >
-                <EyeIcon open={showPassword} />
-              </button>
-              <CopyButton value={entry.password} />
-              {breachStatus === "idle" && (
-                <button
-                  type="button"
-                  onClick={handleBreachCheck}
-                  aria-label="Check for breaches"
-                  className="text-subtle hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
-                >
-                  <ShieldIcon />
-                </button>
-              )}
-              {breachStatus === "checking" && (
-                <span className="text-xs text-subtle animate-pulse">checking</span>
-              )}
-              {breachStatus !== "idle" && breachStatus !== "checking" && (
-                <div className="flex items-center gap-1">
-                  {breachStatus === "safe" && (
-                    <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                      Safe
-                    </span>
-                  )}
-                  {breachStatus === "error" && <span className="text-xs text-muted">Failed</span>}
-                  {typeof breachStatus === "number" && (
-                    <span className="text-xs font-medium text-red-600 dark:text-red-400">
-                      Seen {breachStatus.toLocaleString()}×
-                    </span>
-                  )}
+          {/* ── Login ── */}
+          {(!entry.entryType || entry.entryType === "login") && (
+            <>
+              {[
+                {
+                  label: "Username",
+                  value: entry.username ?? "",
+                  actions: <CopyButton value={entry.username ?? ""} />,
+                },
+                {
+                  label: "Email",
+                  value: entry.email ?? "",
+                  actions: <CopyButton value={entry.email ?? ""} />,
+                },
+              ].map(({ label, value, actions }) => (
+                <div key={label} className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs font-medium text-muted">{label}</span>
+                  <span className="flex-1 truncate text-sm text-default">{value}</span>
+                  <div className="shrink-0">{actions}</div>
+                </div>
+              ))}
+              <div className="flex items-center gap-2">
+                <span className="w-20 shrink-0 text-xs font-medium text-muted">Password</span>
+                <span className="flex-1 truncate text-sm text-default font-mono">
+                  {showPassword ? (entry.password ?? "") : "••••••••"}
+                </span>
+                <div className="shrink-0 flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setBreachStatus("idle")}
-                    aria-label="Dismiss breach result"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-pressed={showPassword}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     className="text-subtle hover:text-default transition-colors"
                   >
-                    <CloseIcon size={12} />
+                    <EyeIcon open={showPassword} />
                   </button>
+                  <CopyButton value={entry.password ?? ""} />
+                  {breachStatus === "idle" && (
+                    <button
+                      type="button"
+                      onClick={handleBreachCheck}
+                      aria-label="Check for breaches"
+                      className="text-subtle hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                    >
+                      <ShieldIcon />
+                    </button>
+                  )}
+                  {breachStatus === "checking" && (
+                    <span className="text-xs text-subtle animate-pulse">checking</span>
+                  )}
+                  {breachStatus !== "idle" && breachStatus !== "checking" && (
+                    <div className="flex items-center gap-1">
+                      {breachStatus === "safe" && (
+                        <span className="text-xs font-medium text-green-600 dark:text-green-400">
+                          Safe
+                        </span>
+                      )}
+                      {breachStatus === "error" && (
+                        <span className="text-xs text-muted">Failed</span>
+                      )}
+                      {typeof breachStatus === "number" && (
+                        <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                          Seen {breachStatus.toLocaleString()}×
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setBreachStatus("idle")}
+                        aria-label="Dismiss breach result"
+                        className="text-subtle hover:text-default transition-colors"
+                      >
+                        <CloseIcon size={12} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {entry.totpSecret && <TotpRow secret={entry.totpSecret} />}
+              {entry.notes && (
+                <div className="flex gap-2 pt-1">
+                  <span className="w-20 shrink-0 text-xs font-medium text-muted pt-0.5">Notes</span>
+                  <p className="flex-1 text-sm text-muted whitespace-pre-wrap break-words">
+                    {entry.notes}
+                  </p>
                 </div>
               )}
-            </div>
-          </div>
+            </>
+          )}
 
-          {entry.totpSecret && <TotpRow secret={entry.totpSecret} />}
+          {/* ── Note ── */}
+          {entry.entryType === "note" && (
+            <p className="text-sm text-default whitespace-pre-wrap break-words">{entry.body}</p>
+          )}
 
-          {entry.notes && (
-            <div className="flex gap-2 pt-1">
-              <span className="w-20 shrink-0 text-xs font-medium text-muted pt-0.5">Notes</span>
-              <p className="flex-1 text-sm text-muted whitespace-pre-wrap break-words">
-                {entry.notes}
-              </p>
-            </div>
+          {/* ── Card ── */}
+          {entry.entryType === "card" && (
+            <>
+              {entry.cardholderName && (
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs font-medium text-muted">Name</span>
+                  <span className="flex-1 truncate text-sm text-default">
+                    {entry.cardholderName}
+                  </span>
+                  <CopyButton value={entry.cardholderName} />
+                </div>
+              )}
+              {entry.cardNumber && (
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs font-medium text-muted">Number</span>
+                  <span className="flex-1 truncate text-sm text-default font-mono">
+                    {showPassword
+                      ? entry.cardNumber
+                      : `•••• •••• •••• ${entry.cardNumber.slice(-4)}`}
+                  </span>
+                  <div className="shrink-0 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-pressed={showPassword}
+                      aria-label={showPassword ? "Hide number" : "Show number"}
+                      className="text-subtle hover:text-default transition-colors"
+                    >
+                      <EyeIcon open={showPassword} />
+                    </button>
+                    <CopyButton value={entry.cardNumber} />
+                  </div>
+                </div>
+              )}
+              {entry.cardExpiry && (
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs font-medium text-muted">Expiry</span>
+                  <span className="flex-1 text-sm text-default">{entry.cardExpiry}</span>
+                  <CopyButton value={entry.cardExpiry} />
+                </div>
+              )}
+              {entry.cardCvv && (
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs font-medium text-muted">CVV</span>
+                  <span className="flex-1 font-mono text-sm text-default">
+                    {showPassword ? entry.cardCvv : "•••"}
+                  </span>
+                  <CopyButton value={entry.cardCvv} />
+                </div>
+              )}
+              {entry.cardPin && (
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs font-medium text-muted">PIN</span>
+                  <span className="flex-1 font-mono text-sm text-default">
+                    {"•".repeat(entry.cardPin.length)}
+                  </span>
+                  <CopyButton value={entry.cardPin} />
+                </div>
+              )}
+              {entry.notes && (
+                <div className="flex gap-2 pt-1">
+                  <span className="w-20 shrink-0 text-xs font-medium text-muted pt-0.5">Notes</span>
+                  <p className="flex-1 text-sm text-muted whitespace-pre-wrap break-words">
+                    {entry.notes}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── Identity ── */}
+          {entry.entryType === "identity" && (
+            <>
+              {[
+                { label: "Full name", value: entry.fullName },
+                { label: "Email", value: entry.email },
+                { label: "Phone", value: entry.phone },
+                { label: "ID number", value: entry.idNumber },
+              ]
+                .filter((r) => r.value)
+                .map(({ label, value }) => (
+                  <div key={label} className="flex items-center gap-2">
+                    <span className="w-20 shrink-0 text-xs font-medium text-muted">{label}</span>
+                    <span className="flex-1 truncate text-sm text-default">{value}</span>
+                    <CopyButton value={value!} />
+                  </div>
+                ))}
+              {entry.address && (
+                <div className="flex gap-2">
+                  <span className="w-20 shrink-0 text-xs font-medium text-muted pt-0.5">
+                    Address
+                  </span>
+                  <p className="flex-1 text-sm text-default whitespace-pre-wrap break-words">
+                    {entry.address}
+                  </p>
+                </div>
+              )}
+              {entry.notes && (
+                <div className="flex gap-2 pt-1">
+                  <span className="w-20 shrink-0 text-xs font-medium text-muted pt-0.5">Notes</span>
+                  <p className="flex-1 text-sm text-muted whitespace-pre-wrap break-words">
+                    {entry.notes}
+                  </p>
+                </div>
+              )}
+            </>
           )}
 
           <div className="flex items-center justify-between pt-2 mt-1 border-t border-divider">

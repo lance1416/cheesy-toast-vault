@@ -18,6 +18,7 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
         encryptedBlob: e.encryptedBlob,
         iv: e.iv,
         pinned: e.pinned,
+        entryType: e.entryType,
         tags: e.tags,
         updatedAt: e.updatedAt.toISOString(),
       }))}

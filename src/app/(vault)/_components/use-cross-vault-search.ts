@@ -61,6 +61,7 @@ export function useCrossVaultSearch(): CrossVaultSearchResult {
               ...payload,
               id: e.id,
               pinned: e.pinned,
+              entryType: e.entryType,
               tags: e.tags,
               updatedAt: e.updatedAt,
               vaultId: v.id,
@@ -86,8 +87,8 @@ export function useCrossVaultSearch(): CrossVaultSearchResult {
       (e) =>
         e.name.toLowerCase().includes(q) ||
         e.url?.toLowerCase().includes(q) ||
-        e.username.toLowerCase().includes(q) ||
-        e.email.toLowerCase().includes(q) ||
+        e.username?.toLowerCase().includes(q) ||
+        e.email?.toLowerCase().includes(q) ||
         e.notes?.toLowerCase().includes(q),
     );
   }, [allDecrypted, searchQuery]);

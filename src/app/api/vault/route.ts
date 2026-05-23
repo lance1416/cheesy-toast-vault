@@ -8,6 +8,7 @@ const createSchema = z.object({
   vaultId: z.string().min(1),
   encryptedBlob: z.string().min(1),
   iv: z.string().min(1),
+  entryType: z.enum(["login", "note", "card", "identity"]).default("login"),
   tagIds: z.array(z.string()).optional(),
 });
 
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
-    const { vaultId, encryptedBlob, iv, tagIds } = parsed.data;
+    const { vaultId, encryptedBlob, iv, entryType, tagIds } = parsed.data;
 
     // Verify vault belongs to current user
     const vault = await db.vault.findFirst({
@@ -34,6 +35,7 @@ export async function POST(req: Request) {
         vaultId,
         encryptedBlob,
         iv,
+        entryType,
         tags: tagIds?.length ? { connect: tagIds.map((id) => ({ id })) } : undefined,
       },
       select: { id: true },

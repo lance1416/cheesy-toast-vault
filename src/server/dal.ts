@@ -113,6 +113,7 @@ export const getVaultEntries = cache(async (vaultId: string) => {
       encryptedBlob: true,
       iv: true,
       pinned: true,
+      entryType: true,
       updatedAt: true,
       tags: { select: { id: true, name: true } },
     },

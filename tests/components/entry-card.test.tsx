@@ -31,6 +31,7 @@ function makeEntry(overrides: Partial<DecryptedEntry> = {}): DecryptedEntry {
     password: "super-secret-pw",
     notes: "",
     pinned: false,
+    entryType: "login",
     tags: [],
     updatedAt: new Date(NOW - DAY_MS).toISOString(),
     passwordChangedAt: new Date(NOW - DAY_MS).toISOString(), // 1 day old → not stale
@@ -207,6 +208,139 @@ describe("EntryCard", () => {
     render(<EntryCard entry={makeEntry()} onEdit={onEdit} />);
     await expand(user);
     expect(screen.queryByText("2FA Code")).not.toBeInTheDocument();
+  });
+
+  // ── Entry types ─────────────────────────────────────────────────────────────
+
+  describe("note type", () => {
+    function makeNote(overrides: Partial<DecryptedEntry> = {}): DecryptedEntry {
+      return makeEntry({
+        entryType: "note",
+        name: "My Note",
+        body: "Secret body text",
+        username: undefined,
+        email: undefined,
+        password: undefined,
+        url: undefined,
+        ...overrides,
+      });
+    }
+
+    it("shows body text when expanded", async () => {
+      const user = userEvent.setup();
+      render(<EntryCard entry={makeNote()} onEdit={onEdit} />);
+      await user.click(screen.getByText("My Note"));
+      expect(screen.getByText("Secret body text")).toBeInTheDocument();
+    });
+
+    it("does not show Username, Email, or Password rows", async () => {
+      const user = userEvent.setup();
+      render(<EntryCard entry={makeNote()} onEdit={onEdit} />);
+      await user.click(screen.getByText("My Note"));
+      expect(screen.queryByText("Username")).not.toBeInTheDocument();
+      expect(screen.queryByText("Email")).not.toBeInTheDocument();
+      expect(screen.queryByText("Password")).not.toBeInTheDocument();
+    });
+
+    it("does not show the breach check button", async () => {
+      const user = userEvent.setup();
+      render(<EntryCard entry={makeNote()} onEdit={onEdit} />);
+      await user.click(screen.getByText("My Note"));
+      expect(screen.queryByRole("button", { name: /check for breaches/i })).not.toBeInTheDocument();
+    });
+  });
+
+  describe("card type", () => {
+    function makeCard(overrides: Partial<DecryptedEntry> = {}): DecryptedEntry {
+      return makeEntry({
+        entryType: "card",
+        name: "Chase Visa",
+        cardholderName: "John Doe",
+        cardNumber: "4111111111111234",
+        cardExpiry: "12/26",
+        cardCvv: "123",
+        username: undefined,
+        email: undefined,
+        password: undefined,
+        url: undefined,
+        ...overrides,
+      });
+    }
+
+    it("shows masked card number (all but last 4 replaced with bullets) when collapsed", async () => {
+      const user = userEvent.setup();
+      render(<EntryCard entry={makeCard()} onEdit={onEdit} />);
+      await user.click(screen.getByText("Chase Visa"));
+      expect(screen.getByText("•••• •••• •••• 1234")).toBeInTheDocument();
+      expect(screen.queryByText("4111111111111234")).not.toBeInTheDocument();
+    });
+
+    it("reveals full card number when the show-number toggle is clicked", async () => {
+      const user = userEvent.setup();
+      render(<EntryCard entry={makeCard()} onEdit={onEdit} />);
+      await user.click(screen.getByText("Chase Visa"));
+      await user.click(screen.getByRole("button", { name: /show number/i }));
+      expect(screen.getByText("4111111111111234")).toBeInTheDocument();
+    });
+
+    it("shows cardholder name and expiry rows", async () => {
+      const user = userEvent.setup();
+      render(<EntryCard entry={makeCard()} onEdit={onEdit} />);
+      await user.click(screen.getByText("Chase Visa"));
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+      expect(screen.getByText("12/26")).toBeInTheDocument();
+    });
+
+    it("does not show Username or Password rows", async () => {
+      const user = userEvent.setup();
+      render(<EntryCard entry={makeCard()} onEdit={onEdit} />);
+      await user.click(screen.getByText("Chase Visa"));
+      expect(screen.queryByText("Username")).not.toBeInTheDocument();
+      expect(screen.queryByText("Password")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("identity type", () => {
+    function makeIdentity(overrides: Partial<DecryptedEntry> = {}): DecryptedEntry {
+      return makeEntry({
+        entryType: "identity",
+        name: "US Passport",
+        fullName: "Jane Smith",
+        email: "jane@example.com",
+        phone: "+1 555 000 0000",
+        idNumber: "123456789",
+        address: "123 Main St",
+        username: undefined,
+        password: undefined,
+        url: undefined,
+        ...overrides,
+      });
+    }
+
+    it("shows full name, email, phone, and ID number rows", async () => {
+      const user = userEvent.setup();
+      render(<EntryCard entry={makeIdentity()} onEdit={onEdit} />);
+      await user.click(screen.getByText("US Passport"));
+      expect(screen.getByText("Jane Smith")).toBeInTheDocument();
+      expect(screen.getByText("jane@example.com")).toBeInTheDocument();
+      expect(screen.getByText("+1 555 000 0000")).toBeInTheDocument();
+      expect(screen.getByText("123456789")).toBeInTheDocument();
+    });
+
+    it("shows address", async () => {
+      const user = userEvent.setup();
+      render(<EntryCard entry={makeIdentity()} onEdit={onEdit} />);
+      await user.click(screen.getByText("US Passport"));
+      expect(screen.getByText("123 Main St")).toBeInTheDocument();
+    });
+
+    it("does not show Password or breach check", async () => {
+      const user = userEvent.setup();
+      render(<EntryCard entry={makeIdentity()} onEdit={onEdit} />);
+      await user.click(screen.getByText("US Passport"));
+      expect(screen.queryByText("Password")).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /check for breaches/i })).not.toBeInTheDocument();
+    });
   });
 
   // ── Breach check ────────────────────────────────────────────────────────────

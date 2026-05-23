@@ -47,13 +47,15 @@ export default function HealthDashboard({
 
     Promise.all(
       unlockedVaults.flatMap((v) =>
-        v.entries.map(async (e) => {
-          try {
-            return await decryptEntry<EntryPayload>(keys[v.id]!, e.encryptedBlob, e.iv);
-          } catch {
-            return null;
-          }
-        }),
+        v.entries
+          .filter((e) => !e.entryType || e.entryType === "login")
+          .map(async (e) => {
+            try {
+              return await decryptEntry<EntryPayload>(keys[v.id]!, e.encryptedBlob, e.iv);
+            } catch {
+              return null;
+            }
+          }),
       ),
     ).then((results) => {
       if (cancelled) return;
@@ -65,12 +67,14 @@ export default function HealthDashboard({
       const passwordCounts = new Map<string, number>();
 
       for (const e of entries) {
-        if (passwordStrength(e.password).score <= 1) weak++;
+        if (e.password && passwordStrength(e.password).score <= 1) weak++;
         if (isStalePassword(e.passwordChangedAt, now)) stale++;
-        passwordCounts.set(e.password, (passwordCounts.get(e.password) ?? 0) + 1);
+        if (e.password) passwordCounts.set(e.password, (passwordCounts.get(e.password) ?? 0) + 1);
       }
 
-      const duplicate = entries.filter((e) => (passwordCounts.get(e.password) ?? 0) > 1).length;
+      const duplicate = entries.filter(
+        (e) => e.password && (passwordCounts.get(e.password) ?? 0) > 1,
+      ).length;
 
       setHealth({ status: "ready", weak, stale, duplicate, total: entries.length });
     });

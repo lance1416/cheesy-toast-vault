@@ -340,7 +340,14 @@ export default function VaultClient({
     Promise.all(
       entries.map(async (e) => {
         const payload = await decryptEntry<EntryPayload>(cryptoKey, e.encryptedBlob, e.iv);
-        return { ...payload, id: e.id, pinned: e.pinned, tags: e.tags, updatedAt: e.updatedAt };
+        return {
+          ...payload,
+          id: e.id,
+          pinned: e.pinned,
+          entryType: e.entryType,
+          tags: e.tags,
+          updatedAt: e.updatedAt,
+        };
       }),
     )
       .then((results) => {
@@ -355,7 +362,10 @@ export default function VaultClient({
   }, [cryptoKey, entries]);
 
   const staleCount = useMemo(
-    () => (decrypted ?? []).filter((e) => isStalePassword(e.passwordChangedAt, PAGE_NOW)).length,
+    () =>
+      (decrypted ?? []).filter(
+        (e) => e.entryType === "login" && isStalePassword(e.passwordChangedAt, PAGE_NOW),
+      ).length,
     [decrypted],
   );
 
@@ -374,8 +384,8 @@ export default function VaultClient({
         (e) =>
           e.name.toLowerCase().includes(q) ||
           e.url?.toLowerCase().includes(q) ||
-          e.username.toLowerCase().includes(q) ||
-          e.email.toLowerCase().includes(q) ||
+          e.username?.toLowerCase().includes(q) ||
+          e.email?.toLowerCase().includes(q) ||
           e.notes?.toLowerCase().includes(q),
       );
     }

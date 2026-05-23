@@ -19,6 +19,7 @@ export async function GET() {
             encryptedBlob: true,
             iv: true,
             pinned: true,
+            entryType: true,
             updatedAt: true,
             tags: { select: { id: true, name: true } },
           },

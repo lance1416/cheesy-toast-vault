@@ -54,8 +54,7 @@ Losing your vault password means losing your data. By design.
 
 ## Roadmap
 
-- [ ] Custom fields — add arbitrary typed key-value pairs to any entry (text, secret, URL, date)
-- [ ] Entry types — e.g. login, credit card, identity, secure note, each with its own set of fields
+- [ ] Custom entry types — user-defined types with arbitrary field schemas (built-in: login, note, card, identity)
 - [ ] Soft delete / trash — 30-day recovery window before permanent deletion
 - [ ] Bitwarden import — migrate in from a Bitwarden JSON export
 

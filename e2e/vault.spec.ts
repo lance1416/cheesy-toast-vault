@@ -147,6 +147,133 @@ test.describe("Vault entry CRUD", () => {
   });
 });
 
+// ── Entry types ───────────────────────────────────────────────────────────────
+
+test.describe("Entry types", () => {
+  /** Open the new-entry dialog, switch to the given type, and position the
+   *  caller to fill in type-specific fields. */
+  async function openNewEntryAs(
+    page: Page,
+    type: "Login" | "Note" | "Card" | "Identity",
+  ): Promise<void> {
+    await page.getByRole("button", { name: /\+ add entry/i }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    if (type !== "Login") {
+      const dialog = page.getByRole("dialog");
+      await dialog
+        .getByRole("group", { name: /entry type/i })
+        .getByRole("button", { name: type })
+        .click();
+      await expect(dialog.getByRole("heading", { name: `New ${type}` })).toBeVisible();
+    }
+  }
+
+  test("Note: body text is shown when the card is expanded", async ({
+    authedPage: page,
+    vaultData,
+  }) => {
+    await unlockVault(page, vaultData);
+    await openNewEntryAs(page, "Note");
+
+    await page.locator("#new-name").fill("Shopping list");
+    await page.locator("#new-body").fill("Milk, eggs, cheese");
+    await page.getByRole("button", { name: /save entry/i }).click();
+
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Shopping list")).toBeVisible({ timeout: 5_000 });
+
+    // Expand the card and verify body text is visible
+    await page.getByText("Shopping list").click();
+    await expect(page.getByText("Milk, eggs, cheese")).toBeVisible({ timeout: 3_000 });
+  });
+
+  test("Note: no breach-check button is shown", async ({ authedPage: page, vaultData }) => {
+    await unlockVault(page, vaultData);
+    await openNewEntryAs(page, "Note");
+
+    await page.locator("#new-name").fill("Quick note");
+    await page.locator("#new-body").fill("Some secret content");
+    await page.getByRole("button", { name: /save entry/i }).click();
+
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
+    await page.getByText("Quick note").click();
+    await expect(page.getByRole("button", { name: /check for breaches/i })).not.toBeVisible();
+  });
+
+  test("Card: masked card number shown on expand, full number on reveal", async ({
+    authedPage: page,
+    vaultData,
+  }) => {
+    await unlockVault(page, vaultData);
+    await openNewEntryAs(page, "Card");
+
+    await page.locator("#new-name").fill("Chase Visa");
+    await page.locator("#new-cardnumber").fill("4111111111111234");
+    await page.locator("#new-expiry").fill("12/26");
+    await page.getByRole("button", { name: /save entry/i }).click();
+
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Chase Visa")).toBeVisible({ timeout: 5_000 });
+
+    // Expand and check masked number
+    await page.getByText("Chase Visa").click();
+    await expect(page.getByText("•••• •••• •••• 1234")).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByText("12/26")).toBeVisible();
+
+    // Reveal full number
+    await page.getByRole("button", { name: /show number/i }).click();
+    await expect(page.getByText("4111111111111234")).toBeVisible();
+  });
+
+  test("Identity: full name and phone are shown on expand", async ({
+    authedPage: page,
+    vaultData,
+  }) => {
+    await unlockVault(page, vaultData);
+    await openNewEntryAs(page, "Identity");
+
+    await page.locator("#new-name").fill("UK Passport");
+    await page.locator("#new-fullname").fill("Jane Smith");
+    await page.locator("#new-phone").fill("+44 7700 900000");
+    await page.locator("#new-idnumber").fill("123456789");
+    await page.getByRole("button", { name: /save entry/i }).click();
+
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("UK Passport")).toBeVisible({ timeout: 5_000 });
+
+    await page.getByText("UK Passport").click();
+    await expect(page.getByText("Jane Smith")).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByText("+44 7700 900000")).toBeVisible();
+    await expect(page.getByText("123456789")).toBeVisible();
+  });
+
+  test("type picker is not shown in the edit modal (type is immutable)", async ({
+    authedPage: page,
+    vaultData,
+  }) => {
+    await unlockVault(page, vaultData);
+    await openNewEntryAs(page, "Note");
+
+    await page.locator("#new-name").fill("Immutable note");
+    await page.locator("#new-body").fill("content");
+    await page.getByRole("button", { name: /save entry/i }).click();
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
+
+    // Open edit modal
+    await page.getByText("Immutable note").click();
+    await page
+      .getByRole("button", { name: /^edit$/i })
+      .first()
+      .click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+
+    // No type-picker group in the edit modal
+    await expect(page.getByRole("group", { name: /entry type/i })).not.toBeVisible();
+    // The edit modal title reflects the type
+    await expect(page.getByRole("heading", { name: "Edit Note" })).toBeVisible();
+  });
+});
+
 // ── Settings ──────────────────────────────────────────────────────────────────
 
 test.describe("Settings page", () => {

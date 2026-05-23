@@ -1,14 +1,32 @@
 export type Tag = { id: string; name: string };
 
+export type EntryType = "login" | "note" | "card" | "identity";
+
 export type EntryPayload = {
+  // undefined means "login" for entries created before type support was added
+  type?: EntryType;
   name: string;
-  url?: string;
-  username: string;
-  email: string;
-  password: string;
   notes?: string;
-  passwordChangedAt?: string; // ISO timestamp; set on create, updated when password field changes
-  totpSecret?: string; // base32 TOTP seed for the site; encrypted in blob, never sent to server
+  // login
+  url?: string;
+  username?: string;
+  email?: string;
+  password?: string;
+  passwordChangedAt?: string;
+  totpSecret?: string;
+  // note
+  body?: string;
+  // card
+  cardholderName?: string;
+  cardNumber?: string;
+  cardExpiry?: string;
+  cardCvv?: string;
+  cardPin?: string;
+  // identity
+  fullName?: string;
+  phone?: string;
+  address?: string;
+  idNumber?: string;
 };
 
 export type EncryptedEntryProp = {
@@ -16,6 +34,7 @@ export type EncryptedEntryProp = {
   encryptedBlob: string;
   iv: string;
   pinned: boolean;
+  entryType: string;
   tags: { id: string; name: string }[];
   updatedAt: string;
 };
@@ -23,6 +42,7 @@ export type EncryptedEntryProp = {
 export type DecryptedEntry = EntryPayload & {
   id: string;
   pinned: boolean;
+  entryType: string;
   tags: { id: string; name: string }[];
   updatedAt: string;
 };
