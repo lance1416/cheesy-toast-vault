@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { SearchIcon } from "@/components/icons";
-import UserAvatar from "@/components/user-avatar";
 import ThemeToggle from "@/components/theme-toggle";
 import FooterApp from "@/components/footer-app";
 import VaultCard from "./vault-card";
@@ -66,102 +65,85 @@ export default function VaultOverviewClient({ vaults: initialVaults }: { vaults:
 
   return (
     <div
-      className="min-h-screen bg-canvas flex flex-col"
+      className="bg-canvas flex flex-col min-h-full"
       style={{ fontFamily: "var(--font-dm-sans, sans-serif)" }}
     >
-      <header className="sticky top-0 z-10 bg-surface/90 backdrop-blur-sm border-b border-line/80">
-        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-          {/* Wordmark — emoji only on small screens */}
-          <Link
-            href="/vaults"
-            aria-label="Cheesy Toast Vault"
-            className="font-bold text-default tracking-tight hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
-            style={{ fontFamily: "var(--font-playfair, serif)" }}
-          >
-            <span className="text-2xl sm:hidden" aria-hidden="true">
-              🧀
-            </span>
-            <span className="hidden sm:inline text-base">
-              <span aria-hidden="true">🧀 </span>Cheesy Toast Vault
-            </span>
-          </Link>
-
-          {/* Desktop actions */}
-          <div className="hidden md:flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowCreate(true)}
-              className="rounded-lg bg-stone-800 dark:bg-amber-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-amber-700 dark:hover:bg-amber-500 transition-colors"
-            >
-              + New vault
-            </button>
-            <div className="w-px h-5 bg-line" role="separator" aria-hidden="true" />
-            <UserAvatar />
-          </div>
-
-          {/* Mobile hamburger */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen((v) => !v)}
-            aria-expanded={mobileMenuOpen}
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-            className="md:hidden p-2 -mr-1 rounded-lg text-muted hover:text-default hover:bg-line transition-colors"
-          >
-            {mobileMenuOpen ? <XIcon /> : <MenuIcon />}
-          </button>
-        </div>
-      </header>
-
-      {/* Mobile overlay */}
-      {mobileMenuOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-30 md:hidden bg-canvas/60 backdrop-blur-sm"
-            aria-hidden="true"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <nav
-            className="fixed inset-x-3 top-[3.75rem] z-40 md:hidden rounded-2xl bg-surface border border-line/50 shadow-2xl shadow-black/15 p-2 space-y-0.5"
-            style={{ animation: "menu-in 0.15s ease-out" }}
-          >
-            {session?.user?.email && (
-              <p className="px-3 py-2 text-xs text-subtle truncate border-b border-line/40 pb-2 mb-1">
-                {session.user.email}
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                setShowCreate(true);
-                setMobileMenuOpen(false);
-              }}
-              className="w-full text-left rounded-xl px-3 py-2.5 text-sm font-semibold text-white bg-stone-800 dark:bg-amber-600 hover:bg-amber-700 dark:hover:bg-amber-500 transition-colors"
-            >
-              + New vault
-            </button>
-            <div className="h-px bg-line/50 my-1 mx-1" />
+      {/* Mobile-only header — sidebar handles desktop nav */}
+      <div className="md:hidden">
+        <header className="sticky top-0 z-10 bg-surface/90 backdrop-blur-sm border-b border-line/80">
+          <div className="w-full px-4 h-14 flex items-center justify-between gap-4">
             <Link
-              href="/settings"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center px-3 py-2.5 text-sm text-muted hover:text-default hover:bg-sunken rounded-xl transition-colors"
+              href="/vaults"
+              aria-label="Cheesy Toast Vault"
+              className="font-bold text-default tracking-tight hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
+              style={{ fontFamily: "var(--font-playfair, serif)" }}
             >
-              Settings
+              <span className="text-2xl" aria-hidden="true">
+                🧀
+              </span>
             </Link>
-            <div className="flex items-center justify-between px-3 py-2">
-              <span className="text-sm text-muted">Theme</span>
-              <ThemeToggle />
-            </div>
-            <div className="h-px bg-line/50 my-1 mx-1" />
             <button
               type="button"
-              onClick={() => signOut({ callbackUrl: "/" })}
-              className="w-full text-left rounded-xl px-3 py-2.5 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              aria-expanded={mobileMenuOpen}
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              className="p-2 -mr-1 rounded-lg text-muted hover:text-default hover:bg-line transition-colors"
             >
-              Sign out
+              {mobileMenuOpen ? <XIcon /> : <MenuIcon />}
             </button>
-          </nav>
-        </>
-      )}
+          </div>
+        </header>
+
+        {mobileMenuOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-30 bg-canvas/60 backdrop-blur-sm"
+              aria-hidden="true"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <nav
+              className="fixed inset-x-3 top-[3.75rem] z-40 rounded-2xl bg-surface border border-line/50 shadow-2xl shadow-black/15 p-2 space-y-0.5"
+              style={{ animation: "menu-in 0.15s ease-out" }}
+            >
+              {session?.user?.email && (
+                <p className="px-3 py-2 text-xs text-subtle truncate border-b border-line/40 pb-2 mb-1">
+                  {session.user.email}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreate(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full text-left rounded-xl px-3 py-2.5 text-sm font-semibold text-white bg-stone-800 dark:bg-amber-600 hover:bg-amber-700 dark:hover:bg-amber-500 transition-colors"
+              >
+                + New vault
+              </button>
+              <div className="h-px bg-line/50 my-1 mx-1" />
+              <Link
+                href="/settings"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center px-3 py-2.5 text-sm text-muted hover:text-default hover:bg-sunken rounded-xl transition-colors"
+              >
+                Settings
+              </Link>
+              <div className="flex items-center justify-between px-3 py-2">
+                <span className="text-sm text-muted">Theme</span>
+                <ThemeToggle />
+              </div>
+              <div className="h-px bg-line/50 my-1 mx-1" />
+              <button
+                type="button"
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="w-full text-left rounded-xl px-3 py-2.5 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+              >
+                Sign out
+              </button>
+            </nav>
+          </>
+        )}
+      </div>
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Search bar — shown when there are vaults to search */}

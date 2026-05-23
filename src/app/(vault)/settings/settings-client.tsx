@@ -263,11 +263,11 @@ export default function SettingsClient({
   }
 
   return (
-    <div
-      className="min-h-screen bg-canvas"
-      style={{ fontFamily: "var(--font-dm-sans, sans-serif)" }}
-    >
-      <VaultHeader vaultName="Settings" />
+    <div className="bg-canvas min-h-full" style={{ fontFamily: "var(--font-dm-sans, sans-serif)" }}>
+      {/* Mobile-only nav — sidebar handles desktop */}
+      <div className="md:hidden">
+        <VaultHeader vaultName="Settings" />
+      </div>
 
       <main className="max-w-lg mx-auto px-4 py-10">
         <h1 className="text-lg font-semibold text-default mb-6">Account Settings</h1>

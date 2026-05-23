@@ -649,7 +649,7 @@ export default function VaultClient({
 
   return (
     <div
-      className="min-h-screen bg-canvas"
+      className="bg-canvas min-h-full"
       style={{
         fontFamily: "var(--font-dm-sans, sans-serif)",
       }}

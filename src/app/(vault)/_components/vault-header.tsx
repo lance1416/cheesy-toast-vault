@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import UserAvatar from "@/components/user-avatar";
 import ThemeToggle from "@/components/theme-toggle";
 
 export default function VaultHeader({
@@ -71,48 +70,16 @@ export default function VaultHeader({
           </button>
         </div>
 
-        {/* ── Desktop layout: breadcrumb | actions | avatar ── */}
-        <div className="hidden md:flex max-w-7xl mx-auto w-full px-6 h-14 items-center justify-between gap-4">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <Link
-              href="/vaults"
-              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm text-muted hover:text-default hover:bg-line transition-colors shrink-0 whitespace-nowrap"
-            >
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-              All vaults
-            </Link>
-            <span className="text-subtle select-none" aria-hidden="true">
-              /
-            </span>
-            <h1
-              className="text-sm font-semibold text-default truncate"
-              style={{ fontFamily: "var(--font-playfair, serif)" }}
-            >
-              {vaultName}
-            </h1>
-          </div>
+        {/* ── Desktop layout: vault name | actions ── */}
+        <div className="hidden md:flex max-w-full w-full px-6 h-14 items-center justify-between gap-4">
+          <h1
+            className="text-sm font-semibold text-default truncate"
+            style={{ fontFamily: "var(--font-playfair, serif)" }}
+          >
+            {vaultName}
+          </h1>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {actions && (
-              <>
-                <div className="flex items-center gap-1.5">{actions}</div>
-                <div className="w-px h-5 bg-line" role="separator" aria-hidden="true" />
-              </>
-            )}
-            <UserAvatar />
-          </div>
+          {actions && <div className="flex items-center gap-1.5 shrink-0">{actions}</div>}
         </div>
       </header>
 

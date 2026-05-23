@@ -21,12 +21,13 @@ export default function LockScreen({
 
   return (
     <div
-      className="min-h-screen bg-canvas flex flex-col"
-      style={{
-        fontFamily: "var(--font-dm-sans, sans-serif)",
-      }}
+      className="bg-canvas flex flex-col min-h-full"
+      style={{ fontFamily: "var(--font-dm-sans, sans-serif)" }}
     >
-      <VaultHeader vaultName={vaultName ?? "Vault"} />
+      {/* Mobile-only nav — sidebar handles desktop */}
+      <div className="md:hidden">
+        <VaultHeader vaultName={vaultName ?? "Vault"} />
+      </div>
 
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-sm">
