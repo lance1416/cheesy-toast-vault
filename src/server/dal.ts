@@ -47,7 +47,7 @@ export const getVaults = cache(async () => {
       id: true,
       name: true,
       updatedAt: true,
-      _count: { select: { entries: true } },
+      _count: { select: { entries: { where: { deletedAt: null } } } },
     },
   });
 });
@@ -121,7 +121,7 @@ export const getVaultEntries = cache(async (vaultId: string) => {
   const vault = await db.vault.findFirst({ where: { id: vaultId, userId }, select: { id: true } });
   if (!vault) notFound();
   return db.vaultEntry.findMany({
-    where: { vaultId },
+    where: { vaultId, deletedAt: null },
     select: {
       id: true,
       encryptedBlob: true,

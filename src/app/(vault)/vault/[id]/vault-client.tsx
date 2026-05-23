@@ -20,6 +20,7 @@ import NewEntryModal from "../../_components/new-entry-modal";
 import EditEntryModal from "../../_components/edit-entry-modal";
 import ManageTagsModal from "../../_components/manage-tags-modal";
 import HistoryModal from "../../_components/history-modal";
+import TrashModal from "../../_components/trash-modal";
 import KeyboardShortcutHelp from "../../_components/keyboard-shortcut-help";
 import { useKeyboardShortcuts } from "@/lib/use-keyboard-shortcuts";
 
@@ -37,6 +38,7 @@ function VaultMenu({
   onImport,
   onRenamed,
   onDeleted,
+  onTrash,
 }: {
   vault: { id: string; name: string };
   entryCount: number;
@@ -44,6 +46,7 @@ function VaultMenu({
   onImport: (file: File) => void;
   onRenamed: (name: string) => void;
   onDeleted: () => void;
+  onTrash: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<"idle" | "rename" | "delete">("idle");
@@ -178,6 +181,16 @@ function VaultMenu({
                   }}
                 />
               </label>
+              <button
+                type="button"
+                className={`${ITEM_BASE} text-muted hover:text-default hover:bg-sunken/60`}
+                onClick={() => {
+                  onTrash();
+                  closeMenu();
+                }}
+              >
+                Trash
+              </button>
 
               {divider}
 
@@ -327,6 +340,7 @@ export default function VaultClient({
   const [importStatus, setImportStatus] = useState<
     "idle" | "importing" | { imported: number } | { error: string }
   >("idle");
+  const [showTrash, setShowTrash] = useState(false);
 
   const searchRef = useRef<HTMLInputElement>(null);
   const anyModalOpen = showNew || !!editingEntry || !!historyEntryId || showManageTags || showHelp;
@@ -647,6 +661,7 @@ export default function VaultClient({
               onImport={handleImport}
               onRenamed={setVaultName}
               onDeleted={() => router.push("/")}
+              onTrash={() => setShowTrash(true)}
             />
           </>
         }
@@ -999,6 +1014,14 @@ export default function VaultClient({
             setHistoryEntryId(null);
             router.refresh();
           }}
+        />
+      )}
+      {showTrash && cryptoKey && (
+        <TrashModal
+          vaultId={vault.id}
+          cryptoKey={cryptoKey}
+          onClose={() => setShowTrash(false)}
+          onRestored={() => router.refresh()}
         />
       )}
       {showHelp && <KeyboardShortcutHelp onClose={() => setShowHelp(false)} />}

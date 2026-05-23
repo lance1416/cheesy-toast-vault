@@ -55,10 +55,14 @@ model VaultEntry {
   pinned        Boolean        @default(false)
   /// "login" | "note" | "card" | "identity" — mirrors the type field inside the encrypted blob
   entryType     String         @default("login")
+  /// set when the entry is soft-deleted; null means active
+  deletedAt     DateTime?
   tags          Tag[]
   history       EntryHistory[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+
+  @@index([vaultId, deletedAt])
 }
 
 /// Snapshots of a VaultEntry taken before each update; at most 10 kept per entry

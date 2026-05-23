@@ -53,6 +53,8 @@ export default function Modal({
   // Focus trap + initial focus
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
+      // Skip if a child already has focus (e.g. via autoFocus on an inner input)
+      if (cardRef.current?.contains(document.activeElement)) return;
       const first = cardRef.current?.querySelector<HTMLElement>(FOCUSABLE);
       first?.focus();
     });

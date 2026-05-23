@@ -405,8 +405,8 @@ test.describe("Custom entry types", () => {
     await expect(page.getByText("192.168.1.100")).toBeVisible({ timeout: 3_000 });
     await expect(page.getByText("deploy")).toBeVisible();
 
-    // No password or breach-check
-    await expect(page.getByText("Password")).not.toBeVisible();
+    // No breach-check button — only shown for login-type entries
+    await expect(page.getByRole("button", { name: /check for breaches/i })).not.toBeVisible();
   });
 
   test("can edit a custom type name and fields from settings", async ({ authedPage: page }) => {

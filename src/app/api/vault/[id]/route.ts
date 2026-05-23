@@ -12,9 +12,14 @@ const updateSchema = z.object({
   tagIds: z.array(z.string()).optional(),
 });
 
+const patchSchema = z.union([
+  z.object({ pinned: z.boolean() }),
+  z.object({ restore: z.literal(true) }),
+]);
+
 async function resolveEntry(id: string, userId: string) {
   return db.vaultEntry.findFirst({
-    where: { id, vault: { userId } },
+    where: { id, vault: { userId }, deletedAt: null },
     select: { id: true, encryptedBlob: true, iv: true },
   });
 }
@@ -71,28 +76,46 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const { id } = await params;
     const { userId } = await verifySession();
 
-    const entry = await resolveEntry(id, userId);
-    if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
-    const parsed = z.object({ pinned: z.boolean() }).safeParse(await req.json());
+    const parsed = patchSchema.safeParse(await req.json());
     if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-    await db.vaultEntry.update({ where: { id }, data: { pinned: parsed.data.pinned } });
+    if ("restore" in parsed.data) {
+      const entry = await db.vaultEntry.findFirst({
+        where: { id, vault: { userId }, deletedAt: { not: null } },
+        select: { id: true },
+      });
+      if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      await db.vaultEntry.update({ where: { id }, data: { deletedAt: null } });
+    } else {
+      const entry = await resolveEntry(id, userId);
+      if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      await db.vaultEntry.update({ where: { id }, data: { pinned: parsed.data.pinned } });
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     return handleApiError(err);
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const { userId } = await verifySession();
+    const permanent = new URL(req.url).searchParams.get("permanent") === "1";
 
-    const entry = await resolveEntry(id, userId);
-    if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
-    await db.vaultEntry.delete({ where: { id } });
+    if (permanent) {
+      const entry = await db.vaultEntry.findFirst({
+        where: { id, vault: { userId } },
+        select: { id: true },
+      });
+      if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      await db.vaultEntry.delete({ where: { id } });
+    } else {
+      const entry = await resolveEntry(id, userId);
+      if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      await db.vaultEntry.update({ where: { id }, data: { deletedAt: new Date() } });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
