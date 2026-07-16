@@ -14,9 +14,9 @@ jobs:
       # prisma.config.ts, but no real DB connection is made during these checks.
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cheesy_toast_vault
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
@@ -53,9 +53,9 @@ jobs:
       RESEND_API_KEY: re_ci_dummy
       EMAIL_FROM: "CI <ci@example.com>"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
